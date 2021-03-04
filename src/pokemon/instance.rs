@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::Level;
-use crate::data::StatSet;
+use crate::pokemon::data::StatSet;
+use crate::pokemon::Gender;
 
-use super::PokemonId;
-use super::moves::serializable::SerializableMoveSet;
+use crate::PokemonId;
+use crate::moves::serializable::SerializableMoveSet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PokemonInstance {
@@ -12,6 +13,7 @@ pub struct PokemonInstance {
 	pub id: PokemonId,
     pub nickname: Option<String>,
     pub level: Level,
+    pub gender: Option<Gender>, // optional because it hasn't been calculated yet (some pokemon arent 50/50 gender)
     
     #[serde(default = "iv_default")]
 	pub ivs: StatSet,
@@ -37,6 +39,7 @@ impl PokemonInstance {
 
             id: pokemon_id,
             nickname: None,
+            gender: None,
             level: quad_rand::gen_range(min_level, max_level),
             ivs: ivs.unwrap_or_default(),
             evs: StatSet::default(),

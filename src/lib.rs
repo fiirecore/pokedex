@@ -5,12 +5,7 @@ use pokemon::Pokemon;
 use moves::PokemonMove;
 
 pub mod pokemon;
-pub mod data;
-pub mod types;
 pub mod moves;
-pub mod instance;
-pub mod party;
-pub mod texture;
 
 lazy_static::lazy_static! {
 	pub static ref POKEDEX: HashMap<PokemonId, Pokemon> = HashMap::new();

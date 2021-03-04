@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use crate::MoveId;
 
-use super::types::PokemonType;
+use super::pokemon::types::PokemonType;
 
 pub mod instance;
 pub mod serializable;

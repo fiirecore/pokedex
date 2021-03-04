@@ -1,8 +1,10 @@
+use smallvec::SmallVec;
+
 use crate::MoveRef;
 
 use super::PokemonMove;
 
-pub type MoveInstances = Vec<MoveInstance>;
+pub type MoveInstances = SmallVec<[MoveInstance; 4]>;
 
 pub struct MoveInstance {
 	

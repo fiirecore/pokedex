@@ -5,12 +5,11 @@ use crate::Level;
 use crate::MoveId;
 use crate::Stat;
 
-use super::PokemonId;
-use super::types::PokemonType;
+use crate::PokemonId;
+use crate::pokemon::types::PokemonType;
 
-//pub mod pokedex;
 pub mod training;
-
+pub mod breeding;
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -30,15 +29,6 @@ pub struct PokedexData {
 pub struct LearnableMove {
 	pub move_id: MoveId,
 	pub level: Level,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Breeding {
-	
-//	pub groups: Vec<EggGroup>,
-//	pub gender: Option< // something for percentages
-	pub cycles: Option<u8>,
-	
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]

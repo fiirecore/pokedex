@@ -1,9 +1,19 @@
 use serde::{Deserialize, Serialize};
-use crate::data::LearnableMove;
-use crate::data::PokedexData;
-use crate::data::StatSet;
-use crate::data::training::Training;
+use data::breeding::Breeding;
+use data::LearnableMove;
+use data::PokedexData;
+use data::StatSet;
+use data::training::Training;
 use crate::moves::instance::{MoveInstance, MoveInstances};
+
+pub mod data;
+pub mod types;
+
+pub mod instance;
+pub mod battle;
+
+pub mod party;
+pub mod texture;
 
 #[derive(Serialize, Deserialize)]
 pub struct Pokemon {
@@ -12,7 +22,7 @@ pub struct Pokemon {
 	pub base: StatSet,
 	pub moves: Vec<LearnableMove>,
 	pub training: Training,
-	// pub breeding: Option<Breeding>,
+	pub breeding: Breeding,
 	
 }
 
@@ -42,12 +52,23 @@ impl Pokemon {
 		moves.reverse();
 		moves.truncate(4);
 
-		return moves;		
+		return moves.into();		
 	}
+
+    pub fn generate_gender(&self) -> Gender {
+        match self.breeding.gender {
+            Some(percentage) => if quad_rand::gen_range(0, 100) < percentage {
+                Gender::Male
+            } else {
+                Gender::Female
+            }
+            None => Gender::None,
+        }
+    }
 	
 }
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum Gender {
 	
 	None,

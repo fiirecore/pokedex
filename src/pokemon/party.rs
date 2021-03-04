@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
+
+use crate::pokemon::instance::PokemonInstance;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct PokemonParty {
 
-	pub pokemon: Vec<super::instance::PokemonInstance>,
+	pub pokemon: SmallVec<[PokemonInstance; 6]>,
 
 }
 

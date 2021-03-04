@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 
 use crate::MoveId;
 
 use super::instance::{MoveInstance, MoveInstances};
 
-pub type SerializableMoveSet = Vec<SerializablePokemonMove>;
+pub type SerializableMoveSet = SmallVec<[SerializablePokemonMove; 4]>;
 
 pub fn to_instances(moves: &SerializableMoveSet) -> MoveInstances {
-    let mut move_instances = Vec::new();
+    let mut move_instances = SmallVec::new();
     for saved_move in moves {
         if let Some(pokemon_move) = crate::MOVEDEX.get(&saved_move.move_id) {
             move_instances.push(MoveInstance {
