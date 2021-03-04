@@ -7,6 +7,9 @@ use moves::PokemonMove;
 pub mod pokemon;
 pub mod moves;
 
+pub use smallvec::smallvec;
+pub use smallvec::SmallVec;
+
 lazy_static::lazy_static! {
 	pub static ref POKEDEX: HashMap<PokemonId, Pokemon> = HashMap::new();
 	pub static ref MOVEDEX: HashMap<MoveId, PokemonMove> = HashMap::new();
