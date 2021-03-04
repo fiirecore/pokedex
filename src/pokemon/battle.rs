@@ -34,33 +34,33 @@ impl BattlePokemon {
 		return self.current_hp == 0;
 	}
 
-	pub fn new(pokemon: &PokemonInstance) -> Self {
+	pub fn new(pokemon: &PokemonInstance) -> Option<Self> {
 
-		let pokemon_data = crate::POKEDEX.get(&pokemon.id).expect("Could not get Pokemon from id!");
+		crate::POKEDEX.get(&pokemon.id).map(|pokemon_data| {
+			let stats = get_stats(pokemon_data.value(), pokemon.ivs, pokemon.evs, pokemon.level);
 
-		let stats = get_stats(pokemon_data.value(), pokemon.ivs, pokemon.evs, pokemon.level);
-
-		Self {
-			
-			moves: pokemon_data.moves_from_level(pokemon.level),
-			
-			nickname: pokemon.nickname.clone(),
-			level: pokemon.level,
-            gender: pokemon_data.generate_gender(),
-			
-			ivs: pokemon.ivs,
-			
-			evs: pokemon.evs,
-			
-			current_hp: pokemon.current_hp.unwrap_or(stats.hp),
-
-			base: stats,
-
-			exp: pokemon.exp,
-
-			pokemon: pokemon_data,
-			
-		}
+			Self {
+				
+				moves: pokemon_data.moves_from_level(pokemon.level),
+				
+				nickname: pokemon.nickname.clone(),
+				level: pokemon.level,
+				gender: pokemon_data.generate_gender(),
+				
+				ivs: pokemon.ivs,
+				
+				evs: pokemon.evs,
+				
+				current_hp: pokemon.current_hp.unwrap_or(stats.hp),
+	
+				base: stats,
+	
+				exp: pokemon.exp,
+	
+				pokemon: pokemon_data,
+				
+			}
+		})		
 
 	}
 	
