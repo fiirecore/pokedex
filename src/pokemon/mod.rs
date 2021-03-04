@@ -57,7 +57,7 @@ impl Pokemon {
 
     pub fn generate_gender(&self) -> Gender {
         match self.breeding.gender {
-            Some(percentage) => if quad_rand::gen_range(0, 100) < percentage {
+            Some(percentage) => if quad_rand::gen_range(0, 8) > percentage {
                 Gender::Male
             } else {
                 Gender::Female

@@ -20,8 +20,8 @@ pub struct PokedexData {
 	pub primary_type: PokemonType,
 	pub secondary_type: Option<PokemonType>,
 	pub species: String,
-	pub height: f32,
-	pub weight: f32,
+	pub height: u8,
+	pub weight: u16,
 	
 }
 
