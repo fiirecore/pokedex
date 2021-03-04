@@ -6,8 +6,11 @@ use data::StatSet;
 use data::training::Training;
 use crate::moves::instance::{MoveInstance, MoveInstances};
 
+use self::cry::PokemonCry;
+
 pub mod data;
 pub mod types;
+pub mod cry;
 
 pub mod instance;
 pub mod battle;
@@ -23,6 +26,8 @@ pub struct Pokemon {
 	pub moves: Vec<LearnableMove>,
 	pub training: Training,
 	pub breeding: Breeding,
+	#[serde(default)]
+	pub cry: PokemonCry,
 	
 }
 
