@@ -24,3 +24,9 @@ pub type Stat = u8;
 pub type MoveRef = Ref<'static, MoveId, PokemonMove>;
 
 pub type MoveId = u16;
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct SerializedDex {
+	pub pokemon: Vec<Pokemon>,
+	pub moves: Vec<PokemonMove>,
+}
