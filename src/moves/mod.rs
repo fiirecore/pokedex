@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use crate::MoveId;
 
 use super::pokemon::types::PokemonType;
@@ -6,7 +6,7 @@ use super::pokemon::types::PokemonType;
 pub mod instance;
 pub mod serializable;
 
-#[derive(Default, Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct PokemonMove {
 
 	pub number: MoveId,
@@ -25,7 +25,7 @@ impl std::fmt::Display for PokemonMove {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum MoveCategory {
 	
 	Physical,

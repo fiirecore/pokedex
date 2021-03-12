@@ -18,8 +18,8 @@ pub mod texture;
 #[derive(Serialize, Deserialize)]
 pub struct Pokemon {
 
-	#[serde(default)]
-	pub data_format: u8, // Current = 1
+	// #[serde(default)]
+	// pub data_format: u8, // Current = 1
 
 	pub data: PokedexData,
 	pub base: StatSet,
