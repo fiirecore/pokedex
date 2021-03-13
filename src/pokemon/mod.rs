@@ -26,10 +26,9 @@ pub struct Pokemon {
 
 	pub training: Training,
 	pub breeding: Breeding,
-
-	pub cry_file: Option<String>,
 	
-	pub moves: Vec<LearnableMove>,	
+	pub moves: Vec<LearnableMove>,
+	
 }
 
 impl Pokemon {

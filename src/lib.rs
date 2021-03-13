@@ -7,8 +7,7 @@ use moves::PokemonMove;
 pub mod pokemon;
 pub mod moves;
 
-pub use smallvec::smallvec;
-pub use smallvec::SmallVec;
+pub mod serialized;
 
 lazy_static::lazy_static! {
 	pub static ref POKEDEX: HashMap<PokemonId, Pokemon> = HashMap::new();
@@ -24,9 +23,3 @@ pub type Stat = u8;
 pub type MoveRef = Ref<'static, MoveId, PokemonMove>;
 
 pub type MoveId = u16;
-
-#[derive(serde::Deserialize, serde::Serialize)]
-pub struct SerializedDex {
-	pub pokemon: Vec<Pokemon>,
-	pub moves: Vec<PokemonMove>,
-}
