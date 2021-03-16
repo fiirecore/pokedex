@@ -16,12 +16,13 @@ pub struct SerializedPokemon {
     pub cry_ogg: Vec<u8>,
     pub front_png: Vec<u8>,
     pub back_png: Vec<u8>,
+    pub icon_png: Vec<u8>,
 
 }
 
 // #[derive(Deserialize, Serialize)]
 // pub struct SerializedPokemonMove {
 
-//     pub pokemon_move: PokemonMove,
+//     pub pokemon_move: PokemonMove, // add move scripting stuff later
 
 // }
