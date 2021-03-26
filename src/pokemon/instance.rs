@@ -13,7 +13,7 @@ pub struct PokemonInstance {
 	pub id: PokemonId,
     pub nickname: Option<String>,
     pub level: Level,
-    pub gender: Option<Gender>, // optional because it hasn't been calculated yet (some pokemon arent 50/50 gender)
+    pub gender: Gender, // optional because it hasn't been calculated yet (some pokemon arent 50/50 gender)
     
     #[serde(default = "iv_default")]
 	pub ivs: StatSet,
@@ -23,7 +23,7 @@ pub struct PokemonInstance {
     pub moves: Option<SerializableMoveSet>,
     
     #[serde(default)]
-	pub exp: usize,
+	pub exp: u32,
     #[serde(default)]
     pub friendship: u8,
     
@@ -35,11 +35,13 @@ impl PokemonInstance {
 
     pub fn generate(pokemon_id: PokemonId, min_level: Level, max_level: Level, ivs: Option<StatSet>) -> Self {
 
+        let pokemon = crate::POKEDEX.get(&pokemon_id);
+
         Self {
 
             id: pokemon_id,
             nickname: None,
-            gender: None,
+            gender: pokemon.map(|pokemon| pokemon.generate_gender()).unwrap_or(Gender::None),
             level: quad_rand::gen_range(min_level, max_level),
             ivs: ivs.unwrap_or_default(),
             evs: StatSet::default(),

@@ -1,6 +1,6 @@
 [package]
 name = "firecore-pokedex"
-version = "0.1.1"
+version = "0.3.0-beta.1"
 authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
 edition = "2018"
 description = "Pokemon FireRed Clone Pokedex dependency"

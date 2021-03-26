@@ -24,7 +24,7 @@ pub struct BattlePokemon {
 
 	pub current_hp: u16,
 
-	pub exp: usize,
+	pub exp: u32,
 	
 }
 
@@ -45,7 +45,7 @@ impl BattlePokemon {
 				
 				nickname: pokemon.nickname.clone(),
 				level: pokemon.level,
-				gender: pokemon_data.generate_gender(),
+				gender: pokemon.gender,
 				
 				ivs: pokemon.ivs,
 				
@@ -103,7 +103,7 @@ impl BattlePokemon {
 		PokemonInstance {
 		    id: self.pokemon.data.number,
 			nickname: self.nickname.clone(),
-            gender: Some(self.gender),
+            gender: self.gender,
 		    level: self.level,
 		    ivs: self.ivs,
 		    evs: self.evs,
@@ -112,7 +112,11 @@ impl BattlePokemon {
 		    friendship: 70,
 		    current_hp: Some(self.current_hp),
 		}
-	}	
+	}
+
+	pub fn name(&self) -> &String {
+		self.nickname.as_ref().unwrap_or(&self.pokemon.data.name)
+	}
 	
 }
 

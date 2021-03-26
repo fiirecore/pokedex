@@ -1,9 +1,11 @@
+use std::u32;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct Training {
 	
-	pub base_exp: usize,
+	pub base_exp: u16,
 	#[serde(default)]
 	pub growth_rate: GrowthRate,
 	//pub ev_yield: Option<(String, usize)>,
@@ -38,13 +40,13 @@ impl Default for GrowthRate {
 
 impl GrowthRate {
 
-	pub fn level_exp(self, level: u8) -> usize {
+	pub fn level_exp(self, level: u8) -> u32 {
 		let level = level as u32;
 		match self {
-		    GrowthRate::Fast => (0.8 * level.pow(3) as f32) as usize,
-		    GrowthRate::Medium => level.pow(3) as usize,
-		    GrowthRate::Slow => (1.25 * level.pow(3) as f32) as usize,
-			_ => ((1.2 * level.pow(3) as f32) as isize - 15 * level.pow(2) as isize + 100 * level as isize - 140) as usize, // MediumSlow
+		    GrowthRate::Fast => (0.8 * level.pow(3) as f32) as u32,
+		    GrowthRate::Medium => level.pow(3) as u32,
+		    GrowthRate::Slow => (1.25 * level.pow(3) as f32) as u32,
+			_ => ((1.2 * level.pow(3) as f32) as isize - 15 * level.pow(2) as isize + 100 * level as isize - 140) as u32, // MediumSlow
 		}
 	}
 
