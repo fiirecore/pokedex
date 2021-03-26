@@ -10,7 +10,7 @@ pub use firecore_pokedex_lib::pokemon::*;
 pub mod generate;
 pub mod random;
 
-pub mod battle;
+pub mod instance;
 
 
 pub type PokemonRef = Ref<'static, PokemonId, Pokemon>;

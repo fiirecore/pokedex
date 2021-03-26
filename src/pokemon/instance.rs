@@ -3,20 +3,25 @@ use crate::{pokemon::{
 		Level,
 		Pokemon,
 		PokemonRef,
-		instance::SavedPokemon,
-		instance::PokemonInstance,
+		saved::{
+			SavedPokemon,
+			PokemonData
+		},
 		data::StatSet,
 		InPokedex,
 		random::RandomSet,
 	},
-	moves::instance::MoveInstances,
+	moves::{
+		instance::MoveInstances,
+		serializable::to_instances
+	}
 };
 
-pub struct BattlePokemon {
+pub struct PokemonInstance {
 	
 	pub pokemon: PokemonRef, 
 	
-	pub data: PokemonInstance,
+	pub data: PokemonData,
 
 	pub moves: MoveInstances,
 
@@ -26,7 +31,7 @@ pub struct BattlePokemon {
 	
 }
 
-impl BattlePokemon {
+impl PokemonInstance {
 
 	pub fn new(pokemon: &SavedPokemon) -> Option<Self> {
 
@@ -37,7 +42,7 @@ impl BattlePokemon {
 
 				data: pokemon.data.clone(),				
 				
-				moves: pokemon_data.moves_from_level(pokemon.data.level),
+				moves: pokemon.moves.as_ref().map(|moves| to_instances(moves)).unwrap_or(pokemon_data.moves_from_level(pokemon.data.level)),
 	
 				base: stats,
 				
@@ -69,7 +74,7 @@ impl BattlePokemon {
 	
 }
 
-impl super::generate::GeneratePokemon for BattlePokemon {
+impl super::generate::GeneratePokemon for PokemonInstance {
 
     fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<StatSet>) -> Self {
 
@@ -88,7 +93,7 @@ impl super::generate::GeneratePokemon for BattlePokemon {
 
 		Self {
 
-			data: PokemonInstance {
+			data: PokemonData {
 				nickname: None,
 				level: level,
 				gender: pokemon.generate_gender(),
@@ -110,7 +115,7 @@ impl super::generate::GeneratePokemon for BattlePokemon {
     }
 }
 
-impl std::fmt::Display for BattlePokemon {
+impl std::fmt::Display for PokemonInstance {
 
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "Lv. {} {}", self.data.level, self.name())
