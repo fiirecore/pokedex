@@ -1,4 +1,5 @@
 use dashmap::mapref::one::Ref;
+use firecore_pokedex_lib::pokemon::data::Gender;
 
 use crate::moves::instance::{MoveInstance, MoveInstances};
 
@@ -34,7 +35,7 @@ impl InPokedex for Pokemon {
 				if let Some(pokemon_move) =  crate::MOVEDEX.get(&learnable_move.move_id) {
 					let mut has = false;
 					for pmove in &moves {
-						if pmove.pokemon_move.number == pokemon_move.number {
+						if pmove.pokemon_move.id == pokemon_move.id {
 							has = true;
 						}
 					}

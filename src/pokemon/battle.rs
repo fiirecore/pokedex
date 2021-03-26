@@ -1,64 +1,47 @@
-use firecore_pokedex_lib::pokemon::{
-    Pokemon,
-    Gender,
-    instance::PokemonInstance,
-    data::StatSet,
+use crate::{pokemon::{
+		PokemonId,
+		Level,
+		Pokemon,
+		PokemonRef,
+		instance::SavedPokemon,
+		instance::PokemonInstance,
+		data::StatSet,
+		InPokedex,
+		random::RandomSet,
+	},
+	moves::instance::MoveInstances,
 };
-use crate::pokemon::PokemonRef;
-use crate::moves::instance::MoveInstances;
-
-use super::{InPokedex, random::RandomSet};
 
 pub struct BattlePokemon {
 	
 	pub pokemon: PokemonRef, 
 	
-	pub nickname: Option<String>,
-	pub level: u8,
-    pub gender: Gender,
-//	ability: Ability,
+	pub data: PokemonInstance,
 
 	pub moves: MoveInstances,
 
 	pub base: BaseStatSet,
 
-	ivs: StatSet,
-	evs: StatSet,
-
 	pub current_hp: u16,
-
-	pub exp: u32,
 	
 }
 
 impl BattlePokemon {
 
-	pub fn faint(&self) -> bool {
-		return self.current_hp == 0;
-	}
-
-	pub fn new(pokemon: &PokemonInstance) -> Option<Self> {
+	pub fn new(pokemon: &SavedPokemon) -> Option<Self> {
 
 		crate::POKEDEX.get(&pokemon.id).map(|pokemon_data| {
-			let stats = get_stats(pokemon_data.value(), pokemon.ivs, pokemon.evs, pokemon.level);
+			let stats = get_stats(pokemon_data.value(), pokemon.data.ivs, pokemon.data.evs, pokemon.data.level);
 
 			Self {
+
+				data: pokemon.data.clone(),				
 				
-				moves: pokemon_data.moves_from_level(pokemon.level),
-				
-				nickname: pokemon.nickname.clone(),
-				level: pokemon.level,
-				gender: pokemon.gender,
-				
-				ivs: pokemon.ivs,
-				
-				evs: pokemon.evs,
-				
-				current_hp: pokemon.current_hp.unwrap_or(stats.hp),
+				moves: pokemon_data.moves_from_level(pokemon.data.level),
 	
 				base: stats,
-	
-				exp: pokemon.exp,
+				
+				current_hp: pokemon.current_hp.unwrap_or(stats.hp),
 	
 				pokemon: pokemon_data,
 				
@@ -66,67 +49,71 @@ impl BattlePokemon {
 		})		
 
 	}
-	
-	pub fn generate(pokemon: PokemonRef, min_level: u8, max_level: u8) -> Self {
-		let level;
-		if min_level == max_level {
-			level = max_level;
-		} else {
-			level = quad_rand::gen_range(min_level, max_level + 1);
-		}
 
-		let ivs = StatSet::random();
+	pub fn to_saved(self) -> SavedPokemon {
+		SavedPokemon {
+		    id: self.pokemon.data.id,
+			data: self.data,
+		    moves: Some(crate::moves::serializable::from_instances(self.moves)),
+		    current_hp: Some(self.current_hp),
+		}
+	}
+
+	pub fn is_faint(&self) -> bool {
+		return self.current_hp == 0;
+	}
+
+	pub fn name(&self) -> String {
+		self.data.nickname.as_ref().map(|name| name.clone()).unwrap_or(self.pokemon.data.name.to_ascii_uppercase())
+	}
+	
+}
+
+impl super::generate::GeneratePokemon for BattlePokemon {
+
+    fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<StatSet>) -> Self {
+
+		let pokemon = crate::POKEDEX.get(&id).unwrap();
+
+        let level = if min == max {
+			max
+		} else {
+			quad_rand::gen_range(min, max + 1)
+		};
+
+		let ivs = ivs.unwrap_or(StatSet::random());
 		let evs = StatSet::default();
 
 		let base = get_stats(pokemon.value(), ivs, evs, level);
 
 		Self {
-			
-			nickname: None,
-			level: level,
-            gender: pokemon.generate_gender(),
-			
-			moves: pokemon.moves_from_level(level),
-			
-			ivs: ivs,
-			evs: evs,
 
-			base: base,
+			data: PokemonInstance {
+				nickname: None,
+				level: level,
+				gender: pokemon.generate_gender(),
+				ivs: ivs,
+				evs: evs,
+				experience: 0,
+				friendship: 70,
+			},
+
+			moves: pokemon.moves_from_level(level),
 
 			current_hp: base.hp,
-			exp: 0,
+
+			base,
 			
 			pokemon,
 			
 		}
-		
-	}
-
-	pub fn to_instance(&self) -> PokemonInstance {
-		PokemonInstance {
-		    id: self.pokemon.data.number,
-			nickname: self.nickname.clone(),
-            gender: self.gender,
-		    level: self.level,
-		    ivs: self.ivs,
-		    evs: self.evs,
-		    moves: Some(crate::moves::serializable::from_instances(&self.moves)),
-		    exp: self.exp,
-		    friendship: 70,
-		    current_hp: Some(self.current_hp),
-		}
-	}
-
-	pub fn name(&self) -> &String {
-		self.nickname.as_ref().unwrap_or(&self.pokemon.data.name)
-	}
-	
+    }
 }
 
 impl std::fmt::Display for BattlePokemon {
 
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "Lv. {} {}", self.level, &self.pokemon.data.name)
+		write!(f, "Lv. {} {}", self.data.level, self.name())
 	}
 	
 }
