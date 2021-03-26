@@ -1,39 +1,33 @@
-use serde::{Deserialize, Serialize};
-use data::breeding::Breeding;
-use data::LearnableMove;
-use data::PokedexData;
-use data::StatSet;
-use data::training::Training;
+use dashmap::mapref::one::Ref;
+
 use crate::moves::instance::{MoveInstance, MoveInstances};
 
-pub mod data;
-pub mod types;
 
-pub mod instance;
+pub use firecore_pokedex_lib::pokemon::*;
+
+
+pub mod generate;
+pub mod random;
+
 pub mod battle;
 
-pub mod party;
-pub mod texture;
 
-#[derive(Serialize, Deserialize)]
-pub struct Pokemon {
+pub type PokemonRef = Ref<'static, PokemonId, Pokemon>;
 
-	// #[serde(default)]
-	// pub data_format: u8, // Current = 1
 
-	pub data: PokedexData,
-	pub base: StatSet,
 
-	pub training: Training,
-	pub breeding: Breeding,
-	
-	pub moves: Vec<LearnableMove>,
-	
+pub trait InPokedex {
+
+    fn moves_from_level(&self, level: Level) -> MoveInstances;
+
+    // #[deprecated(note = "move or rename trait")]
+    fn generate_gender(&self) -> Gender;
+
 }
 
-impl Pokemon {
+impl InPokedex for Pokemon {
 
-	pub fn moves_from_level(&self, level: u8) -> MoveInstances {
+	fn moves_from_level(&self, level: u8) -> MoveInstances {
 		let mut moves: Vec<MoveInstance> = Vec::new();
 		for learnable_move in &self.moves {
 			if learnable_move.level <= level {
@@ -60,7 +54,7 @@ impl Pokemon {
 		return moves.into();		
 	}
 
-    pub fn generate_gender(&self) -> Gender {
+    fn generate_gender(&self) -> Gender {
         match self.breeding.gender {
             Some(percentage) => if quad_rand::gen_range(0, 8) > percentage {
                 Gender::Male
@@ -70,14 +64,5 @@ impl Pokemon {
             None => Gender::None,
         }
     }
-	
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
-pub enum Gender {
-	
-	None,
-	Male,
-	Female,
 	
 }

@@ -1,10 +1,13 @@
-use crate::PokemonRef;
-use crate::pokemon::data::StatSet;
-use crate::pokemon::Pokemon;
-use crate::pokemon::instance::PokemonInstance;
+use firecore_pokedex_lib::pokemon::{
+    Pokemon,
+    Gender,
+    instance::PokemonInstance,
+    data::StatSet,
+};
+use crate::pokemon::PokemonRef;
 use crate::moves::instance::MoveInstances;
 
-use super::Gender;
+use super::{InPokedex, random::RandomSet};
 
 pub struct BattlePokemon {
 	
@@ -72,7 +75,7 @@ impl BattlePokemon {
 			level = quad_rand::gen_range(min_level, max_level + 1);
 		}
 
-		let ivs = StatSet::iv_random();
+		let ivs = StatSet::random();
 		let evs = StatSet::default();
 
 		let base = get_stats(pokemon.value(), ivs, evs, level);
