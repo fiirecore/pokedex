@@ -19,9 +19,14 @@ pub mod instance {
     
     impl MoveInstance {
     
-        pub fn use_move(&mut self) -> &PokemonMove {
-            self.remaining_pp -= 1;
-            &self.pokemon_move
+        pub fn use_move(&mut self) -> Option<&PokemonMove> {
+            if self.remaining_pp == 0 {
+                None
+            } else {
+                self.remaining_pp -= 1;
+                Some(&self.pokemon_move)
+            }
+            
         }
     
     }
