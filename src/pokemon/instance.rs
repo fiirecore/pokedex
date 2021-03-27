@@ -1,3 +1,4 @@
+use crate::moves::MoveRef;
 use crate::{pokemon::{
 		PokemonId,
 		Level,
@@ -70,6 +71,16 @@ impl PokemonInstance {
 
 	pub fn name(&self) -> String {
 		self.data.nickname.as_ref().map(|name| name.clone()).unwrap_or(self.pokemon.data.name.to_ascii_uppercase())
+	}
+
+	pub fn moves_at_level(&self) -> Vec<MoveRef> {
+		let mut moves = Vec::new();
+		for pokemon_move in &self.pokemon.moves {
+			if pokemon_move.level == self.data.level {
+				moves.push(crate::MOVEDEX.get(&pokemon_move.move_id).unwrap())
+			}
+		}
+		moves
 	}
 	
 }

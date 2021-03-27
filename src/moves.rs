@@ -21,6 +21,13 @@ pub mod instance {
     }
     
     impl MoveInstance {
+
+        pub fn new(pokemon_move: MoveRef) -> Self {
+            Self {
+                pp: pokemon_move.pp,
+                pokemon_move,
+            }
+        }
     
         pub fn use_move(&mut self) -> Option<&PokemonMove> {
             if self.pp == 0 {
