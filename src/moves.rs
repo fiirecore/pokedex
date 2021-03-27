@@ -1,11 +1,14 @@
+use dashmap::mapref::one::Ref;
 pub use firecore_pokedex_lib::moves::*;
+
+pub type MoveRef = Ref<'static, MoveId, PokemonMove>;
 
 pub mod instance {
 
-    use firecore_pokedex_lib::moves::PokemonMove;
+    use firecore_pokedex_lib::moves::{PokemonMove, PP};
     use smallvec::SmallVec;
 
-    use crate::MoveRef;
+    use super::MoveRef;
 
 
     pub type MoveInstances = SmallVec<[MoveInstance; 4]>;
@@ -13,17 +16,17 @@ pub mod instance {
     pub struct MoveInstance {
         
         pub pokemon_move: MoveRef,
-        pub remaining_pp: u8,
+        pub pp: PP,
         
     }
     
     impl MoveInstance {
     
         pub fn use_move(&mut self) -> Option<&PokemonMove> {
-            if self.remaining_pp == 0 {
+            if self.pp == 0 {
                 None
             } else {
-                self.remaining_pp -= 1;
+                self.pp -= 1;
                 Some(&self.pokemon_move)
             }
             
@@ -48,7 +51,7 @@ pub mod serializable {
             if let Some(pokemon_move) = crate::MOVEDEX.get(&saved_move.id) {
                 instances.push(MoveInstance {
                     pokemon_move: pokemon_move,
-                    remaining_pp: saved_move.remaining_pp,
+                    pp: saved_move.pp,
                 });
             }
         }
@@ -58,7 +61,7 @@ pub mod serializable {
     pub fn from_instances(moves: MoveInstances) -> SerializableMoveSet {
         moves.into_iter().map(|instance| SerializableMove {
             id: instance.pokemon_move.id,
-            remaining_pp: instance.remaining_pp,
+            pp: instance.pp,
         }).collect()
     }
 

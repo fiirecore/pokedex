@@ -41,7 +41,7 @@ impl InPokedex for Pokemon {
 					}
 					if !has {
 						moves.push(MoveInstance {
-							remaining_pp: pokemon_move.pp,
+							pp: pokemon_move.pp,
 							pokemon_move: pokemon_move,
 						});
 					}
