@@ -11,7 +11,7 @@ pub mod instance {
     use super::MoveRef;
 
 
-    pub type MoveInstances = SmallVec<[MoveInstance; 4]>;
+    pub type MoveInstanceSet = SmallVec<[MoveInstance; 4]>;
 
     pub struct MoveInstance {
         
@@ -47,28 +47,27 @@ pub mod instance {
 
 pub mod serializable {
     
-    use firecore_pokedex_lib::moves::{SerializableMove, SerializableMoveSet};
-    use smallvec::SmallVec;
+    use firecore_pokedex_lib::moves::saved::{SavedMove, SavedMoveSet};
 
-    use super::instance::{MoveInstance, MoveInstances};
+    use super::instance::{MoveInstance, MoveInstanceSet};
 
-    pub fn to_instances(moves: &SerializableMoveSet) -> MoveInstances {
-        let mut instances = SmallVec::new();
+    pub fn to_instances(moves: &SavedMoveSet) -> MoveInstanceSet {
+        let mut instances = MoveInstanceSet::new();
         for saved_move in moves {
             if let Some(pokemon_move) = crate::movedex().get(&saved_move.id) {
                 instances.push(MoveInstance {
+                    pp: saved_move.pp.unwrap_or(pokemon_move.pp),
                     pokemon_move: pokemon_move,
-                    pp: saved_move.pp,
                 });
             }
         }
         return instances;
     }
     
-    pub fn from_instances(moves: MoveInstances) -> SerializableMoveSet {
-        moves.into_iter().map(|instance| SerializableMove {
+    pub fn from_instances(moves: MoveInstanceSet) -> SavedMoveSet {
+        moves.into_iter().map(|instance| SavedMove {
             id: instance.pokemon_move.id,
-            pp: instance.pp,
+            pp: Some(instance.pp),
         }).collect()
     }
 

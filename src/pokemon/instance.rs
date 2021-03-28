@@ -13,7 +13,7 @@ use crate::{pokemon::{
 		random::RandomSet,
 	},
 	moves::{
-		instance::MoveInstances,
+		instance::MoveInstanceSet,
 		serializable::to_instances
 	}
 };
@@ -24,7 +24,7 @@ pub struct PokemonInstance {
 	
 	pub data: PokemonData,
 
-	pub moves: MoveInstances,
+	pub moves: MoveInstanceSet,
 
 	pub base: BaseStatSet,
 

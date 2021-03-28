@@ -1,7 +1,7 @@
 use dashmap::mapref::one::Ref;
 use firecore_pokedex_lib::pokemon::data::Gender;
 
-use crate::moves::instance::{MoveInstance, MoveInstances};
+use crate::moves::instance::{MoveInstance, MoveInstanceSet};
 
 
 pub use firecore_pokedex_lib::pokemon::*;
@@ -19,7 +19,7 @@ pub type PokemonRef = Ref<'static, PokemonId, Pokemon>;
 
 pub trait InPokedex {
 
-    fn moves_from_level(&self, level: Level) -> MoveInstances;
+    fn moves_from_level(&self, level: Level) -> MoveInstanceSet;
 
     // #[deprecated(note = "move or rename trait")]
     fn generate_gender(&self) -> Gender;
@@ -28,7 +28,7 @@ pub trait InPokedex {
 
 impl InPokedex for Pokemon {
 
-	fn moves_from_level(&self, level: u8) -> MoveInstances {
+	fn moves_from_level(&self, level: u8) -> MoveInstanceSet {
 		let mut moves: Vec<MoveInstance> = Vec::new();
 		for learnable_move in &self.moves {
 			if learnable_move.level <= level {
