@@ -32,7 +32,7 @@ impl InPokedex for Pokemon {
 		let mut moves: Vec<MoveInstance> = Vec::new();
 		for learnable_move in &self.moves {
 			if learnable_move.level <= level {
-				if let Some(pokemon_move) =  crate::MOVEDEX.get(&learnable_move.move_id) {
+				if let Some(pokemon_move) =  crate::movedex().get(&learnable_move.move_id) {
 					let mut has = false;
 					for pmove in &moves {
 						if pmove.pokemon_move.id == pokemon_move.id {

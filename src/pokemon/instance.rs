@@ -36,7 +36,7 @@ impl PokemonInstance {
 
 	pub fn new(pokemon: &SavedPokemon) -> Option<Self> {
 
-		crate::POKEDEX.get(&pokemon.id).map(|pokemon_data| {
+		crate::pokedex().get(&pokemon.id).map(|pokemon_data| {
 			let stats = get_stats(pokemon_data.value(), pokemon.data.ivs, pokemon.data.evs, pokemon.data.level);
 
 			Self {
@@ -77,7 +77,7 @@ impl PokemonInstance {
 		let mut moves = Vec::new();
 		for pokemon_move in &self.pokemon.moves {
 			if pokemon_move.level == self.data.level {
-				moves.push(crate::MOVEDEX.get(&pokemon_move.move_id).unwrap())
+				moves.push(crate::movedex().get(&pokemon_move.move_id).unwrap())
 			}
 		}
 		moves
@@ -89,7 +89,7 @@ impl super::generate::GeneratePokemon for PokemonInstance {
 
     fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<StatSet>) -> Self {
 
-		let pokemon = crate::POKEDEX.get(&id).unwrap();
+		let pokemon = crate::pokedex().get(&id).unwrap();
 
         let level = if min == max {
 			max

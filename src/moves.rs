@@ -55,7 +55,7 @@ pub mod serializable {
     pub fn to_instances(moves: &SerializableMoveSet) -> MoveInstances {
         let mut instances = SmallVec::new();
         for saved_move in moves {
-            if let Some(pokemon_move) = crate::MOVEDEX.get(&saved_move.id) {
+            if let Some(pokemon_move) = crate::movedex().get(&saved_move.id) {
                 instances.push(MoveInstance {
                     pokemon_move: pokemon_move,
                     pp: saved_move.pp,
