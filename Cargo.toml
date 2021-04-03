@@ -1,6 +1,6 @@
 [package]
 name = "firecore-pokedex"
-version = "0.3.0-beta.2"
+version = "0.3.0"
 authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
 edition = "2018"
 description = "Pokemon FireRed Clone Pokedex dependency"
@@ -21,7 +21,7 @@ firecore-pokedex-lib = { git = "https://github.com/DoNotDoughnut/firecore-pokede
 ### Collections
 
 smallvec = { version = "1.6", features = ["serde"] }
-dashmap = "4.0"
+ahash = { version = "0.7", features = ["serde"] }
 
 ### Other
 

@@ -37,7 +37,7 @@ impl PokemonInstance {
 	pub fn new(pokemon: &SavedPokemon) -> Option<Self> {
 
 		crate::pokedex().get(&pokemon.id).map(|pokemon_data| {
-			let stats = get_stats(pokemon_data.value(), pokemon.data.ivs, pokemon.data.evs, pokemon.data.level);
+			let stats = get_stats(pokemon_data, pokemon.data.ivs, pokemon.data.evs, pokemon.data.level);
 
 			Self {
 
@@ -100,7 +100,7 @@ impl super::generate::GeneratePokemon for PokemonInstance {
 		let ivs = ivs.unwrap_or(StatSet::random());
 		let evs = StatSet::default();
 
-		let base = get_stats(pokemon.value(), ivs, evs, level);
+		let base = get_stats(pokemon, ivs, evs, level);
 
 		Self {
 

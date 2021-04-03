@@ -1,7 +1,6 @@
-use dashmap::mapref::one::Ref;
 pub use firecore_pokedex_lib::moves::*;
 
-pub type MoveRef = Ref<'static, MoveId, PokemonMove>;
+pub type MoveRef = &'static PokemonMove;// dashmap::mapref::one::Ref<'static, MoveId, PokemonMove>;
 
 pub mod instance {
 

@@ -1,4 +1,3 @@
-use dashmap::mapref::one::Ref;
 use firecore_pokedex_lib::pokemon::data::Gender;
 
 use crate::moves::instance::{MoveInstance, MoveInstanceSet};
@@ -13,7 +12,7 @@ pub mod random;
 pub mod instance;
 
 
-pub type PokemonRef = Ref<'static, PokemonId, Pokemon>;
+pub type PokemonRef = &'static Pokemon;// dashmap::mapref::one::Ref<'static, PokemonId, Pokemon>;
 
 
 

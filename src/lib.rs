@@ -1,4 +1,4 @@
-use dashmap::DashMap as HashMap;
+use ahash::AHashMap as HashMap;
 
 use firecore_pokedex_lib::{
 	pokemon::{PokemonId, Pokemon},
