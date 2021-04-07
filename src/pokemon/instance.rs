@@ -62,6 +62,7 @@ impl PokemonInstance {
 			data: self.data,
 		    moves: Some(crate::moves::serializable::from_instances(self.moves)),
 		    current_hp: Some(self.current_hp),
+			owned_data: None,
 		}
 	}
 
