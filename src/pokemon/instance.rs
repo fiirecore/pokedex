@@ -10,7 +10,7 @@ use crate::{pokemon::{
 		},
 		data::StatSet,
 		InPokedex,
-		random::RandomSet,
+		RandomSet,
 	},
 	moves::{
 		instance::MoveInstanceSet,
@@ -86,7 +86,7 @@ impl PokemonInstance {
 	
 }
 
-impl super::generate::GeneratePokemon for PokemonInstance {
+impl super::GeneratePokemon for PokemonInstance {
 
     fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<StatSet>) -> Self {
 
@@ -95,7 +95,7 @@ impl super::generate::GeneratePokemon for PokemonInstance {
         let level = if min == max {
 			max
 		} else {
-			quad_rand::gen_range(min, max + 1)
+			super::POKEMON_RANDOM.gen_range(min as u32..max as u32 + 1) as u8
 		};
 
 		let ivs = ivs.unwrap_or(StatSet::random());

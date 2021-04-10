@@ -1,20 +1,26 @@
-use firecore_pokedex_lib::pokemon::data::Gender;
-
+use firecore_pokedex_lib::pokemon::data::{Gender, StatSet};
+use firecore_rand::Random;
 use crate::moves::instance::{MoveInstance, MoveInstanceSet};
 
 
 pub use firecore_pokedex_lib::pokemon::*;
 
-
-pub mod generate;
-pub mod random;
-
 pub mod instance;
 
 
-pub type PokemonRef = &'static Pokemon;// dashmap::mapref::one::Ref<'static, PokemonId, Pokemon>;
+pub type PokemonRef = &'static Pokemon;
 
+pub static POKEMON_RANDOM: Random = Random::new();
 
+pub trait GeneratePokemon {
+
+    fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<StatSet>) -> Self;
+
+    fn generate_with_level(id: PokemonId, level: Level, ivs: Option<StatSet>) -> Self where Self: Sized {
+        GeneratePokemon::generate(id, level, level, ivs)
+    }
+
+}
 
 pub trait InPokedex {
 
@@ -56,7 +62,7 @@ impl InPokedex for Pokemon {
 
     fn generate_gender(&self) -> Gender {
         match self.breeding.gender {
-            Some(percentage) => if quad_rand::gen_range(0, 8) > percentage {
+            Some(percentage) => if POKEMON_RANDOM.gen_range(0..8) as u8 > percentage {
                 Gender::Male
             } else {
                 Gender::Female
@@ -65,4 +71,25 @@ impl InPokedex for Pokemon {
         }
     }
 	
+}
+
+pub trait RandomSet {
+
+    fn random() -> Self;
+
+}
+
+impl RandomSet for StatSet {
+
+    fn random() -> Self {
+		Self {
+			hp: POKEMON_RANDOM.gen_range(0..32) as u8,
+			atk: POKEMON_RANDOM.gen_range(0..32) as u8,
+			def: POKEMON_RANDOM.gen_range(0..32) as u8,
+			sp_atk: POKEMON_RANDOM.gen_range(0..32) as u8,
+			sp_def: POKEMON_RANDOM.gen_range(0..32) as u8,
+			speed: POKEMON_RANDOM.gen_range(0..32) as u8,
+		}
+	}
+
 }
