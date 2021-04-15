@@ -15,17 +15,14 @@ lto = true
 
 ### Specifications
 
-firecore-pokedex-lib = { git = "https://github.com/DoNotDoughnut/firecore-pokedex-lib" }
-# firecore-pokedex-lib = { path = "../firecore-pokedex-lib" }
+firecore-pokedex-lib = { path = "./lib" }
 
-firecore-rand = { git = "https://github.com/DoNotDoughnut/firecore-rand" }
-
-
-### Collections
-
-smallvec = { version = "1.6", features = ["serde"] }
-ahash = { version = "0.7", features = ["serde"] }
-
-### Other
+firecore-util = { git = "https://github.com/DoNotDoughnut/firecore-util", default-features = false, features = ["random", "smallvec", "hash"] }
 
 serde = { version = "1.0", features = ["derive"] }
+
+[workspace]
+members = [
+    "lib",
+    "builder"
+]

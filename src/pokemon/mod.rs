@@ -1,5 +1,5 @@
 use firecore_pokedex_lib::pokemon::data::{Gender, StatSet};
-use firecore_rand::Random;
+use firecore_util::Random;
 use crate::moves::instance::{MoveInstance, MoveInstanceSet};
 
 

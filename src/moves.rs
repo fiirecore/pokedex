@@ -5,7 +5,7 @@ pub type MoveRef = &'static PokemonMove;// dashmap::mapref::one::Ref<'static, Mo
 pub mod instance {
 
     use firecore_pokedex_lib::moves::{PokemonMove, PP};
-    use smallvec::SmallVec;
+    use firecore_util::smallvec::SmallVec;
 
     use super::MoveRef;
 
