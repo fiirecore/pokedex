@@ -1,4 +1,4 @@
-use firecore_pokedex_lib::moves::PokemonMove;
+use firecore_pokedex::moves::PokemonMove;
 
 use crate::error::EntryError;
 

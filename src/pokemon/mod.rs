@@ -1,16 +1,47 @@
-use firecore_pokedex_lib::pokemon::data::{Gender, StatSet};
+use serde::{Deserialize, Serialize};
 use firecore_util::Random;
 use crate::moves::instance::{MoveInstance, MoveInstanceSet};
+use data::breeding::Breeding;
+use data::LearnableMove;
+use data::PokedexData;
+use data::StatSet;
+use data::training::Training;
+use data::Gender;
 
+pub mod data;
+pub mod types;
 
-pub use firecore_pokedex_lib::pokemon::*;
-
+pub mod saved;
 pub mod instance;
 
+pub mod party;
+pub mod texture;
+
+pub static POKEMON_RANDOM: Random = Random::new();
+
+pub type PokemonId = u16;
+pub type Level = u8;
+pub type Stat = u8;
+pub type Experience = u32;
+pub type Friendship = u8;
 
 pub type PokemonRef = &'static Pokemon;
 
-pub static POKEMON_RANDOM: Random = Random::new();
+#[derive(Serialize, Deserialize)]
+pub struct Pokemon {
+
+	// #[serde(default)]
+	// pub data_format: u8, // Current = 1
+
+	pub data: PokedexData,
+	pub base: StatSet,
+
+	pub training: Training,
+	pub breeding: Breeding,
+	
+	pub moves: Vec<LearnableMove>,
+	
+}
 
 pub trait GeneratePokemon {
 
@@ -22,18 +53,9 @@ pub trait GeneratePokemon {
 
 }
 
-pub trait InPokedex {
+impl Pokemon {
 
-    fn moves_from_level(&self, level: Level) -> MoveInstanceSet;
-
-    // #[deprecated(note = "move or rename trait")]
-    fn generate_gender(&self) -> Gender;
-
-}
-
-impl InPokedex for Pokemon {
-
-	fn moves_from_level(&self, level: u8) -> MoveInstanceSet {
+	pub fn moves_from_level(&self, level: u8) -> MoveInstanceSet {
 		let mut moves: Vec<MoveInstance> = Vec::new();
 		for learnable_move in &self.moves {
 			if learnable_move.level <= level {
@@ -60,7 +82,7 @@ impl InPokedex for Pokemon {
 		return moves.into();		
 	}
 
-    fn generate_gender(&self) -> Gender {
+    pub fn generate_gender(&self) -> Gender {
         match self.breeding.gender {
             Some(percentage) => if POKEMON_RANDOM.gen_range(0..8) as u8 > percentage {
                 Gender::Male
@@ -71,25 +93,4 @@ impl InPokedex for Pokemon {
         }
     }
 	
-}
-
-pub trait RandomSet {
-
-    fn random() -> Self;
-
-}
-
-impl RandomSet for StatSet {
-
-    fn random() -> Self {
-		Self {
-			hp: POKEMON_RANDOM.gen_range(0..32) as u8,
-			atk: POKEMON_RANDOM.gen_range(0..32) as u8,
-			def: POKEMON_RANDOM.gen_range(0..32) as u8,
-			sp_atk: POKEMON_RANDOM.gen_range(0..32) as u8,
-			sp_def: POKEMON_RANDOM.gen_range(0..32) as u8,
-			speed: POKEMON_RANDOM.gen_range(0..32) as u8,
-		}
-	}
-
 }

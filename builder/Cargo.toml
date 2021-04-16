@@ -8,7 +8,7 @@ edition = "2018"
 
 ### Pokemon specifications
 
-firecore-pokedex-lib = { path = "../lib" }
+firecore-pokedex = { path = "../" }
 
 ### Serialization
 

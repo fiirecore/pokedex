@@ -13,16 +13,11 @@ lto = true
 
 [dependencies]
 
-### Specifications
-
-firecore-pokedex-lib = { path = "./lib" }
-
 firecore-util = { git = "https://github.com/DoNotDoughnut/firecore-util", default-features = false, features = ["random", "smallvec", "hash"] }
 
 serde = { version = "1.0", features = ["derive"] }
 
 [workspace]
 members = [
-    "lib",
-    "builder"
+    "builder",
 ]

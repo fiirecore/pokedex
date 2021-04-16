@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
-
 use super::pokemon::types::PokemonType;
-
-pub mod saved;
 
 pub type MoveId = u16;
 pub type PP = u8;
+
+pub type MoveRef = &'static PokemonMove;
+
+pub mod saved;
+pub mod instance;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PokemonMove {

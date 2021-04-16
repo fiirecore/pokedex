@@ -1,5 +1,5 @@
 // use serde::{Deserialize, Serialize};
-use util::smallvec::SmallVec;
+use firecore_util::smallvec::SmallVec;
 
 use super::saved::SavedPokemon;
 

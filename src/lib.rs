@@ -1,14 +1,14 @@
 use firecore_util::hash::HashMap;
 
-use firecore_pokedex_lib::{
+use crate::{
 	pokemon::{PokemonId, Pokemon},
 	moves::{MoveId, PokemonMove}
 };
 
-pub use firecore_pokedex_lib::serialized;
-
 pub mod pokemon;
 pub mod moves;
+
+pub mod serialize;
 
 pub type Pokedex = HashMap<PokemonId, Pokemon>;
 pub type Movedex = HashMap<MoveId, PokemonMove>;

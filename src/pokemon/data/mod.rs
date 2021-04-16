@@ -4,6 +4,8 @@ use crate::pokemon::{PokemonId, Level, Stat, types::PokemonType};
 
 use crate::moves::MoveId;
 
+use super::POKEMON_RANDOM;
+
 
 pub mod training;
 pub mod breeding;
@@ -54,4 +56,16 @@ impl StatSet {
 			speed: stat,
 		}
 	}
+
+	pub fn random() -> Self {
+		Self {
+			hp: POKEMON_RANDOM.gen_range(0..32) as u8,
+			atk: POKEMON_RANDOM.gen_range(0..32) as u8,
+			def: POKEMON_RANDOM.gen_range(0..32) as u8,
+			sp_atk: POKEMON_RANDOM.gen_range(0..32) as u8,
+			sp_def: POKEMON_RANDOM.gen_range(0..32) as u8,
+			speed: POKEMON_RANDOM.gen_range(0..32) as u8,
+		}
+	}
+
 }

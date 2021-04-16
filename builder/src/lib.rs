@@ -18,7 +18,7 @@ pub fn compile<P: AsRef<std::path::Path>>(pokemon_dir: P, move_dir: P, output_fi
         .unwrap_or_else(|err| panic!("Could not create output file at {:?} with error {}", output_file, err))
             .write(
             &postcard::to_allocvec(
-                    &firecore_pokedex_lib::serialized::SerializedDex {
+                    &firecore_pokedex::serialize::SerializedDex {
                         pokemon,
                         moves
                     }

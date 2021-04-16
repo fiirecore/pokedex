@@ -9,13 +9,9 @@ use crate::{pokemon::{
 			PokemonData
 		},
 		data::StatSet,
-		InPokedex,
-		RandomSet,
 	},
-	moves::{
-		instance::MoveInstanceSet,
-		serializable::to_instances
-	}
+	moves::instance::MoveInstanceSet,
+	moves::saved::to_instance,
 };
 
 pub struct PokemonInstance {
@@ -43,7 +39,7 @@ impl PokemonInstance {
 
 				data: pokemon.data.clone(),				
 				
-				moves: pokemon.moves.as_ref().map(|moves| to_instances(moves)).unwrap_or(pokemon_data.moves_from_level(pokemon.data.level)),
+				moves: pokemon.moves.as_ref().map(|moves| to_instance(moves)).unwrap_or(pokemon_data.moves_from_level(pokemon.data.level)),
 	
 				base: stats,
 				
@@ -60,7 +56,7 @@ impl PokemonInstance {
 		SavedPokemon {
 		    id: self.pokemon.data.id,
 			data: self.data,
-		    moves: Some(crate::moves::serializable::from_instances(self.moves)),
+		    moves: Some(crate::moves::instance::to_saved(self.moves)),
 		    current_hp: Some(self.current_hp),
 			owned_data: None,
 		}

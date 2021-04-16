@@ -3,8 +3,8 @@ use std::fs::read_dir;
 use std::io::Read;
 use std::path::PathBuf;
 
-use firecore_pokedex_lib::pokemon::Pokemon;
-use firecore_pokedex_lib::serialized::SerializedPokemon;
+use firecore_pokedex::pokemon::Pokemon;
+use firecore_pokedex::serialize::SerializedPokemon;
 
 use crate::error::EntryError;
 
