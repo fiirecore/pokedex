@@ -23,15 +23,15 @@ pub struct Item {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct SavedItemStack {
-    pub item: ItemId,
+pub struct ItemStack {
+    pub id: ItemId,
     pub count: StackSize,
 }
 
 #[derive(Debug)]
 pub struct ItemStackInstance {
     pub item: ItemRef,
-    pub count: StackSize,
+    pub instance: ItemStack,
 }
 
 pub const fn default_stack_size() -> StackSize {
