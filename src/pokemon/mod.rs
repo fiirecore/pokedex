@@ -9,12 +9,15 @@ use data::training::Training;
 use data::Gender;
 
 pub mod data;
+
 pub mod types;
+pub mod status;
 
 pub mod saved;
 pub mod instance;
 
 pub mod party;
+
 pub mod texture;
 
 pub static POKEMON_RANDOM: Random = Random::new();

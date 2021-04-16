@@ -16,7 +16,7 @@ pub type ItemRef = &'static Item;
 pub struct Item {
 
     pub name: String,
-    pub description: String,
+    pub description: Vec<String>,
 
     #[serde(default = "default_stack_size")]
     pub stack_size: StackSize,

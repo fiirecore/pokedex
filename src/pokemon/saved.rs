@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::status::PokemonStatus;
 use super::{Level, PokemonId, Experience, Friendship, data::Gender, data::StatSet};
 
 use crate::moves::saved::SavedMoveSet;
@@ -41,6 +42,9 @@ pub struct PokemonData {
 
     #[serde(default = "default_friendship")]
     pub friendship: Friendship,
+
+    #[serde(default)]
+    pub status: Option<PokemonStatus>,
 
     // #[serde(default)]
     // pub item: Option<Item>, // item: struct with name, texture, description, and singular script-like enum which activates function of item

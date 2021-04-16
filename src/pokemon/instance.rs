@@ -1,3 +1,5 @@
+use crate::item::Item;
+use crate::item::script::ItemActionKind;
 use crate::moves::MoveRef;
 use crate::{pokemon::{
 		PokemonId,
@@ -79,6 +81,30 @@ impl PokemonInstance {
 		}
 		moves
 	}
+
+	pub fn use_item(&mut self, item: &Item) {
+		for action in &item.script.actions {
+			match action {
+			    ItemActionKind::CurePokemon(status) => {
+					if let Some(own_status) = self.data.status {
+						if let Some(status) = status {
+							if own_status.eq(status) {
+								self.data.status = None;
+							}
+						} else {
+							self.data.status = None;
+						}
+					}
+				}
+			    ItemActionKind::HealPokemon(hp) => {
+					self.current_hp += *hp;
+					if self.current_hp > self.base.hp {
+						self.current_hp = self.base.hp;
+					}
+				}
+			}
+		}
+	}
 	
 }
 
@@ -109,6 +135,7 @@ impl super::GeneratePokemon for PokemonInstance {
 				evs: evs,
 				experience: 0,
 				friendship: 70,
+				status: None,
 			},
 
 			moves: pokemon.moves_from_level(level),
