@@ -15,3 +15,4 @@ firecore-pokedex = { path = "../" }
 serde = { version = "1.0", features = ["derive"] }
 postcard = { version = "0.6", features = ["alloc"] }
 toml = "0.5"
+ron = "0.6"

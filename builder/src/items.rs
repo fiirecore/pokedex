@@ -18,7 +18,7 @@ fn get_item_config(dir: PathBuf) -> Option<SerializedItem> {
                 Ok(path) => {
                     if path.extension() == Some(&std::ffi::OsString::from("ron")) {
                         let data = std::fs::read_to_string(&path).unwrap_or_else(|err| panic!("Could not read item entry at {:?} to string with error {}", path, err));
-                        let item: SerializedItemConfig = toml::from_str(&data).unwrap_or_else(|err| panic!("Could not deserialize item entry at {:?} with error {}", path, err));
+                        let item: SerializedItemConfig = ron::from_str(&data).unwrap_or_else(|err| panic!("Could not deserialize item entry at {:?} with error {}", path, err));
                         let texture = std::fs::read(dir.join(item.id.to_string() + ".png")).unwrap_or_else(|err| panic!("Could not get texture for item id {:?} with error {}", item.id, err));
                         return Some(SerializedItem {
                             item,
