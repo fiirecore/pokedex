@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use util::tinystr::TinyStr16;
 use script::ItemScript;
 
+mod stack;
+pub use stack::*;
+
 pub mod script;
 
 pub type ItemId = TinyStr16;
@@ -20,18 +23,6 @@ pub struct Item {
 
     pub script: ItemScript,
 
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ItemStack {
-    pub id: ItemId,
-    pub count: StackSize,
-}
-
-#[derive(Debug)]
-pub struct ItemStackInstance {
-    pub item: ItemRef,
-    pub instance: ItemStack,
 }
 
 pub const fn default_stack_size() -> StackSize {
