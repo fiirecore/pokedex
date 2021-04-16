@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::io::Write;
 
-pub mod error;
 pub mod pokemon;
 pub mod moves;
 pub mod items;
@@ -10,9 +9,9 @@ pub fn compile<P: AsRef<std::path::Path>>(pokemon_dir: P, move_dir: P, item_dir:
     let output_file = output_file.as_ref();
 
     println!("Loading pokemon...");
-    let pokemon = pokemon::get_pokemon(pokemon_dir, include_audio).unwrap_or_else(|err| panic!("Could not get pokemon with error {}", err));
+    let pokemon = pokemon::get_pokemon(pokemon_dir, include_audio);
     println!("Loading moves...");
-    let moves = moves::get_moves(move_dir).unwrap_or_else(|err| panic!("Could not get moves with error {}", err));
+    let moves = moves::get_moves(move_dir);
     println!("Loading items...");
     let items = items::get_items(item_dir);
     

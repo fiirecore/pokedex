@@ -6,11 +6,13 @@ use std::path::PathBuf;
 use firecore_pokedex::pokemon::Pokemon;
 use firecore_pokedex::serialize::SerializedPokemon;
 
-use crate::error::EntryError;
+pub fn get_pokemon<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Vec<SerializedPokemon> {
+    get_pokemon_result(pokemon_dir, include_audio).unwrap_or_else(|err| panic!("Could not get pokemon with error {}", err))    
+}
 
-pub fn get_pokemon<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Result<Vec<SerializedPokemon>, EntryError> {
+#[deprecated(note = "remove EntryError")]
+fn get_pokemon_result<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Result<Vec<SerializedPokemon>, EntryError> {
     let mut pokemon = Vec::new();
-
     for entry in read_dir(pokemon_dir.as_ref())? {
         match entry.map(|entry| entry.path()) {
             Ok(dir) => {
@@ -66,4 +68,36 @@ fn find_entry_file(dir_path: &PathBuf) -> Result<Pokemon, EntryError> {
         }
     }
     Err(EntryError::NoEntry)
+}
+
+use std::io::Error as IoError;
+use toml::de::Error as ParseError;
+use postcard::Error as SerializeError;
+
+#[derive(Debug)]
+pub enum EntryError {
+    NoEntry,
+    IoError(IoError),
+    ParseError(String, ParseError),
+    SerializeError(SerializeError),
+}
+
+impl From<IoError> for EntryError {
+    fn from(err: IoError) -> Self {
+        Self::IoError(err)
+    }
+}
+
+impl From<SerializeError> for EntryError {
+    fn from(err: SerializeError) -> Self {
+        Self::SerializeError(err)
+    }
+}
+
+impl std::error::Error for EntryError {}
+
+impl core::fmt::Display for EntryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
 }

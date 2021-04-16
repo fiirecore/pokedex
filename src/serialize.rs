@@ -32,6 +32,14 @@ pub struct SerializedPokemon {
 #[derive(Deserialize, Serialize)]
 pub struct SerializedItem {
 
+    pub item: SerializedItemConfig,
+
+    pub texture: Vec<u8>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct SerializedItemConfig {
+
     pub id: ItemId,
     pub item: Item,
 
