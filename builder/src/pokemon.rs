@@ -8,43 +8,46 @@ use firecore_pokedex_lib::serialized::SerializedPokemon;
 
 use crate::error::EntryError;
 
-pub fn get_pokemon(pokemon_dir: &str, include_audio: bool) -> Result<Vec<SerializedPokemon>, EntryError> {
+pub fn get_pokemon<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Result<Vec<SerializedPokemon>, EntryError> {
     let mut pokemon = Vec::new();
 
-    for dir_entry in read_dir(pokemon_dir)? {
-        let dir_path = dir_entry?.path();
-        if dir_path.is_dir() {
-            let pokemon_entry = find_entry_file(&dir_path)?;
-            let mut front_png = Vec::new();
-            let mut back_png = Vec::new();
-            let mut icon_png = Vec::new();
-            File::open(dir_path.join("normal_front.png"))?.read_to_end(&mut front_png)?;
-            File::open(dir_path.join("normal_back.png"))?.read_to_end(&mut back_png)?;
-            File::open(dir_path.join("icon.png"))?.read_to_end(&mut icon_png)?;
-            let cry_ogg = {
-                if include_audio {
-                    if let Ok(mut cry_file) = File::open(dir_path.join("cry.ogg")) {
-                        let mut cry_ogg = Vec::new();
-                        cry_file.read_to_end(&mut cry_ogg)?;
-                        cry_ogg
-                    } else {
-                        Vec::new()
-                    }
-                } else {
-                    Vec::new()
-                }
-            };
-
-            pokemon.push(SerializedPokemon {
-                pokemon: pokemon_entry,
-                cry_ogg,
-                front_png,
-                back_png,
-                icon_png,
-            });
-
-        }       
+    for entry in read_dir(pokemon_dir.as_ref())? {
+        match entry.map(|entry| entry.path()) {
+            Ok(dir) => {
+                if dir.is_dir() {
+                    let pokemon_entry = find_entry_file(&dir)?;
+                    let mut front_png = Vec::new();
+                    let mut back_png = Vec::new();
+                    let mut icon_png = Vec::new();
+                    File::open(dir.join("normal_front.png"))?.read_to_end(&mut front_png)?;
+                    File::open(dir.join("normal_back.png"))?.read_to_end(&mut back_png)?;
+                    File::open(dir.join("icon.png"))?.read_to_end(&mut icon_png)?;
+                    let cry_ogg = {
+                        if include_audio {
+                            if let Ok(mut cry_file) = File::open(dir.join("cry.ogg")) {
+                                let mut cry_ogg = Vec::new();
+                                cry_file.read_to_end(&mut cry_ogg)?;
+                                cry_ogg
+                            } else {
+                                Vec::new()
+                            }
+                        } else {
+                            Vec::new()
+                        }
+                    };
         
+                    pokemon.push(SerializedPokemon {
+                        pokemon: pokemon_entry,
+                        cry_ogg,
+                        front_png,
+                        back_png,
+                        icon_png,
+                    });
+        
+                }
+            }
+            Err(err) => eprintln!("Could not read directory entry with error {}", err),
+        }
     }
 
     println!("Loaded {} pokemon.", pokemon.len());
