@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use firecore_util::smallvec::SmallVec;
+use util::smallvec::SmallVec;
 use super::{MoveId, PP};
 
 pub type SavedMoveSet = SmallVec<[SavedMove; 4]>;

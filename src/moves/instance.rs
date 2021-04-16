@@ -1,4 +1,4 @@
-use firecore_util::smallvec::SmallVec;
+use util::smallvec::SmallVec;
 use super::{PokemonMove, PP};
 
 use super::MoveRef;

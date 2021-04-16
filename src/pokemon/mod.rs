@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use firecore_util::Random;
+use util::Random;
 use crate::moves::instance::{MoveInstance, MoveInstanceSet};
 use data::breeding::Breeding;
 use data::LearnableMove;
