@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::status::PokemonStatus;
 use super::{Level, PokemonId, Experience, Friendship, data::Gender, data::StatSet};
 
+use crate::item::ItemId;
 use crate::moves::saved::SavedMoveSet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,6 +13,8 @@ pub struct SavedPokemon {
 
     pub data: PokemonData,
 
+    #[serde(default)]
+    pub item: Option<ItemId>,
     #[serde(default)]
     pub moves: Option<SavedMoveSet>,
     #[serde(default)]

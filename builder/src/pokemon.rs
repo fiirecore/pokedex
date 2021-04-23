@@ -1,50 +1,46 @@
-use std::fs::File;
-use std::fs::read_dir;
-use std::io::Read;
+use std::fs::{read, read_dir};
 use std::path::PathBuf;
 
 use firecore_pokedex::pokemon::Pokemon;
 use firecore_pokedex::serialize::SerializedPokemon;
 
 pub fn get_pokemon<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Vec<SerializedPokemon> {
-    get_pokemon_result(pokemon_dir, include_audio).unwrap_or_else(|err| panic!("Could not get pokemon with error {}", err))    
-}
-
-#[deprecated(note = "remove EntryError")]
-fn get_pokemon_result<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: bool) -> Result<Vec<SerializedPokemon>, EntryError> {
+    let pokemon_dir = pokemon_dir.as_ref();
     let mut pokemon = Vec::new();
-    for entry in read_dir(pokemon_dir.as_ref())? {
+    for entry in read_dir(pokemon_dir).unwrap_or_else(|err| panic!("Could not read pokemon directory at {:?} with error {}", pokemon_dir, err)) {
         match entry.map(|entry| entry.path()) {
             Ok(dir) => {
                 if dir.is_dir() {
-                    let pokemon_entry = find_entry_file(&dir)?;
-                    let mut front_png = Vec::new();
-                    let mut back_png = Vec::new();
-                    let mut icon_png = Vec::new();
-                    File::open(dir.join("normal_front.png"))?.read_to_end(&mut front_png)?;
-                    File::open(dir.join("normal_back.png"))?.read_to_end(&mut back_png)?;
-                    File::open(dir.join("icon.png"))?.read_to_end(&mut icon_png)?;
-                    let cry_ogg = {
-                        if include_audio {
-                            if let Ok(mut cry_file) = File::open(dir.join("cry.ogg")) {
-                                let mut cry_ogg = Vec::new();
-                                cry_file.read_to_end(&mut cry_ogg)?;
-                                cry_ogg
+                    if let Some(pokemon_entry) = find_entry_file(&dir) {
+
+                        let front_png = read(dir.join("normal_front.png"))
+                            .unwrap_or_else(|err| panic!("Could not read front texture file for pokemon {} with error {}", pokemon_entry.data.name, err));
+
+                        let back_png =  read(dir.join("normal_back.png"))
+                            .unwrap_or_else(|err| panic!("Could not read back texture file for pokemon {} with error {}", pokemon_entry.data.name, err));
+
+                        let icon_png = read(dir.join("icon.png"))
+                            .unwrap_or_else(|err| panic!("Could not read icon file for pokemon {} with error {}", pokemon_entry.data.name, err));
+
+                        let cry_ogg = {
+                            if include_audio {
+                                read(dir.join("cry.ogg")).ok().unwrap_or_default()
                             } else {
                                 Vec::new()
                             }
-                        } else {
-                            Vec::new()
-                        }
-                    };
-        
-                    pokemon.push(SerializedPokemon {
-                        pokemon: pokemon_entry,
-                        cry_ogg,
-                        front_png,
-                        back_png,
-                        icon_png,
-                    });
+                        };
+            
+                        pokemon.push(SerializedPokemon {
+                            pokemon: pokemon_entry,
+                            cry_ogg,
+                            front_png,
+                            back_png,
+                            icon_png,
+                        });
+                    } else {
+                        eprintln!("Could not find pokemon under directory {:?}!", dir);
+                    }
+                    
         
                 }
             }
@@ -54,50 +50,18 @@ fn get_pokemon_result<P: AsRef<std::path::Path>>(pokemon_dir: P, include_audio: 
 
     println!("Loaded {} pokemon.", pokemon.len());
 
-    Ok(pokemon)
+    pokemon
 }
 
-fn find_entry_file(dir_path: &PathBuf) -> Result<Pokemon, EntryError> {
-    for file_entry in read_dir(&dir_path)? {
-        let file = file_entry?.path();
+fn find_entry_file(dir_path: &PathBuf) -> Option<Pokemon> {
+    for file_entry in read_dir(&dir_path).unwrap_or_else(|err| panic!("Could not read pokemon directory at {:?} with error {}", dir_path, err)) {
+        let file = file_entry.unwrap_or_else(|err| panic!("Could not get pokemon directory entry path under {:?} with error {}", dir_path, err)).path();
         if let Some(ext) = file.extension() {
             if ext == std::ffi::OsString::from("toml") {
-                let data = std::fs::read_to_string(&file)?;
-                return Ok(toml::from_str(&data).map_err(|err| EntryError::ParseError(file.to_string_lossy().to_string(), err))?);
+                let data = std::fs::read_to_string(&file).unwrap_or_else(|err| panic!("Could not read pokemon file at {:?} to string with error {}", file, err));
+                return Some(toml::from_str(&data).unwrap_or_else(|err| panic!("Could not parse pokemon file at {:?} with error {}", file, err)));
             }
         }
     }
-    Err(EntryError::NoEntry)
-}
-
-use std::io::Error as IoError;
-use toml::de::Error as ParseError;
-use postcard::Error as SerializeError;
-
-#[derive(Debug)]
-pub enum EntryError {
-    NoEntry,
-    IoError(IoError),
-    ParseError(String, ParseError),
-    SerializeError(SerializeError),
-}
-
-impl From<IoError> for EntryError {
-    fn from(err: IoError) -> Self {
-        Self::IoError(err)
-    }
-}
-
-impl From<SerializeError> for EntryError {
-    fn from(err: SerializeError) -> Self {
-        Self::SerializeError(err)
-    }
-}
-
-impl std::error::Error for EntryError {}
-
-impl core::fmt::Display for EntryError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
-    }
+    None
 }

@@ -1,5 +1,8 @@
 use crate::item::Item;
+use crate::item::ItemId;
+use crate::item::ItemRef;
 use crate::item::script::ItemActionKind;
+use crate::itemdex;
 use crate::moves::MoveRef;
 use crate::{pokemon::{
 		PokemonId,
@@ -22,6 +25,8 @@ pub struct PokemonInstance {
 	
 	pub data: PokemonData,
 
+	pub item: Option<(ItemId, ItemRef)>,
+
 	pub moves: MoveInstanceSet,
 
 	pub base: BaseStatSet,
@@ -39,8 +44,10 @@ impl PokemonInstance {
 
 			Self {
 
-				data: pokemon.data.clone(),				
-				
+				data: pokemon.data.clone(),
+
+				item: pokemon.item.as_ref().map(|id| itemdex().get(id).map(|item| (*id, item))).flatten(),
+
 				moves: pokemon.moves.as_ref().map(|moves| to_instance(moves)).unwrap_or(pokemon_data.moves_from_level(pokemon.data.level)),
 	
 				base: stats,
@@ -58,6 +65,7 @@ impl PokemonInstance {
 		SavedPokemon {
 		    id: self.pokemon.data.id,
 			data: self.data,
+			item: self.item.map(|(id, _)| id),
 		    moves: Some(crate::moves::instance::to_saved(self.moves)),
 		    current_hp: Some(self.current_hp),
 			owned_data: None,
@@ -137,6 +145,8 @@ impl super::GeneratePokemon for PokemonInstance {
 				friendship: 70,
 				status: None,
 			},
+
+			item: None,
 
 			moves: pokemon.moves_from_level(level),
 
