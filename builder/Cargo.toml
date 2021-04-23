@@ -1,6 +1,6 @@
 [package]
 name = "dex-builder"
-version = "0.3.1"
+version = "0.4.0-beta.2"
 authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
 edition = "2018"
 
@@ -13,6 +13,6 @@ firecore-pokedex = { path = "../" }
 ### Serialization
 
 serde = { version = "1.0", features = ["derive"] }
-postcard = { version = "0.6", features = ["alloc"] }
+postcard = { version = "0.6", default-features = false, features = ["alloc"] }
 toml = "0.5"
 ron = "0.6"
