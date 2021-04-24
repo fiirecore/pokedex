@@ -16,6 +16,8 @@ pub mod instance;
 pub mod script;
 pub mod persistent;
 
+pub mod battle_script;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PokemonMove {
 

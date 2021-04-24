@@ -7,7 +7,7 @@ use crate::item::Item;
 #[derive(Deserialize, Serialize)]
 pub struct SerializedDex {
 	pub pokemon: Vec<SerializedPokemon>,
-	pub moves: Vec<PokemonMove>,
+	pub moves: Vec<SerializedMove>,
     pub items: Vec<SerializedItem>,
 }
 
@@ -20,6 +20,12 @@ pub struct SerializedPokemon {
     pub back_png: Vec<u8>,
     pub icon_png: Vec<u8>,
 
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct SerializedMove {
+    pub pokemon_move: PokemonMove,
+    pub action_script: Option<crate::moves::battle_script::BattleActionScript>,
 }
 
 // #[derive(Deserialize, Serialize)]
