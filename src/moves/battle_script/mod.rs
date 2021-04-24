@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 
 // }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BattleActionScript {
 
     pub actions: VecDeque<BattleActionActions>,
 
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum BattleActionActions {
 
     MoveAndReturn(f32),

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use self::battle_script::BattleActionScript;
 use self::script::MoveScript;
 
 use super::pokemon::types::PokemonType;
@@ -33,6 +34,8 @@ pub struct PokemonMove {
 	pub pp: PP,
 
 	pub script: Option<MoveScript>,
+
+	pub battle_script: Option<BattleActionScript>,
 	
 }
 

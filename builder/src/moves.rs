@@ -3,10 +3,10 @@ use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 
 use firecore_pokedex::moves::PokemonMove;
-use firecore_pokedex::serialize::SerializedMove;
-use firecore_pokedex::moves::battle_script::BattleActionScript;
+// use firecore_pokedex::serialize::SerializedMove;
+// use firecore_pokedex::moves::battle_script::BattleActionScript;
 
-pub fn get_moves<P: AsRef<std::path::Path>>(move_dir: P) -> Vec<SerializedMove> {
+pub fn get_moves<P: AsRef<std::path::Path>>(move_dir: P) -> Vec<PokemonMove> {
     let move_dir = move_dir.as_ref();
     read_dir(move_dir).unwrap_or_else(|err| panic!("Could not read moves directory at {:?} with error {}", move_dir, err))
         .map(|entry| match entry.map(|entry| entry.path()) {
@@ -14,10 +14,10 @@ pub fn get_moves<P: AsRef<std::path::Path>>(move_dir: P) -> Vec<SerializedMove> 
                 Some(if path.is_dir() {
                     from_dir(path)
                 } else {
-                    SerializedMove {
-                        pokemon_move: from_path(path),
-                        action_script: None,
-                    }
+                    // SerializedMove {
+                        from_path(path)
+                        // action_script: None,
+                    // }
                 })
             }
             Err(err) => {
@@ -27,7 +27,7 @@ pub fn get_moves<P: AsRef<std::path::Path>>(move_dir: P) -> Vec<SerializedMove> 
         }).flatten().collect()
 }
 
-fn from_dir(path: PathBuf) -> SerializedMove {
+fn from_dir(path: PathBuf) -> PokemonMove {
     for entry in read_dir(&path).unwrap_or_else(|err| panic!("Could not read move entry directory at {:?} with error {}", path, err)) {
         match entry.map(|entry| entry.path()) {
             Ok(path) => {
@@ -46,11 +46,12 @@ fn from_dir(path: PathBuf) -> SerializedMove {
                         None
                     }
                 } {
-                    let action_script = read_to_string(path.parent().unwrap().join("actions.ron")).ok().map(|data| ron::from_str::<BattleActionScript>(&data).unwrap_or_else(|err| panic!("Could not parse actions script for move {} with error {}", pokemon_move.name, err)));
-                    return SerializedMove {
-                        pokemon_move,
-                        action_script,
-                    };
+                    // let action_script = read_to_string(path.parent().unwrap().join("actions.ron")).ok().map(|data| ron::from_str::<BattleActionScript>(&data).unwrap_or_else(|err| panic!("Could not parse actions script for move {} with error {}", pokemon_move.name, err)));
+                    // return SerializedMove {
+                    //     pokemon_move,
+                    //     action_script,
+                    // };
+                    return pokemon_move;
                 }                
             }
             Err(err) => {
