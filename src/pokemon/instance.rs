@@ -159,8 +159,8 @@ impl PokemonInstance {
 				match action {
 				    MoveAction::Damage(damage) => {
 						self.current_hp = self.current_hp.saturating_sub(match *damage {
-						    crate::moves::script::DamageKind::PercentCurrent(percent) => (self.current_hp as f32 * (1.0 - percent)) as Health,
-						    crate::moves::script::DamageKind::PercentMax(percent) => (self.base.hp as f32 * (1.0 - percent)) as Health,
+						    crate::moves::script::DamageKind::PercentCurrent(percent) => (self.current_hp as f32 * percent) as Health,
+						    crate::moves::script::DamageKind::PercentMax(percent) => (self.base.hp as f32 * percent) as Health,
 						    crate::moves::script::DamageKind::Constant(damage) => damage,
 						});
 					}
