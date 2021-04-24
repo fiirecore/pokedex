@@ -5,6 +5,8 @@ use crate::item::script::ItemCondition;
 use crate::itemdex;
 use crate::moves::MoveRef;
 use crate::moves::PokemonMove;
+use crate::moves::persistent::PersistentMove;
+use crate::moves::script::MoveAction;
 use crate::{pokemon::{
 		PokemonId,
 		Level,
@@ -29,12 +31,11 @@ pub struct PokemonInstance {
 	
 	pub data: PokemonData,
 
+	pub persistent: Vec<PersistentMove>,
+
 	pub item: Option<ItemRef>,
-
 	pub moves: MoveInstanceSet,
-
 	pub base: BaseStatSet,
-
 	pub current_hp: Health,
 	
 }
@@ -49,6 +50,8 @@ impl PokemonInstance {
 			Self {
 
 				data: pokemon.data.clone(),
+
+				persistent: Vec::new(),
 
 				item: pokemon.item.as_ref().map(|id| itemdex().get(id).map(|item| item)).flatten(),
 
@@ -130,9 +133,9 @@ impl PokemonInstance {
 		for action in &item.script.actions {
 			match action {
 			    ItemActionKind::CurePokemon(status) => {
-					if let Some(own_status) = self.data.status {
+					if let Some(effect) = self.data.status {
 						if let Some(status) = status {
-							if own_status.eq(status) {
+							if effect.status.eq(status) {
 								self.data.status = None;
 							}
 						} else {
@@ -145,6 +148,30 @@ impl PokemonInstance {
 					if self.current_hp > self.base.hp {
 						self.current_hp = self.base.hp;
 					}
+				}
+			}
+		}
+	}
+
+	pub fn run_persistent_moves(&mut self) {
+		for persistent in &mut self.persistent {
+			for action in &persistent.actions {
+				match action {
+				    MoveAction::Damage(damage) => {
+						self.current_hp = self.current_hp.saturating_sub(match *damage {
+						    crate::moves::script::DamageKind::PercentCurrent(percent) => (self.current_hp as f32 * (1.0 - percent)) as Health,
+						    crate::moves::script::DamageKind::PercentMax(percent) => (self.base.hp as f32 * (1.0 - percent)) as Health,
+						    crate::moves::script::DamageKind::Constant(damage) => damage,
+						});
+					}
+				    MoveAction::Status(chance, effect) => {
+						if self.data.status.is_none() {
+							if *chance >= super::POKEMON_RANDOM.gen_range(1..11) as u8 {
+								self.data.status = Some(*effect);
+							}
+						}
+					}
+				    _ => (),
 				}
 			}
 		}
@@ -181,6 +208,8 @@ impl super::GeneratePokemon for PokemonInstance {
 				friendship: 70,
 				status: None,
 			},
+
+			persistent: Vec::new(),
 
 			item: None,
 

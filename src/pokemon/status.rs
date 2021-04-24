@@ -8,3 +8,11 @@ pub enum PokemonStatus {
     Sleep,
 
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub struct StatusEffect {
+
+    pub status: PokemonStatus,
+    pub remaining: Option<u8>,
+
+}

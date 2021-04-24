@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::Health;
-use super::status::PokemonStatus;
+use super::status::StatusEffect;
 use super::{Level, PokemonId, Experience, Friendship, data::Gender, data::StatSet};
 
 use crate::item::ItemId;
@@ -14,13 +14,10 @@ pub struct SavedPokemon {
 
     pub data: PokemonData,
 
-    #[serde(default)]
+
     pub item: Option<ItemId>,
-    #[serde(default)]
     pub moves: Option<SavedMoveSet>,
-    #[serde(default)]
     pub current_hp: Option<Health>,
-    #[serde(default)]
     pub owned_data: Option<OwnedPokemon>,
     
 }
@@ -28,13 +25,13 @@ pub struct SavedPokemon {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PokemonData {
 
-    #[serde(default)]
     pub nickname: Option<String>,
     pub level: Level,
     pub gender: Gender,
 
     // #[serde(default)]
     // pub ability: Option<Ability>,
+    pub status: Option<StatusEffect>,
     
     #[serde(default = "default_iv")]
 	pub ivs: StatSet,
@@ -46,9 +43,6 @@ pub struct PokemonData {
 
     #[serde(default = "default_friendship")]
     pub friendship: Friendship,
-
-    #[serde(default)]
-    pub status: Option<PokemonStatus>,
 
     // #[serde(default)]
     // pub item: Option<Item>, // item: struct with name, texture, description, and singular script-like enum which activates function of item
