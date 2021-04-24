@@ -15,6 +15,8 @@ pub type ItemRef = &'static Item;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Item {
 
+    pub id: ItemId,
+
     pub name: String,
     pub description: Vec<String>,
 

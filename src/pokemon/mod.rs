@@ -27,6 +27,7 @@ pub type Level = u8;
 pub type Stat = u8;
 pub type Experience = u32;
 pub type Friendship = u8;
+pub type Health = u16;
 
 pub type PokemonRef = &'static Pokemon;
 

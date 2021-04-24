@@ -1,13 +1,20 @@
 use serde::{Deserialize, Serialize};
+use self::script::MoveScript;
+
 use super::pokemon::types::PokemonType;
 
 pub type MoveId = u16;
+pub type Power = u8;
+pub type Accuracy = u8;
 pub type PP = u8;
 
 pub type MoveRef = &'static PokemonMove;
 
 pub mod saved;
 pub mod instance;
+
+pub mod script;
+pub mod persistent;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PokemonMove {
@@ -19,9 +26,11 @@ pub struct PokemonMove {
 	#[serde(rename = "type")]
 	pub pokemon_type: PokemonType,
 
-	pub power: Option<u8>,
-	pub accuracy: Option<u8>,
+	pub power: Option<Power>,
+	pub accuracy: Option<Accuracy>,
 	pub pp: PP,
+
+	pub script: Option<MoveScript>,
 	
 }
 

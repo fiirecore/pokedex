@@ -1,9 +1,10 @@
 use crate::item::Item;
-use crate::item::ItemId;
 use crate::item::ItemRef;
 use crate::item::script::ItemActionKind;
+use crate::item::script::ItemCondition;
 use crate::itemdex;
 use crate::moves::MoveRef;
+use crate::moves::PokemonMove;
 use crate::{pokemon::{
 		PokemonId,
 		Level,
@@ -19,19 +20,22 @@ use crate::{pokemon::{
 	moves::saved::to_instance,
 };
 
+use super::Health;
+use super::types::effective::Effective;
+
 pub struct PokemonInstance {
 	
 	pub pokemon: PokemonRef, 
 	
 	pub data: PokemonData,
 
-	pub item: Option<(ItemId, ItemRef)>,
+	pub item: Option<ItemRef>,
 
 	pub moves: MoveInstanceSet,
 
 	pub base: BaseStatSet,
 
-	pub current_hp: u16,
+	pub current_hp: Health,
 	
 }
 
@@ -46,7 +50,7 @@ impl PokemonInstance {
 
 				data: pokemon.data.clone(),
 
-				item: pokemon.item.as_ref().map(|id| itemdex().get(id).map(|item| (*id, item))).flatten(),
+				item: pokemon.item.as_ref().map(|id| itemdex().get(id).map(|item| item)).flatten(),
 
 				moves: pokemon.moves.as_ref().map(|moves| to_instance(moves)).unwrap_or(pokemon_data.moves_from_level(pokemon.data.level)),
 	
@@ -65,7 +69,7 @@ impl PokemonInstance {
 		SavedPokemon {
 		    id: self.pokemon.data.id,
 			data: self.data,
-			item: self.item.map(|(id, _)| id),
+			item: self.item.map(|item| item.id),
 		    moves: Some(crate::moves::instance::to_saved(self.moves)),
 		    current_hp: Some(self.current_hp),
 			owned_data: None,
@@ -90,7 +94,39 @@ impl PokemonInstance {
 		moves
 	}
 
-	pub fn use_item(&mut self, item: &Item) {
+	pub fn move_effective(&self, pokemon_move: &PokemonMove) -> Effective {
+		let primary = pokemon_move.pokemon_type.effective(self.pokemon.data.primary_type);
+		if let Some(secondary) = self.pokemon.data.secondary_type {
+			primary * pokemon_move.pokemon_type.effective(secondary)
+		} else {
+			primary
+		}
+	}
+
+	pub fn use_held_item(&mut self) -> bool {
+		if let Some(item) = self.item {
+			if let Some(conditions) = item.script.conditions.as_ref() {
+				for condition in conditions {
+					match condition {
+					    ItemCondition::BelowHealthPercent(percent) => {
+							if (self.current_hp as f32 / self.base.hp as f32) >= *percent {
+								return false;
+							}
+						}
+					}
+				}
+				self.execute_item(item);
+				self.item = None;
+				true
+			} else {
+				false
+			}
+		} else {
+			false
+		}
+	}
+
+	pub fn execute_item(&mut self, item: &Item) {
 		for action in &item.script.actions {
 			match action {
 			    ItemActionKind::CurePokemon(status) => {
@@ -171,7 +207,7 @@ impl std::fmt::Display for PokemonInstance {
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Default)]
 pub struct BaseStatSet {
 
-	pub hp: u16,
+	pub hp: Health,
 	pub atk: u16,
 	pub def: u16,
 	pub sp_atk: u16,

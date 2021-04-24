@@ -1,6 +1,7 @@
+
 use super::PokemonType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Effective {
 
     Ineffective,
@@ -23,7 +24,7 @@ impl Effective {
 
 }
 
-impl std::fmt::Display for Effective {
+impl core::fmt::Display for Effective {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
             Effective::Ineffective => "ineffective",
@@ -34,9 +35,30 @@ impl std::fmt::Display for Effective {
     }
 }
 
+impl std::ops::Mul for Effective {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self {
+            Effective::Ineffective => Self::Ineffective,
+            Effective::NotEffective => match rhs {
+                Effective::SuperEffective => Self::Effective,
+                Effective::Ineffective => Self::Ineffective,
+                _ => Self::NotEffective,
+            }
+            Effective::Effective => rhs,
+            Effective::SuperEffective => match rhs {
+                Effective::NotEffective => Self::Effective,
+                Effective::Ineffective => Self::Ineffective,
+                _ => Self::SuperEffective,
+            }
+        }
+    }
+}
+
 impl PokemonType {
 
-    pub const fn effective(&self, pokemon_type: PokemonType) -> f32 {
+    pub const fn effective(&self, pokemon_type: PokemonType) -> Effective {
         if self.supereffective(&pokemon_type) {
             Effective::SuperEffective
         } else if self.noteffective(&pokemon_type) {
@@ -45,7 +67,7 @@ impl PokemonType {
             Effective::Ineffective
         } else {
             Effective::Effective
-        }.multiplier()
+        }
     }
 
     pub const fn supereffective(&self, pokemon_type: &PokemonType) -> bool {

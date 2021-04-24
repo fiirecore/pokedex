@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::Health;
 use super::status::PokemonStatus;
 use super::{Level, PokemonId, Experience, Friendship, data::Gender, data::StatSet};
 
@@ -18,7 +19,7 @@ pub struct SavedPokemon {
     #[serde(default)]
     pub moves: Option<SavedMoveSet>,
     #[serde(default)]
-    pub current_hp: Option<u16>,
+    pub current_hp: Option<Health>,
     #[serde(default)]
     pub owned_data: Option<OwnedPokemon>,
     

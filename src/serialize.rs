@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pokemon::Pokemon;
 use crate::moves::PokemonMove;
-use crate::item::{ItemId, Item};
+use crate::item::Item;
 
 #[derive(Deserialize, Serialize)]
 pub struct SerializedDex {
@@ -32,15 +32,7 @@ pub struct SerializedPokemon {
 #[derive(Deserialize, Serialize)]
 pub struct SerializedItem {
 
-    pub item: SerializedItemConfig,
-
-    pub texture: Vec<u8>,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct SerializedItemConfig {
-
-    pub id: ItemId,
     pub item: Item,
 
+    pub texture: Vec<u8>,
 }

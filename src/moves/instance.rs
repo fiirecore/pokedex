@@ -1,5 +1,5 @@
 use util::smallvec::SmallVec;
-use super::{PokemonMove, PP};
+use super::PP;
 
 use super::MoveRef;
 
@@ -23,12 +23,12 @@ impl MoveInstance {
         }
     }
 
-    pub fn use_move(&mut self) -> Option<&PokemonMove> {
+    pub fn use_move(&mut self) -> Option<MoveRef> {
         if self.pp == 0 {
             None
         } else {
             self.pp -= 1;
-            Some(&self.pokemon_move)
+            Some(self.pokemon_move)
         }
         
     }
