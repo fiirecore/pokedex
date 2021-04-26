@@ -6,7 +6,7 @@ use super::MoveRef;
 pub type MoveInstanceSet = SmallVec<[MoveInstance; 4]>;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct MoveInstance {
     
     pub pokemon_move: MoveRef,
