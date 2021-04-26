@@ -25,6 +25,7 @@ use crate::{pokemon::{
 use super::Health;
 use super::types::effective::Effective;
 
+#[derive(Clone)]
 pub struct PokemonInstance {
 	
 	pub pokemon: PokemonRef, 
