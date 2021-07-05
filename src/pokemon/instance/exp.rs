@@ -35,7 +35,6 @@ impl PokemonInstance {
         // Get the moves the pokemon learns at the level it just gained.
 
         let mut moves = self.pokemon.moves_at(previous..self.level).into_iter();
-        deps::log::debug!("{} to {}: {:?}", previous, self.level, moves);
 
         // Add moves if the player's pokemon does not have a full set of moves.
 
