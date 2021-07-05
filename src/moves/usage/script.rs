@@ -1,4 +1,4 @@
-use deps::rhai::{plugin::*, Dynamic, Engine, INT};
+use rhai::{plugin::*, Dynamic, Engine, INT, exported_module,};
 
 use crate::{
     moves::{
@@ -115,7 +115,7 @@ pub fn engine() -> Engine {
         .register_type_with_name::<MoveResult>("MoveResult")
         .register_static_module(
             "MoveResult",
-            deps::rhai::exported_module!(move_result).into(),
+            exported_module!(move_result).into(),
         );
 
     engine
@@ -134,9 +134,9 @@ impl Move {
 }
 
 #[allow(non_snake_case, non_upper_case_globals)]
-#[deps::rhai::export_module]
+#[export_module]
 mod move_result {
-    use deps::rhai::INT;
+    use rhai::INT;
 
     use crate::moves::usage::MoveResult;
 
