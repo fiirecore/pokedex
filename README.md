@@ -1,3 +1,5 @@
-### Pokemon FireRed Clone
+# Pokedex library
 
-# Pokedex dependency for Pokemon FireRed Clone
+## Roadmap
+
+- [ ] Better scripting support, because Rhai clones things and I don't want to clone heap allocations

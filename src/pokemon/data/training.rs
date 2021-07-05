@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+use crate::pokemon::{Level, Experience};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Training {
 	
 	pub base_exp: u16,
@@ -12,21 +14,15 @@ pub struct Training {
 	
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GrowthRate {
 
-	#[serde(rename = "fast")]
-	Fast,
-	#[serde(rename = "medium")]
-	Medium,
-	#[serde(rename = "medium-slow")]
-	MediumSlow,
-	#[serde(rename = "slow")]
 	Slow,
-	#[serde(rename = "fast-then-very-slow")]
-	FastSlow,
-	#[serde(rename = "slow-then-very-fast")]
-	SlowFast,
+	Fast,
+	Medium,
+	MediumSlow,
+	FastThenVerySlow,
+	SlowThenVeryFast,
 	
 }
 
@@ -38,14 +34,18 @@ impl Default for GrowthRate {
 
 impl GrowthRate {
 
-	pub fn level_exp(self, level: u8) -> u32 {
-		let level = level as u32;
-		match self {
-		    GrowthRate::Fast => (0.8 * level.pow(3) as f32) as u32,
-		    GrowthRate::Medium => level.pow(3) as u32,
-		    GrowthRate::Slow => (1.25 * level.pow(3) as f32) as u32,
-			_ => ((1.2 * level.pow(3) as f32) as isize - 15 * level.pow(2) as isize + 100 * level as isize - 140) as u32, // MediumSlow
-		}
+	pub fn max_exp(self, level: Level) -> Experience {
+		(match level as i32 {
+			0 => 0,
+			1 => 1,
+			level => match self {
+				GrowthRate::Slow => 5 * (level.pow(3) >> 2),
+				GrowthRate::Fast => (level.pow(3) << 2) / 5,
+				GrowthRate::Medium => level.pow(3),
+				GrowthRate::MediumSlow => (6 * level.pow(3)) / 5 - (15 * level.pow(2)) + (100 * level) - 140,
+				_ => (1.2 * level.pow(3) as f32) as i32 - 15 * level.pow(2) as i32 + 100 * level as i32 - 140, // MediumSlow
+			}
+		}) as Experience		
 	}
 
 }

@@ -1,52 +1,100 @@
+use deps::{
+    borrow::{Identifiable, StaticRef},
+    hash::HashMap,
+    str::{TinyStr16, TinyStr4},
+    UNKNOWN16,
+};
 use serde::{Deserialize, Serialize};
-use self::battle_script::BattleActionScript;
-use self::script::MoveScript;
 
-use super::pokemon::types::PokemonType;
+use crate::{
+    moves::{target::MoveTarget, usage::MoveUseType},
+    types::PokemonType,
+};
 
-pub type MoveId = u16;
+use crate::Dex;
+
+mod category;
+pub use category::*;
+
+pub mod instance;
+
+pub mod target;
+pub mod usage;
+
+pub mod persistent;
+
+pub type MoveId = TinyStr16;
 pub type Power = u8;
 pub type Accuracy = u8;
 pub type PP = u8;
+pub type Priority = i8;
+pub type CriticalRate = u8;
 
-pub type MoveRef = &'static PokemonMove;
+pub type FieldMoveId = TinyStr4;
 
-pub mod saved;
-pub mod instance;
+pub struct Movedex;
 
-pub mod script;
-pub mod persistent;
+static mut MOVEDEX: Option<HashMap<MoveId, Move>> = None;
 
-pub mod battle_script;
+impl Dex<'static> for Movedex {
+    type DexType = Move;
+
+    fn dex() -> &'static mut Option<
+        HashMap<<<Self as Dex<'static>>::DexType as Identifiable<'static>>::Id, Self::DexType>,
+    > {
+        unsafe { &mut MOVEDEX }
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PokemonMove {
+#[serde(deny_unknown_fields)]
+pub struct Move {
+    pub id: MoveId,
 
-	pub id: MoveId,
+    pub name: String,
+    pub category: MoveCategory,
+    #[serde(rename = "type")]
+    pub pokemon_type: PokemonType,
 
-	pub name: String,
-	pub category: MoveCategory,
-	#[serde(rename = "type")]
-	pub pokemon_type: PokemonType,
+    pub accuracy: Option<Accuracy>,
+    pub pp: PP,
+    #[serde(default)]
+    pub priority: Priority,
 
-	pub power: Option<Power>,
-	pub accuracy: Option<Accuracy>,
-	pub pp: PP,
+    pub usage: Vec<MoveUseType>,
 
-	pub script: Option<MoveScript>,
+    #[serde(default)]
+    pub target: MoveTarget,
 
-	pub battle_script: Option<BattleActionScript>,
-	
+    #[serde(default)]
+    pub contact: bool,
+
+    #[serde(default)]
+    pub crit_rate: CriticalRate,
+
+    pub field_id: Option<FieldMoveId>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
-pub enum MoveCategory {
-	Physical,
-	Special,
-	Status,	
+pub type MoveRef = StaticRef<Move>;
+
+impl<'a> Identifiable<'a> for Move {
+    type Id = MoveId;
+
+    const UNKNOWN: MoveId = UNKNOWN16;
+
+    fn id(&self) -> &Self::Id {
+        &self.id
+    }
+
+    fn try_get(id: &Self::Id) -> Option<&'a Self>
+    where
+        Self: Sized,
+    {
+        Movedex::try_get(id)
+    }
 }
 
-impl std::fmt::Display for PokemonMove {
+impl core::fmt::Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }

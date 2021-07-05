@@ -1,43 +1,60 @@
-extern crate firecore_util as util;
+extern crate firecore_dependencies as deps;
 
-use util::hash::HashMap;
-
-use {
-	pokemon::{PokemonId, Pokemon},
-	moves::{MoveId, PokemonMove},
-	item::{ItemId, Item},
+use deps::{
+    random::{Random, RandomState, GLOBAL_STATE},
+    borrow::Identifiable,
+    hash::HashMap,
 };
 
 pub mod pokemon;
 pub mod moves;
 pub mod item;
 
-pub mod serialize;
+pub mod types;
+pub mod status;
 
-pub type Pokedex = HashMap<PokemonId, Pokemon>;
-pub type Movedex = HashMap<MoveId, PokemonMove>;
-pub type Itemdex = HashMap<ItemId, Item>;
+pub mod battle;
+pub mod trainer;
 
-pub static mut POKEDEX: Option<Pokedex> = None;
-pub static mut MOVEDEX: Option<Movedex> = None;
-pub static mut ITEMDEX: Option<Itemdex> = None;
+pub(crate) static RANDOM: Random = Random::new(RandomState::Static(&GLOBAL_STATE));
 
-pub fn pokedex() -> &'static Pokedex {
-	unsafe { POKEDEX.as_ref().expect("Pokedex was not initialized!") }
+pub trait Dex<'a> {
+
+    type DexType: Identifiable<'a> + 'a;
+
+    fn dex() -> &'a mut Option<HashMap<<<Self as Dex<'a>>::DexType as Identifiable<'a>>::Id, Self::DexType>>;
+
+    fn set(dex: HashMap<<<Self as Dex<'a>>::DexType as Identifiable<'a>>::Id, Self::DexType>) {
+        *Self::dex() = Some(dex)
+    }
+
+    fn get(id: &<<Self as Dex<'a>>::DexType as Identifiable<'a>>::Id) -> &'a Self::DexType {
+        Self::try_get(id).unwrap()
+    }
+
+    fn try_get(id: &<<Self as Dex<'a>>::DexType as Identifiable<'a>>::Id) -> Option<&'a Self::DexType> {
+        Self::dex().as_ref().map(|dex| dex.get(id)).flatten()
+    }
+
+    fn len() -> usize {
+        Self::dex().as_ref().map(|dex| dex.len()).unwrap_or_default()
+    }
+
+    fn with_capacity(capacity: usize) -> HashMap<<<Self as Dex<'a>>::DexType as Identifiable<'a>>::Id, Self::DexType> {
+        HashMap::with_capacity(capacity)
+    }
+
 }
 
-pub fn movedex() -> &'static Movedex {
-	unsafe { MOVEDEX.as_ref().expect("Movedex was not initialized!") }
-}
-
-pub fn itemdex() -> &'static Itemdex {
-	unsafe { ITEMDEX.as_ref().expect("Itemdex was not initialized!") }
-}
-
-pub fn new() {
-	unsafe {
-		POKEDEX = Some(HashMap::new());
-		MOVEDEX = Some(HashMap::new());
-		ITEMDEX = Some(HashMap::new());
-	}
-}
+// pub trait HashableDex<'a>: Dex<'a> where <Self as Dex<'a>>::DexType: Hash {
+    
+//     fn hash() -> u64 {
+//         Self::dex().as_ref().map(|dex| {
+//             use std::hash::Hasher;
+//             let mut hasher = deps::hash::Hasher::default();
+//             dex.values().for_each(|t| std::hash::Hash::hash(t, &mut hasher));            
+//             hasher.finish()
+//         }).unwrap_or_default()
+//     }
+    
+// }

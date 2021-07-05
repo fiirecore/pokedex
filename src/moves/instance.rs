@@ -1,44 +1,38 @@
-use util::smallvec::SmallVec;
-use super::PP;
+use deps::vec::ArrayVec;
+use serde::{Deserialize, Serialize};
 
-use super::MoveRef;
+use crate::moves::{MoveRef, PP};
 
-pub type MoveInstanceSet = SmallVec<[MoveInstance; 4]>;
+pub type MoveInstanceSet = ArrayVec<[MoveInstance; 4]>;
 
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct MoveInstance {
-    
-    pub pokemon_move: MoveRef,
+    #[serde(rename = "move")]
+    pub move_ref: MoveRef,
     pub pp: PP,
-    
 }
 
 impl MoveInstance {
-
-    pub fn new(pokemon_move: MoveRef) -> Self {
+    pub fn new(move_ref: MoveRef) -> Self {
         Self {
-            pp: pokemon_move.pp,
-            pokemon_move,
+            pp: move_ref.pp,
+            move_ref,
         }
     }
 
-    pub fn use_move(&mut self) -> Option<MoveRef> {
-        if self.pp == 0 {
-            None
-        } else {
-            self.pp -= 1;
-            Some(self.pokemon_move)
-        }
-        
+    pub fn get(&self) -> Option<MoveRef> {
+        (self.pp != 0).then(|| self.move_ref)
     }
 
-}
+    pub fn decrement(&mut self) {
+        self.pp = self.pp.saturating_sub(1);
+    }
 
-pub fn to_saved(moves: MoveInstanceSet) -> super::saved::SavedMoveSet {
-    moves.into_iter().map(|instance| super::saved::SavedMove {
-        id: instance.pokemon_move.id,
-        pp: Some(instance.pp),
-    }).collect()
-}
+    pub fn empty(&self) -> bool {
+        self.pp == 0
+    }
 
+    pub fn restore(&mut self) {
+        self.pp = self.move_ref.pp;
+    }
+}
