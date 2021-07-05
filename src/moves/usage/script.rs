@@ -1,4 +1,6 @@
-use rhai::{plugin::*, Dynamic, Engine, INT, exported_module,};
+use rhai::{plugin::*, Dynamic, INT, exported_module};
+
+pub use rhai::Engine;
 
 use crate::{
     moves::{
