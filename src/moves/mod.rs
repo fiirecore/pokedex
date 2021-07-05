@@ -1,8 +1,7 @@
 use deps::{
-    borrow::{Identifiable, StaticRef},
+    borrow::{Identifiable, StaticRef, UNKNOWN},
     hash::HashMap,
     str::{TinyStr16, TinyStr4},
-    UNKNOWN16,
 };
 use serde::{Deserialize, Serialize};
 
@@ -80,7 +79,7 @@ pub type MoveRef = StaticRef<Move>;
 impl<'a> Identifiable<'a> for Move {
     type Id = MoveId;
 
-    const UNKNOWN: MoveId = UNKNOWN16;
+    const UNKNOWN: MoveId = UNKNOWN;
 
     fn id(&self) -> &Self::Id {
         &self.id
