@@ -1,4 +1,7 @@
-use crate::{moves::{MoveRef, instance::MoveInstance}, pokemon::{Experience, Level, stat::BaseStats}};
+use crate::{
+    moves::{instance::MoveInstance, MoveRef},
+    pokemon::{stat::BaseStats, Experience, Level},
+};
 
 use super::PokemonInstance;
 
@@ -27,7 +30,6 @@ impl PokemonInstance {
     }
 
     pub fn on_level_up(&mut self, previous: Level) -> impl Iterator<Item = MoveRef> {
-
         // Updates base stats of pokemon
 
         self.base = BaseStats::new(&self.pokemon, &self.ivs, &self.evs, self.level);
@@ -46,7 +48,5 @@ impl PokemonInstance {
         }
 
         moves
-
     }
-
 }

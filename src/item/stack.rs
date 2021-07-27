@@ -1,5 +1,7 @@
-use super::{Item, ItemId, ItemRef, StackSize};
-use deps::borrow::{Identifiable, StaticRef};
+use crate::{
+    id::Dex,
+    item::{ItemId, ItemRef, Itemdex, StackSize},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -16,29 +18,26 @@ pub struct ItemStackInstance {
 }
 
 impl ItemStack {
-    pub fn new(item: &ItemId, count: StackSize) -> Self {
+    pub fn new(id: &ItemId, count: StackSize) -> Self {
         Self {
-            item: Item::get(item),
+            item: Itemdex::get(id),
             count,
         }
     }
 
     pub fn add(&mut self, stack: ItemStack) -> Option<ItemStack> {
         self.count += stack.count;
-        match &self.item {
-            StaticRef::Init(item) => {
-                if self.count > item.stack_size {
-                    let count = self.count - item.stack_size;
-                    self.count = item.stack_size;
-                    Some(ItemStack {
-                        item: stack.item,
-                        count,
-                    })
-                } else {
-                    None
-                }
+        let item = &*self.item;
+        match self.count > item.stack_size {
+            true => {
+                let count = self.count - item.stack_size;
+                self.count = item.stack_size;
+                Some(ItemStack {
+                    item: stack.item,
+                    count,
+                })
             }
-            StaticRef::Uninit(_) => None,
+            false => None,
         }
     }
 

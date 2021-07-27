@@ -1,12 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use deps::{
-    borrow::{Identifiable, StaticRef, UNKNOWN},
-    hash::HashMap,
-    str::TinyStr16,
-};
+use deps::str::TinyStr16;
+use hashbrown::HashMap;
 
-use crate::Dex;
+use crate::id::{Dex, Identifiable, IdentifiableRef};
 
 pub mod bag;
 pub mod script;
@@ -18,20 +15,6 @@ pub use uses::*;
 
 pub type ItemId = TinyStr16;
 pub type StackSize = u16;
-
-pub struct Itemdex;
-
-static mut ITEMDEX: Option<HashMap<ItemId, Item>> = None;
-
-impl Dex<'static> for Itemdex {
-    type DexType = Item;
-
-    fn dex() -> &'static mut Option<
-        HashMap<<<Self as Dex<'static>>::DexType as Identifiable<'static>>::Id, Self::DexType>,
-    > {
-        unsafe { &mut ITEMDEX }
-    }
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -48,19 +31,31 @@ pub struct Item {
     pub usage: ItemUseType,
 }
 
-pub type ItemRef = StaticRef<Item>;
-
-impl<'a> Identifiable<'a> for Item {
+impl Identifiable for Item {
     type Id = ItemId;
-
-    const UNKNOWN: ItemId = UNKNOWN;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
+}
 
-    fn try_get(id: &Self::Id) -> Option<&'a Self> {
-        Itemdex::try_get(id)
+pub struct Itemdex;
+
+pub type ItemRef = IdentifiableRef<Itemdex>;
+
+static mut ITEMDEX: Option<HashMap<ItemId, Item>> = None;
+
+impl Dex for Itemdex {
+    type Kind = Item;
+
+    const UNKNOWN: ItemId = crate::UNKNOWN_ID;
+
+    fn dex() -> &'static HashMap<ItemId, Self::Kind> {
+        unsafe { ITEMDEX.as_ref().unwrap() }
+    }
+
+    fn dex_mut() -> &'static mut Option<HashMap<ItemId, Self::Kind>> {
+        unsafe { &mut ITEMDEX }
     }
 }
 

@@ -1,4 +1,7 @@
-use super::{ItemId, ItemRef, ItemStack};
+use crate::{
+    id::Identifiable,
+    item::{ItemId, ItemRef, ItemStack},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]

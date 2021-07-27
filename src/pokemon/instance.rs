@@ -1,13 +1,14 @@
+use deps::borrow::BorrowableMut;
+
 use serde::Serialize;
 
-use deps::borrow::{BorrowableMut, Identifiable};
-
 use crate::{
+    id::Dex,
     item::ItemRef,
     moves::{instance::*, MoveCategory, MoveRef},
     pokemon::{
         stat::{BaseStats, Stats},
-        Experience, Friendship, Gender, Health, Level, Pokemon, PokemonId, PokemonRef,
+        Experience, Friendship, Gender, Health, Level, Pokedex, PokemonId, PokemonRef,
     },
     status::StatusEffectInstance,
     types::{Effective, PokemonType},
@@ -61,16 +62,17 @@ pub struct PokemonInstance {
 pub type BorrowedPokemon = BorrowableMut<'static, PokemonInstance>;
 
 impl PokemonInstance {
-    pub fn generate(id: PokemonId, min: Level, max: Level, ivs: Option<Stats>) -> Self {
-        let pokemon = Pokemon::get(&id);
+    pub fn generate(id: &PokemonId, min: Level, max: Level, ivs: Option<Stats>) -> Self {
+        let random = &crate::RANDOM;
+        let pokemon = Pokedex::get(id);
 
         let level = if min == max {
             max
         } else {
-            crate::RANDOM.gen_range(min, max + 1)
+            random.gen_range(min, max + 1)
         };
 
-        let ivs = ivs.unwrap_or_else(Stats::random);
+        let ivs = ivs.unwrap_or_else(|| Stats::random(random));
         let evs = Stats::default();
 
         let base = BaseStats::new(&pokemon, &ivs, &evs, level);
@@ -78,7 +80,7 @@ impl PokemonInstance {
         Self {
             nickname: None,
             level,
-            gender: pokemon.generate_gender(),
+            gender: pokemon.generate_gender(random),
 
             ivs,
             evs,
@@ -95,12 +97,11 @@ impl PokemonInstance {
             current_hp: base.hp(),
 
             base,
-
             pokemon,
         }
     }
 
-    pub fn generate_with_level(id: PokemonId, level: Level, ivs: Option<Stats>) -> Self {
+    pub fn generate_with_level(id: &PokemonId, level: Level, ivs: Option<Stats>) -> Self {
         Self::generate(id, level, level, ivs)
     }
 
@@ -146,7 +147,7 @@ impl PokemonInstance {
     }
 
     pub fn effective(&self, pokemon_type: PokemonType, category: MoveCategory) -> Effective {
-        let pokemon = self.pokemon;
+        let pokemon = &*self.pokemon;
         let primary = pokemon_type.effective(pokemon.primary_type, category);
         if let Some(secondary) = pokemon.secondary_type {
             primary * pokemon_type.effective(secondary, category)

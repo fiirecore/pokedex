@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     battle::party::battle::BattlePartyPokemon,
-    item::ItemRef,
+    item::ItemId,
     moves::{
         target::{MoveTargetInstance, MoveTargetLocation},
         Priority,
@@ -32,7 +32,7 @@ pub enum MovePriority {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BattleMove {
     Move(usize, MoveTargetInstance),
-    UseItem(ItemRef, MoveTargetLocation),
+    UseItem(ItemId, MoveTargetLocation),
     Switch(usize),
 }
 

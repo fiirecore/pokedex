@@ -1,16 +1,12 @@
-use deps::{
-    borrow::{Identifiable, StaticRef, UNKNOWN},
-    hash::HashMap,
-    str::{TinyStr16, TinyStr4},
-};
+use deps::str::{TinyStr16, TinyStr4};
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{target::MoveTarget, usage::MoveUseType},
     types::PokemonType,
+    id::{Dex, Identifiable, IdentifiableRef},
 };
-
-use crate::Dex;
 
 mod category;
 pub use category::*;
@@ -30,20 +26,6 @@ pub type Priority = i8;
 pub type CriticalRate = u8;
 
 pub type FieldMoveId = TinyStr4;
-
-pub struct Movedex;
-
-static mut MOVEDEX: Option<HashMap<MoveId, Move>> = None;
-
-impl Dex<'static> for Movedex {
-    type DexType = Move;
-
-    fn dex() -> &'static mut Option<
-        HashMap<<<Self as Dex<'static>>::DexType as Identifiable<'static>>::Id, Self::DexType>,
-    > {
-        unsafe { &mut MOVEDEX }
-    }
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -74,22 +56,32 @@ pub struct Move {
     pub field_id: Option<FieldMoveId>,
 }
 
-pub type MoveRef = StaticRef<Move>;
-
-impl<'a> Identifiable<'a> for Move {
+impl Identifiable for Move {
     type Id = MoveId;
-
-    const UNKNOWN: MoveId = UNKNOWN;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
 
-    fn try_get(id: &Self::Id) -> Option<&'a Self>
-    where
-        Self: Sized,
-    {
-        Movedex::try_get(id)
+}
+
+pub struct Movedex;
+
+pub type MoveRef = IdentifiableRef<Movedex>;
+
+static mut MOVEDEX: Option<HashMap<MoveId, Move>> = None;
+
+impl Dex for Movedex {
+    type Kind = Move;
+
+    const UNKNOWN: MoveId = crate::UNKNOWN_ID;
+
+    fn dex() -> &'static HashMap<MoveId, Self::Kind> {
+        unsafe { MOVEDEX.as_ref().unwrap() }
+    }
+
+    fn dex_mut() -> &'static mut Option<HashMap<MoveId, Self::Kind>> {
+        unsafe { &mut MOVEDEX }
     }
 }
 

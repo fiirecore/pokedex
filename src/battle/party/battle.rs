@@ -145,7 +145,10 @@ impl<ID> BattleParty<ID, ActivePokemon, BattlePartyPokemon> {
 
 impl<ID> BattleParty<ID, ActivePokemon, BattlePartyPokemon> {
     pub fn cloned(&self) -> PokemonParty {
-        self.pokemon.iter().map(|b| b.pokemon.deref().clone()).collect()
+        self.pokemon
+            .iter()
+            .map(|b| b.pokemon.deref().clone())
+            .collect()
     }
 }
 
@@ -154,7 +157,11 @@ impl<'a, ID: Copy> BattleParty<ID, ActivePokemon, BattlePartyPokemon> {
         BattlePartyKnown {
             id: self.id,
             trainer: self.trainer.clone(),
-            pokemon: self.pokemon.iter().map(|b| b.pokemon.deref().clone()).collect(),
+            pokemon: self
+                .pokemon
+                .iter()
+                .map(|b| b.pokemon.deref().clone())
+                .collect(),
             active: self.active.iter().map(|active| active.index()).collect(),
         }
     }

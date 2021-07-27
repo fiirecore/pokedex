@@ -1,41 +1,17 @@
 use std::ops::Range;
 
-use crate::{
-    moves::{
-        instance::{MoveInstance, MoveInstanceSet},
-        Move, MoveId, MoveRef,
-    },
-    pokemon::{
+use crate::{id::{Dex, Identifiable, IdentifiableRef}, moves::{MoveRef, Movedex, instance::{MoveInstance, MoveInstanceSet}}, pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
         stat::Stats,
-    },
-    types::PokemonType,
-    Dex,
-};
-use deps::{
-    borrow::{Identifiable, StaticRef},
-    hash::HashMap,
-};
+    }, types::PokemonType};
+use deps::random::Random;
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 pub mod data;
 pub mod instance;
 pub mod party;
 pub mod stat;
-
-pub struct Pokedex;
-
-static mut POKEDEX: Option<HashMap<PokemonId, Pokemon>> = None;
-
-impl Dex<'static> for Pokedex {
-    type DexType = Pokemon;
-
-    fn dex() -> &'static mut Option<
-        HashMap<<<Self as Dex<'static>>::DexType as Identifiable<'static>>::Id, Self::DexType>,
-    > {
-        unsafe { &mut POKEDEX }
-    }
-}
 
 pub type PokemonId = u16;
 pub type Level = u8;
@@ -63,25 +39,25 @@ pub struct Pokemon {
 
 impl Pokemon {
     pub fn generate_moves(&self, level: Level) -> MoveInstanceSet {
-        let mut moves = self
+        let mut moves2 = self
             .moves
             .iter()
             .filter(|learnable_move| learnable_move.level <= level)
             .map(|learnable_move| learnable_move.id)
-            .collect::<Vec<MoveId>>();
-        moves.dedup();
-        moves.reverse();
-        moves.truncate(4);
-        moves
-            .into_iter()
-            .map(|id| Move::get(&id))
+            .rev()
+            .flat_map(|id| Movedex::try_get(&id))
             .map(MoveInstance::new)
-            .collect()
+            .collect::<Vec<MoveInstance>>();
+        moves2.dedup();
+        moves2.truncate(4);
+        let mut moves = MoveInstanceSet::new();
+        moves.extend(moves2);
+        moves
     }
 
-    pub fn generate_gender(&self) -> Gender {
+    pub fn generate_gender(&self, random: &Random) -> Gender {
         match self.breeding.gender {
-            Some(percentage) => match crate::RANDOM.gen_range(0, 8) > percentage {
+            Some(percentage) => match random.gen_range(0, 8) > percentage {
                 true => Gender::Male,
                 false => Gender::Female,
             },
@@ -97,7 +73,7 @@ impl Pokemon {
         self.moves
             .iter()
             .filter(|m| m.level == level)
-            .map(|m| Move::get(&m.id))
+            .flat_map(|m| Movedex::try_get(&m.id))
             .collect()
     }
 
@@ -115,24 +91,33 @@ impl Pokemon {
     }
 }
 
-impl<'a> Identifiable<'a> for Pokemon {
+impl Identifiable for Pokemon {
     type Id = PokemonId;
-
-    const UNKNOWN: PokemonId = 0;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
-
-    fn try_get(id: &Self::Id) -> Option<&'a Self>
-    where
-        Self: Sized,
-    {
-        Pokedex::try_get(id)
-    }
 }
 
-pub type PokemonRef = StaticRef<Pokemon>;
+pub struct Pokedex;
+
+pub type PokemonRef = IdentifiableRef<Pokedex>;
+
+static mut POKEDEX: Option<HashMap<PokemonId, Pokemon>> = None;
+
+impl Dex for Pokedex {
+    type Kind = Pokemon;
+
+    const UNKNOWN: PokemonId = 0;
+
+    fn dex() -> &'static HashMap<PokemonId, Self::Kind> {
+        unsafe { POKEDEX.as_ref().unwrap() }
+    }
+
+    fn dex_mut() -> &'static mut Option<HashMap<PokemonId, Self::Kind>> {
+        unsafe { &mut POKEDEX }
+    }
+}
 
 pub fn default_iv() -> Stats {
     Stats::uniform(15)

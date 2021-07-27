@@ -12,7 +12,8 @@ default = []
 stackcount = ["itoa"]
 
 [dependencies]
-firecore-dependencies = { git = "https://github.com/DoNotDoughnut/firecore-dependencies", features = ["str", "vec", "hash", "random", "borrow"] }
+firecore-dependencies = { git = "https://github.com/DoNotDoughnut/firecore-dependencies", features = ["str", "vec", "random", "borrow"] }
 serde = { version = "1.0", features = ["derive"] }
 itoa = { version = "0.4", optional = true }
 rhai = "0.20"
+hashbrown = "0.11"

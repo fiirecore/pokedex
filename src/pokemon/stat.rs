@@ -1,6 +1,5 @@
+use deps::random::Random;
 use serde::{Deserialize, Serialize};
-
-use crate::RANDOM;
 
 pub type Stat = u8;
 
@@ -111,14 +110,14 @@ impl Stats {
     pub const MAX_IV: Stat = 252;
     pub const MAX_IVS_TOTAL: u16 = 512;
 
-    pub fn random() -> Self {
+    pub fn random(random: &Random) -> Self {
         Self {
-            hp: RANDOM.gen_range(0, Self::MAX_EV),
-            atk: RANDOM.gen_range(0, Self::MAX_EV),
-            def: RANDOM.gen_range(0, Self::MAX_EV),
-            sp_atk: RANDOM.gen_range(0, Self::MAX_EV),
-            sp_def: RANDOM.gen_range(0, Self::MAX_EV),
-            speed: RANDOM.gen_range(0, Self::MAX_EV),
+            hp: random.gen_range(0, Self::MAX_EV),
+            atk: random.gen_range(0, Self::MAX_EV),
+            def: random.gen_range(0, Self::MAX_EV),
+            sp_atk: random.gen_range(0, Self::MAX_EV),
+            sp_def: random.gen_range(0, Self::MAX_EV),
+            speed: random.gen_range(0, Self::MAX_EV),
         }
     }
 }

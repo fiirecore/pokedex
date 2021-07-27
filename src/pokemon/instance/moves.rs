@@ -1,4 +1,5 @@
-use rhai::{Engine, Scope, Array};
+use deps::random::Random;
+use rhai::{Array, Engine, Scope};
 
 use crate::{
     moves::{
@@ -16,7 +17,6 @@ use crate::{
         Health,
     },
     types::{Effective, PokemonType},
-    RANDOM,
 };
 
 impl PokemonInstance {
@@ -27,6 +27,7 @@ impl PokemonInstance {
     // To - do: uses PP on use
     pub fn use_own_move(
         &self,
+        random: &Random,
         engine: &Engine,
         move_index: usize,
         targets: Vec<PokemonTarget>,
@@ -45,7 +46,7 @@ impl PokemonInstance {
         let mut results = MoveResults::new();
 
         for target in targets {
-            self.use_move_on_target(engine, &mut results, &pokemon_move, target);
+            self.use_move_on_target(random, engine, &mut results, &pokemon_move, target);
         }
 
         TurnResult {
@@ -57,6 +58,7 @@ impl PokemonInstance {
 
     pub fn use_move_on_target(
         &self,
+        random: &Random,
         engine: &Engine,
         results: &mut MoveResults,
         pokemon_move: &Move,
@@ -65,13 +67,20 @@ impl PokemonInstance {
         let hit = pokemon_move
             .accuracy
             .map(|accuracy| {
-                let hit: u8 = RANDOM.gen_range(0, 100);
+                let hit: u8 = random.gen_range(0, 100);
                 hit < accuracy
             })
             .unwrap_or(true);
 
         if hit {
-            self.usage(results, engine, pokemon_move, target, &pokemon_move.usage);
+            self.usage(
+                results,
+                random,
+                engine,
+                pokemon_move,
+                target,
+                &pokemon_move.usage,
+            );
         } else {
             results.insert(target.active, vec![MoveResult::NoHit(NoHitResult::Miss)]);
         }
@@ -80,6 +89,7 @@ impl PokemonInstance {
     fn usage(
         &self,
         results: &mut MoveResults,
+        random: &Random,
         engine: &Engine,
         pokemon_move: &Move,
         target: PokemonTarget,
@@ -94,6 +104,7 @@ impl PokemonInstance {
                 MoveUseType::Damage(kind) => {
                     move_results.push(
                         match self.damage_kind(
+                            random,
                             *kind,
                             pokemon_move.category,
                             pokemon_move.pokemon_type,
@@ -107,14 +118,15 @@ impl PokemonInstance {
                 }
                 MoveUseType::Status(status, range, chance) => {
                     if target.pokemon.can_afflict_status() {
-                        if RANDOM.gen_float() <= *chance as f32 / 100.0 {
-                            move_results.push(MoveResult::Status(range.init(*status, &RANDOM)));
+                        if random.gen_float() <= *chance as f32 / 100.0 {
+                            move_results.push(MoveResult::Status(range.init(*status, random)));
                         }
                     }
                 }
                 MoveUseType::Drain(kind, percent) => {
                     move_results.push(
                         match self.damage_kind(
+                            random,
                             *kind,
                             pokemon_move.category,
                             pokemon_move.pokemon_type,
@@ -143,14 +155,15 @@ impl PokemonInstance {
                 // }
                 MoveUseType::Flinch => move_results.push(MoveResult::Flinch),
                 MoveUseType::Chance(usage, chance) => {
-                    if RANDOM.gen_float() < *chance as f32 / 100.0 {
-                        self.usage(results, engine, pokemon_move, target, usage);
+                    if random.gen_float() < *chance as f32 / 100.0 {
+                        self.usage(results, random, engine, pokemon_move, target, usage);
                     }
                 }
                 MoveUseType::User(usage) => {
                     if !results.contains_key(&MoveTargetLocation::User) {
                         self.usage(
                             results,
+                            random,
                             engine,
                             pokemon_move,
                             PokemonTarget {
@@ -194,6 +207,7 @@ impl PokemonInstance {
 
     pub fn damage_kind(
         &self,
+        random: &Random,
         kind: DamageKind,
         category: MoveCategory,
         pokemon_type: PokemonType,
@@ -202,7 +216,7 @@ impl PokemonInstance {
     ) -> Option<DamageResult<Health>> {
         match kind {
             DamageKind::Power(power) => {
-                self.move_power_damage(target, power, category, pokemon_type, crit_rate)
+                self.move_power_damage(random, target, power, category, pokemon_type, crit_rate)
             }
             DamageKind::PercentCurrent(percent) => {
                 let effective = target.effective(pokemon_type, category);
@@ -235,6 +249,7 @@ impl PokemonInstance {
 
     pub fn move_power_damage(
         &self,
+        random: &Random,
         target: &PokemonInstance,
         power: Power,
         category: MoveCategory,
@@ -242,16 +257,17 @@ impl PokemonInstance {
         crit_rate: CriticalRate,
     ) -> Option<DamageResult<Health>> {
         let effective = target.effective(use_type, category);
-        let (atk, def) = category.stats();
-        let (atk, def) = (
-            self.base.get(BattleStatType::Basic(atk)),
-            target.base.get(BattleStatType::Basic(def)),
+        let (attack, defense) = category.stats();
+        let (attack, defense) = (
+            self.base.get(BattleStatType::Basic(attack)),
+            target.base.get(BattleStatType::Basic(defense)),
         );
         self.move_power_damage_stat(
+            random,
             effective,
             power,
-            atk,
-            def,
+            attack,
+            defense,
             self.pokemon.primary_type == use_type,
             crit_rate,
         )
@@ -259,6 +275,7 @@ impl PokemonInstance {
 
     pub fn move_power_damage_stat(
         &self,
+        random: &Random,
         effective: Effective,
         power: Power,
         attack: BaseStat,
@@ -269,7 +286,7 @@ impl PokemonInstance {
         if effective == Effective::Ineffective {
             return None;
         }
-        let crit = RANDOM.gen_float()
+        let crit = random.gen_float()
             < match crit_rate {
                 0 => 0.0625, // 1 / 16
                 1 => 0.125,  // 1 / 8
@@ -285,7 +302,7 @@ impl PokemonInstance {
                 .floor()
                 * effective.multiplier() as f64)
                 + 2.0)
-                * (RANDOM.gen_range(85, 101u8) as f64 / 100.0)
+                * (random.gen_range(85, 101u8) as f64 / 100.0)
                 * if same_type_as_user { 1.5 } else { 1.0 }
                 * if crit { 1.5 } else { 1.0 };
         let damage = damage.min(u16::MAX as f64) as u16;
