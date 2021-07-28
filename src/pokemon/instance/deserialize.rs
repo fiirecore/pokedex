@@ -135,9 +135,15 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                         ));
                     }
                 };
-                let gender = seq
-                    .next_element::<Gender>()?
-                    .unwrap_or_else(|| default_gender(pokemon));
+                let gender = match seq.next_element::<Gender>()? {
+                    Some(__value) => __value,
+                    None => {
+                        return Err(serde::de::Error::invalid_length(
+                            3usize,
+                            &"struct PokemonInstance with 12 elements",
+                        ));
+                    }
+                };
                 let ivs = seq.next_element::<Stats>()?.unwrap_or_else(default_iv);
                 let evs = seq.next_element::<Stats>()?.unwrap_or_default();
                 let experience = seq.next_element::<Experience>()?.unwrap_or_default();
@@ -273,7 +279,10 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                     Some(__field2) => __field2,
                     None => missing_field("level")?,
                 };
-                let gender = gender.unwrap_or_else(|| default_gender(pokemon));
+                let gender = match gender {
+                    Some(__field2) => __field2,
+                    None => missing_field("gender")?,
+                };
                 let ivs = ivs.unwrap_or_else(default_iv);
                 let evs = evs.unwrap_or_default();
                 let experience = experience.unwrap_or_default();
@@ -326,11 +335,6 @@ impl<'de> Deserialize<'de> for PokemonInstance {
             },
         )
     }
-}
-
-#[inline]
-fn default_gender(pokemon: PokemonRef) -> Gender {
-    pokemon.generate_gender(&mut rand::thread_rng())
 }
 
 #[inline]

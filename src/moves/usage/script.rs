@@ -1,3 +1,4 @@
+use rand::Rng;
 use rhai::{plugin::*, Dynamic, INT, exported_module};
 
 pub use rhai::Engine;
@@ -14,6 +15,20 @@ use crate::{
     },
     types::{Effective, PokemonType},
 };
+
+#[derive(Clone)]
+struct ScriptRandom<R: Rng + Clone + 'static> {
+    r: R,
+}
+
+impl<R: Rng + Clone + 'static> ScriptRandom<R> {
+    pub fn crit(&mut self, rate: INT) -> bool {
+        PokemonInstance::crit(&mut self.r, rate as _)
+    }
+    pub fn damage_range(&mut self) -> INT {
+        PokemonInstance::damage_range(&mut self.r) as _
+    }
+}
 
 impl DamageResult<INT> {
     fn damage(&mut self) -> INT {
@@ -54,16 +69,17 @@ impl PokemonInstance {
         power: INT,
         target_def: INT,
         effective: Effective,
-        crit_rate: INT,
+        crit: bool,
+        damage_range: INT,
     ) -> DamageResult<INT> {
         user.move_power_damage_stat(
-            &mut rand::thread_rng(),
             effective,
             power as Power,
             user.base.get(BattleStatType::Basic(StatType::Attack)),
             target_def as BaseStat,
             user.pokemon.primary_type == use_type,
-            crit_rate as _,
+            crit,
+            damage_range as _,
         )
         .map(DamageResult::from)
         .unwrap_or(DamageResult {
@@ -90,13 +106,16 @@ impl PokemonInstance {
     // }
 }
 
-pub fn engine() -> Engine {
+pub fn engine<R: Rng + Clone + 'static>() -> Engine {
     let mut engine = Engine::new_raw();
 
     engine
         // .register_type_with_name::<PokemonType>("Type")
         // .register_fn("effective", PokemonType::effective)
         // .register_type::<Effective>()
+        .register_type_with_name::<ScriptRandom<R>>("Random")
+        .register_fn("crit", ScriptRandom::<R>::crit)
+        .register_fn("damage_range", ScriptRandom::<R>::damage_range)
         .register_type_with_name::<DamageResult<INT>>("Damage")
         .register_get("damage", DamageResult::damage)
         .register_get("effective", DamageResult::effective)

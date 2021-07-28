@@ -262,7 +262,7 @@ impl PokemonInstance {
             self.base.get(BattleStatType::Basic(attack)),
             target.base.get(BattleStatType::Basic(defense)),
         );
-        self.move_power_damage_stat(
+        self.move_power_damage_stat_random(
             random,
             effective,
             power,
@@ -273,7 +273,7 @@ impl PokemonInstance {
         )
     }
 
-    pub fn move_power_damage_stat(
+    pub fn move_power_damage_stat_random(
         &self,
         random: &mut impl Rng,
         effective: Effective,
@@ -283,16 +283,44 @@ impl PokemonInstance {
         same_type_as_user: bool,
         crit_rate: CriticalRate,
     ) -> Option<DamageResult<Health>> {
-        if effective == Effective::Ineffective {
-            return None;
-        }
-        let crit = random.gen_bool(match crit_rate {
+        self.move_power_damage_stat(
+            effective,
+            power,
+            attack,
+            defense,
+            same_type_as_user,
+            Self::crit(random, crit_rate),
+            Self::damage_range(random),
+        )
+    }
+
+    pub fn crit(random: &mut impl Rng, crit_rate: CriticalRate) -> bool {
+        random.gen_bool(match crit_rate {
             0 => 0.0625, // 1 / 16
             1 => 0.125,  // 1 / 8
             2 => 0.25,   // 1 / 4
             3 => 1.0 / 3.0,
             _ => 0.5, // rates 4 and above, 1 / 2
-        });
+        })
+    }
+
+    pub fn damage_range(random: &mut impl Rng) -> u8 {
+        random.gen_range(85..=100u8)
+    }
+
+    pub fn move_power_damage_stat(
+        &self,
+        effective: Effective,
+        power: Power,
+        attack: BaseStat,
+        defense: BaseStat,
+        same_type_as_user: bool,
+        crit: bool,
+        damage_range: u8,
+    ) -> Option<DamageResult<Health>> {
+        if effective == Effective::Ineffective {
+            return None;
+        }
         let damage =
             (((((2.0 * self.level as f64 / 5.0 + 2.0).floor() * attack as f64 * power as f64
                 / defense as f64)
@@ -301,7 +329,7 @@ impl PokemonInstance {
                 .floor()
                 * effective.multiplier() as f64)
                 + 2.0)
-                * (random.gen_range(85..=100u8) as f64 / 100.0)
+                * (damage_range as f64 / 100.0)
                 * if same_type_as_user { 1.5 } else { 1.0 }
                 * if crit { 1.5 } else { 1.0 };
         let damage = damage.min(u16::MAX as f64) as u16;
