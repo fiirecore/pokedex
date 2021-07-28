@@ -167,9 +167,9 @@ dependencies = [
 
 [[package]]
 name = "rhai"
-version = "0.20.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8e23c09a050ef3dda3e5c79a73b73659561e2c2907ec4812c1e1391564dd360"
+checksum = "378357360ecb73c9fe845edda6fd23f79cefdd86530051065e2e95370c9e5f41"
 dependencies = [
  "ahash",
  "instant",
