@@ -190,6 +190,7 @@ pub mod borrow {
         ops::{Deref, DerefMut},
     };
     
+    #[deprecated(note = "should be removed")]
     #[derive(Debug)]
     pub enum BorrowableMut<'a, T> {
         Owned(T),

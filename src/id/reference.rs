@@ -32,6 +32,12 @@ impl<'de, DEX: Dex> Deserialize<'de> for IdentifiableRef<DEX> {
     }
 }
 
+impl<D: Dex> Default for IdentifiableRef<D> {
+    fn default() -> Self {
+        D::get(&D::UNKNOWN)
+    }
+}
+
 impl<D: Dex> Clone for IdentifiableRef<D> {
     fn clone(&self) -> Self {
         Self(self.0)
