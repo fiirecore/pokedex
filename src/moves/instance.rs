@@ -1,5 +1,5 @@
-use deps::vec::ArrayVec;
 use serde::{Deserialize, Serialize};
+use arrayvec::ArrayVec;
 
 use crate::moves::{MoveRef, PP};
 

@@ -1,5 +1,4 @@
-use deps::borrow::BorrowableMut;
-
+use rand::Rng;
 use serde::Serialize;
 
 use crate::{
@@ -59,17 +58,22 @@ pub struct PokemonInstance {
     pub current_hp: Health,
 }
 
-pub type BorrowedPokemon = BorrowableMut<'static, PokemonInstance>;
+// pub type BorrowedPokemon = BorrowableMut<'static, PokemonInstance>;
 
 impl PokemonInstance {
-    pub fn generate(id: &PokemonId, min: Level, max: Level, ivs: Option<Stats>) -> Self {
-        let random = &crate::RANDOM;
+    pub fn generate(
+        random: &mut impl Rng,
+        id: &PokemonId,
+        min: Level,
+        max: Level,
+        ivs: Option<Stats>,
+    ) -> Self {
         let pokemon = Pokedex::get(id);
 
         let level = if min == max {
             max
         } else {
-            random.gen_range(min, max + 1)
+            random.gen_range(min..=max)
         };
 
         let ivs = ivs.unwrap_or_else(|| Stats::random(random));
@@ -101,8 +105,8 @@ impl PokemonInstance {
         }
     }
 
-    pub fn generate_with_level(id: &PokemonId, level: Level, ivs: Option<Stats>) -> Self {
-        Self::generate(id, level, level, ivs)
+    pub fn generate_with_level(random: &mut impl Rng, id: &PokemonId, level: Level, ivs: Option<Stats>) -> Self {
+        Self::generate(random, id, level, level, ivs)
     }
 
     pub fn name(&self) -> &str {

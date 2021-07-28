@@ -1,6 +1,6 @@
 [package]
 name = "firecore-pokedex"
-version = "0.5.0-beta.2021-07-04"
+version = "0.5.0-beta.2021-07-27"
 authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
 edition = "2018"
 description = "Pokemon FireRed Clone Pokedex dependency"
@@ -12,8 +12,10 @@ default = []
 stackcount = ["itoa"]
 
 [dependencies]
-firecore-dependencies = { git = "https://github.com/DoNotDoughnut/firecore-dependencies", features = ["str", "vec", "random", "borrow"] }
 serde = { version = "1.0", features = ["derive"] }
 itoa = { version = "0.4", optional = true }
 rhai = "0.20"
+rand = "0.8"
+arrayvec = { version = "0.5", features = ["serde"] }
+tinystr = { version = "0.4", features = ["serde"] }
 hashbrown = "0.11"

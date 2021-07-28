@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
-
-use deps::str::TinyStr16;
+use tinystr::TinyStr16;
 
 pub type TrainerId = TinyStr16;
 

@@ -57,7 +57,7 @@ impl PokemonInstance {
         crit_rate: INT,
     ) -> DamageResult<INT> {
         user.move_power_damage_stat(
-            &crate::RANDOM,
+            &mut rand::thread_rng(),
             effective,
             power as Power,
             user.base.get(BattleStatType::Basic(StatType::Attack)),

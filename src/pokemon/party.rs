@@ -1,4 +1,4 @@
-use deps::vec::ArrayVec;
+use arrayvec::ArrayVec;
 
 use super::instance::PokemonInstance;
 

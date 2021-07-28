@@ -1,11 +1,19 @@
 use std::ops::Range;
 
-use crate::{id::{Dex, Identifiable, IdentifiableRef}, moves::{MoveRef, Movedex, instance::{MoveInstance, MoveInstanceSet}}, pokemon::{
+use crate::{
+    id::{Dex, Identifiable, IdentifiableRef},
+    moves::{
+        instance::{MoveInstance, MoveInstanceSet},
+        MoveRef, Movedex,
+    },
+    pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
         stat::Stats,
-    }, types::PokemonType};
-use deps::random::Random;
+    },
+    types::PokemonType,
+};
 use hashbrown::HashMap;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 pub mod data;
@@ -55,9 +63,9 @@ impl Pokemon {
         moves
     }
 
-    pub fn generate_gender(&self, random: &Random) -> Gender {
+    pub fn generate_gender(&self, random: &mut impl Rng) -> Gender {
         match self.breeding.gender {
-            Some(percentage) => match random.gen_range(0, 8) > percentage {
+            Some(percentage) => match random.gen_range(Gender::RANGE) > percentage {
                 true => Gender::Male,
                 false => Gender::Female,
             },

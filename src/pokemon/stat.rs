@@ -1,8 +1,9 @@
-use deps::random::Random;
+use std::ops::Range;
+
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 pub type Stat = u8;
-
 pub type Stats = StatSet<Stat>;
 
 mod base;
@@ -109,15 +110,16 @@ impl Stats {
     pub const MAX_EV: Stat = 32;
     pub const MAX_IV: Stat = 252;
     pub const MAX_IVS_TOTAL: u16 = 512;
+    pub const EV_RANGE: Range<Stat> = 0..Self::MAX_EV;
 
-    pub fn random(random: &Random) -> Self {
+    pub fn random(random: &mut impl Rng) -> Self {
         Self {
-            hp: random.gen_range(0, Self::MAX_EV),
-            atk: random.gen_range(0, Self::MAX_EV),
-            def: random.gen_range(0, Self::MAX_EV),
-            sp_atk: random.gen_range(0, Self::MAX_EV),
-            sp_def: random.gen_range(0, Self::MAX_EV),
-            speed: random.gen_range(0, Self::MAX_EV),
+            hp: random.gen_range(Self::EV_RANGE),
+            atk: random.gen_range(Self::EV_RANGE),
+            def: random.gen_range(Self::EV_RANGE),
+            sp_atk: random.gen_range(Self::EV_RANGE),
+            sp_def: random.gen_range(Self::EV_RANGE),
+            speed: random.gen_range(Self::EV_RANGE),
         }
     }
 }

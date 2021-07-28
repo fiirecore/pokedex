@@ -1,4 +1,4 @@
-use deps::str::{TinyStr16, TinyStr4};
+use tinystr::{TinyStr16, TinyStr4};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 

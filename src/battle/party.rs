@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use deps::vec::ArrayVec;
-
 use crate::{pokemon::party::Party, trainer::TrainerData};
 
 pub mod knowable;
@@ -21,7 +19,7 @@ impl<ID: Default, A, P> Default for BattleParty<ID, A, P> {
             id: Default::default(),
             trainer: Default::default(),
             active: Default::default(),
-            pokemon: ArrayVec::default(),
+            pokemon: Default::default(),
         }
     }
 }
@@ -32,7 +30,7 @@ impl<ID, A, P> BattleParty<ID, A, P> {
             id,
             trainer: Default::default(),
             active: Default::default(),
-            pokemon: ArrayVec::default(),
+            pokemon: Default::default(),
         }
     }
 }

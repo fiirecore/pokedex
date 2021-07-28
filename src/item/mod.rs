@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use deps::str::TinyStr16;
+use tinystr::TinyStr16;
 use hashbrown::HashMap;
 
 use crate::id::{Dex, Identifiable, IdentifiableRef};

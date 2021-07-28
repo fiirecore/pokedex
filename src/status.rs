@@ -1,4 +1,4 @@
-use deps::random::Random;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
@@ -29,11 +29,11 @@ pub struct StatusEffectInstance {
 }
 
 impl StatusRange {
-    pub fn init(&self, status: Status, random: &Random) -> StatusEffectInstance {
+    pub fn init(&self, status: Status, random: &mut impl Rng) -> StatusEffectInstance {
         StatusEffectInstance {
             status,
-            remaining: match self {
-                StatusRange::Temporary(min, max) => Some(random.gen_range(*min, max + 1)),
+            remaining: match *self {
+                StatusRange::Temporary(min, max) => Some(random.gen_range(min..=max)),
                 StatusRange::Permanent => None,
             }
         }

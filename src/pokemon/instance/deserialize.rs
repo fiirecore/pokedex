@@ -615,7 +615,7 @@ impl<'de> serde::Deserialize<'de> for PokemonInstance {
 
 #[inline]
 fn default_gender(pokemon: PokemonRef) -> Gender {
-    pokemon.generate_gender(&crate::RANDOM)
+    pokemon.generate_gender(&mut rand::thread_rng())
 }
 
 #[inline]

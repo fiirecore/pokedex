@@ -1,4 +1,4 @@
-use deps::random::Random;
+use rand::Rng;
 use rhai::{Array, Engine, Scope};
 
 use crate::{
@@ -27,7 +27,7 @@ impl PokemonInstance {
     // To - do: uses PP on use
     pub fn use_own_move(
         &self,
-        random: &Random,
+        random: &mut impl Rng,
         engine: &Engine,
         move_index: usize,
         targets: Vec<PokemonTarget>,
@@ -58,7 +58,7 @@ impl PokemonInstance {
 
     pub fn use_move_on_target(
         &self,
-        random: &Random,
+        random: &mut impl Rng,
         engine: &Engine,
         results: &mut MoveResults,
         pokemon_move: &Move,
@@ -67,7 +67,7 @@ impl PokemonInstance {
         let hit = pokemon_move
             .accuracy
             .map(|accuracy| {
-                let hit: u8 = random.gen_range(0, 100);
+                let hit: u8 = random.gen_range(0..=100);
                 hit < accuracy
             })
             .unwrap_or(true);
@@ -89,7 +89,7 @@ impl PokemonInstance {
     fn usage(
         &self,
         results: &mut MoveResults,
-        random: &Random,
+        random: &mut impl Rng,
         engine: &Engine,
         pokemon_move: &Move,
         target: PokemonTarget,
@@ -118,7 +118,7 @@ impl PokemonInstance {
                 }
                 MoveUseType::Status(status, range, chance) => {
                     if target.pokemon.can_afflict_status() {
-                        if random.gen_float() <= *chance as f32 / 100.0 {
+                        if random.gen_bool(*chance as f64 / 100.0) {
                             move_results.push(MoveResult::Status(range.init(*status, random)));
                         }
                     }
@@ -155,7 +155,7 @@ impl PokemonInstance {
                 // }
                 MoveUseType::Flinch => move_results.push(MoveResult::Flinch),
                 MoveUseType::Chance(usage, chance) => {
-                    if random.gen_float() < *chance as f32 / 100.0 {
+                    if random.gen_range(0..=100) < *chance {
                         self.usage(results, random, engine, pokemon_move, target, usage);
                     }
                 }
@@ -207,7 +207,7 @@ impl PokemonInstance {
 
     pub fn damage_kind(
         &self,
-        random: &Random,
+        random: &mut impl Rng,
         kind: DamageKind,
         category: MoveCategory,
         pokemon_type: PokemonType,
@@ -249,7 +249,7 @@ impl PokemonInstance {
 
     pub fn move_power_damage(
         &self,
-        random: &Random,
+        random: &mut impl Rng,
         target: &PokemonInstance,
         power: Power,
         category: MoveCategory,
@@ -275,7 +275,7 @@ impl PokemonInstance {
 
     pub fn move_power_damage_stat(
         &self,
-        random: &Random,
+        random: &mut impl Rng,
         effective: Effective,
         power: Power,
         attack: BaseStat,
@@ -286,14 +286,13 @@ impl PokemonInstance {
         if effective == Effective::Ineffective {
             return None;
         }
-        let crit = random.gen_float()
-            < match crit_rate {
-                0 => 0.0625, // 1 / 16
-                1 => 0.125,  // 1 / 8
-                2 => 0.25,   // 1 / 4
-                3 => 1.0 / 3.0,
-                _ => 0.5, // rates 4 and above, 1 / 2
-            };
+        let crit = random.gen_bool(match crit_rate {
+            0 => 0.0625, // 1 / 16
+            1 => 0.125,  // 1 / 8
+            2 => 0.25,   // 1 / 4
+            3 => 1.0 / 3.0,
+            _ => 0.5, // rates 4 and above, 1 / 2
+        });
         let damage =
             (((((2.0 * self.level as f64 / 5.0 + 2.0).floor() * attack as f64 * power as f64
                 / defense as f64)
@@ -302,7 +301,7 @@ impl PokemonInstance {
                 .floor()
                 * effective.multiplier() as f64)
                 + 2.0)
-                * (random.gen_range(85, 101u8) as f64 / 100.0)
+                * (random.gen_range(85..=100u8) as f64 / 100.0)
                 * if same_type_as_user { 1.5 } else { 1.0 }
                 * if crit { 1.5 } else { 1.0 };
         let damage = damage.min(u16::MAX as f64) as u16;
