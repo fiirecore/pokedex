@@ -3,10 +3,10 @@ use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 use tinystr::TinyStr16;
 
-type Id = TinyStr16;
+pub type TrainerIdInner = TinyStr16;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TrainerId(Id);
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct TrainerId(TrainerIdInner);
 
 impl std::fmt::Display for TrainerId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -21,7 +21,7 @@ impl Default for TrainerId {
 }
 
 impl Deref for TrainerId {
-    type Target = Id;
+    type Target = TrainerIdInner;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -35,7 +35,7 @@ impl DerefMut for TrainerId {
 }
 
 impl TrainerId {
-    pub fn new(id: Id) -> Self {
+    pub fn new(id: TrainerIdInner) -> Self {
         Self(id)
     }
 }
