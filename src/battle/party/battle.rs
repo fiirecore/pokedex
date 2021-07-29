@@ -47,10 +47,7 @@ impl BattlePartyPokemon {
 
 impl<ID, A, P> BattleParty<ID, A, P> {
     pub fn name(&self) -> &str {
-        self.trainer
-            .as_ref()
-            .map(|t| t.name.as_str())
-            .unwrap_or("Unknown")
+        self.name.as_deref().unwrap_or("Unknown")
     }
 }
 
@@ -154,7 +151,7 @@ impl<'a, ID: Copy> BattleParty<ID, ActivePokemon, BattlePartyPokemon> {
     pub fn as_known(&self) -> BattlePartyKnown<ID> {
         BattlePartyKnown {
             id: self.id,
-            trainer: self.trainer.clone(),
+            name: self.name.clone(),
             pokemon: self
                 .pokemon
                 .iter()
@@ -167,7 +164,7 @@ impl<'a, ID: Copy> BattleParty<ID, ActivePokemon, BattlePartyPokemon> {
     pub fn as_unknown(&self) -> BattlePartyUnknown<ID> {
         BattlePartyUnknown {
             id: self.id,
-            trainer: self.trainer.clone(),
+            name: self.name.clone(),
             pokemon: self
                 .pokemon
                 .iter()
