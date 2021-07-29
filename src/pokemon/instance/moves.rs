@@ -1,23 +1,11 @@
 use rand::Rng;
 use rhai::{Array, Engine, Scope};
 
-use crate::{
-    moves::{
-        instance::MoveInstance,
-        target::MoveTargetLocation,
-        usage::{
-            DamageKind, DamageResult, MoveResult, MoveResults, MoveUseType, NoHitResult,
-            PokemonTarget, TurnResult,
-        },
-        CriticalRate, Move, MoveCategory, MoveRef, Power,
-    },
-    pokemon::{
+use crate::{moves::{CriticalRate, Move, MoveCategory, MoveRef, Power, instance::MoveInstance, target::MoveTargetLocation, usage::{DamageKind, DamageResult, MoveResult, MoveResults, MoveUseType, NoHitResult, PokemonTarget, TurnResult, script::ScriptRandom}}, pokemon::{
         instance::PokemonInstance,
         stat::{BaseStat, BattleStatType, StatStage},
         Health,
-    },
-    types::{Effective, PokemonType},
-};
+    }, types::{Effective, PokemonType}};
 
 impl PokemonInstance {
     pub fn replace_move(&mut self, index: usize, move_ref: MoveRef) {
@@ -25,9 +13,9 @@ impl PokemonInstance {
     }
 
     // To - do: uses PP on use
-    pub fn use_own_move(
+    pub fn use_own_move<R: Rng + Clone + 'static>(
         &self,
-        random: &mut impl Rng,
+        random: &mut R,
         engine: &Engine,
         move_index: usize,
         targets: Vec<PokemonTarget>,
@@ -56,9 +44,9 @@ impl PokemonInstance {
         // check if target is in move target enum
     }
 
-    pub fn use_move_on_target(
+    pub fn use_move_on_target<R: Rng + Clone + 'static>(
         &self,
-        random: &mut impl Rng,
+        random: &mut R,
         engine: &Engine,
         results: &mut MoveResults,
         pokemon_move: &Move,
@@ -86,10 +74,10 @@ impl PokemonInstance {
         }
     }
 
-    fn usage(
+    fn usage<R: Rng + Clone + 'static>(
         &self,
         results: &mut MoveResults,
-        random: &mut impl Rng,
+        random: &mut R,
         engine: &Engine,
         pokemon_move: &Move,
         target: PokemonTarget,
@@ -176,6 +164,7 @@ impl PokemonInstance {
                 }
                 MoveUseType::Script(script) => {
                     let mut scope = Scope::new();
+                    scope.push("random", ScriptRandom::from(random));
                     scope.push("move", pokemon_move.clone());
                     scope.push("user", self.clone());
                     scope.push("target", target.pokemon.clone());

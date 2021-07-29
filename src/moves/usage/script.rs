@@ -1,5 +1,5 @@
 use rand::Rng;
-use rhai::{plugin::*, Dynamic, INT, exported_module};
+use rhai::{exported_module, plugin::*, Dynamic, INT};
 
 pub use rhai::Engine;
 
@@ -17,16 +17,17 @@ use crate::{
 };
 
 #[derive(Clone)]
-struct ScriptRandom<R: Rng + Clone + 'static> {
-    r: R,
-}
+pub struct ScriptRandom<R: Rng + Clone + 'static>(R);
 
 impl<R: Rng + Clone + 'static> ScriptRandom<R> {
+    pub fn from(random: &R) -> Self {
+        Self(random.clone())
+    }
     pub fn crit(&mut self, rate: INT) -> bool {
-        PokemonInstance::crit(&mut self.r, rate as _)
+        PokemonInstance::crit(&mut self.0, rate as _)
     }
     pub fn damage_range(&mut self) -> INT {
-        PokemonInstance::damage_range(&mut self.r) as _
+        PokemonInstance::damage_range(&mut self.0) as _
     }
 }
 
@@ -135,10 +136,7 @@ pub fn engine<R: Rng + Clone + 'static>() -> Engine {
         // .register_type_with_name::<MoveTargetLocation>("MoveTarget")
         // .register_static_module("MoveTarget", deps::rhai::exported_module!(move_target_instance).into())
         .register_type_with_name::<MoveResult>("MoveResult")
-        .register_static_module(
-            "MoveResult",
-            exported_module!(move_result).into(),
-        );
+        .register_static_module("MoveResult", exported_module!(move_result).into());
 
     engine
 }
