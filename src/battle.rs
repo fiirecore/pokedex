@@ -1,6 +1,5 @@
-use std::cmp::Reverse;
-
 use serde::{Deserialize, Serialize};
+use std::{cmp::Reverse, fmt::Display};
 
 use crate::{
     battle::party::battle::BattlePartyPokemon,
@@ -37,39 +36,36 @@ pub enum BattleMove {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct PokemonIndex<ID: Sized + Copy + core::fmt::Debug + core::fmt::Display + PartialEq> {
+pub struct PokemonIndex<ID: Sized + Copy + Display + PartialEq> {
     pub team: ID,
     pub index: usize,
 }
 
-impl<ID: Sized + Copy + core::fmt::Debug + core::fmt::Display + PartialEq> core::fmt::Display
-    for PokemonIndex<ID>
-{
+impl<ID: Sized + Copy + Display + PartialEq> Display for PokemonIndex<ID> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{:?} #{}", self.team, self.index)
+        write!(f, "{} #{}", self.team, self.index)
     }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ActionInstance<ID: Sized + Copy + core::fmt::Debug + core::fmt::Display + PartialEq, T> {
+pub struct ActionInstance<ID: Sized + Copy + Display + PartialEq, T> {
     pub pokemon: PokemonIndex<ID>,
     pub action: T,
 }
 
 pub type BattleMoveInstance<ID> = ActionInstance<ID, BattleMove>;
 
-pub fn move_queue<ID: Sized + Copy + core::fmt::Debug + core::fmt::Display + PartialEq>(
-    player1: &mut BattleParty<ID, ActivePokemon, BattlePartyPokemon>,
-    player2: &mut BattleParty<ID, ActivePokemon, BattlePartyPokemon>,
-) -> Vec<BattleMoveInstance<ID>> {
-    use std::{
-        collections::BTreeMap,
-        fmt::{Debug, Display},
-    };
+type MoveBattleParty<ID> = BattleParty<ID, ActivePokemon, BattlePartyPokemon>;
 
-    fn insert<ID: Sized + Copy + Debug + Display + PartialEq>(
+pub fn move_queue<ID: Sized + Copy + Display + PartialEq>(
+    player1: &mut MoveBattleParty<ID>,
+    player2: &mut MoveBattleParty<ID>,
+) -> Vec<BattleMoveInstance<ID>> {
+    use std::collections::BTreeMap;
+
+    fn insert<ID: Sized + Copy + Display + PartialEq>(
         map: &mut BTreeMap<MovePriority, BattleMoveInstance<ID>>,
-        party: &mut BattleParty<ID, ActivePokemon, BattlePartyPokemon>,
+        party: &mut MoveBattleParty<ID>,
     ) {
         for index in 0..party.active.len() {
             if let Some(pokemon) = party.active.get_mut(index) {
