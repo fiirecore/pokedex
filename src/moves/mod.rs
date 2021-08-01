@@ -6,7 +6,7 @@ use tinystr::{TinyStr16, TinyStr4};
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
-    moves::{target::MoveTarget, usage::MoveUseType},
+    moves::usage::MoveUseType,
     types::PokemonType,
 };
 
