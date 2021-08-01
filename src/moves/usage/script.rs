@@ -9,9 +9,8 @@ use crate::{
         Move, MoveCategory, Power,
     },
     pokemon::{
-        instance::PokemonInstance,
         stat::{BaseStat, BattleStatType, StatType},
-        Health,
+        Health, PokemonInstance,
     },
     types::{Effective, PokemonType},
 };

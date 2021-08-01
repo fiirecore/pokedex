@@ -43,12 +43,13 @@ pub struct Itemdex;
 
 pub type ItemRef = IdentifiableRef<Itemdex>;
 
+#[deprecated(note = "remove static variables")]
 static mut ITEMDEX: Option<HashMap<ItemId, Item>> = None;
 
 impl Dex for Itemdex {
     type Kind = Item;
 
-    const UNKNOWN: ItemId = crate::UNKNOWN_ID;
+    const UNKNOWN: ItemId = crate::id::UNKNOWN_ID;
 
     fn dex() -> &'static HashMap<ItemId, Self::Kind> {
         unsafe { ITEMDEX.as_ref().unwrap() }

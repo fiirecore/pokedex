@@ -1,3 +1,4 @@
+use core::{ops::Mul, fmt::{Display, Formatter, Result as FmtResult}};
 use serde::{Deserialize, Serialize};
 
 use crate::moves::MoveCategory;
@@ -175,7 +176,7 @@ impl Default for Effective {
     }
 }
 
-impl std::ops::Mul for Effective {
+impl Mul for Effective {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -196,8 +197,8 @@ impl std::ops::Mul for Effective {
     }
 }
 
-impl core::fmt::Display for Effective {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for Effective {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{}", match self {
             Effective::Ineffective => "ineffective",
             Effective::NotEffective => "not very effective",

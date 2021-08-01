@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    moves::target::MoveTargetLocation,
-    pokemon::{
-        instance::PokemonInstance,
-        stat::{BattleStatType, Stage},
-    },
+    pokemon::stat::{BattleStatType, Stage},
     status::{Status, StatusRange},
 };
 
@@ -34,8 +30,13 @@ pub enum MoveUseType {
     Todo,
 }
 
-#[derive(Clone, Copy)]
-pub struct PokemonTarget<'a> {
-    pub pokemon: &'a PokemonInstance,
-    pub active: MoveTargetLocation,
+impl MoveUseType {
+
+    pub(crate) fn usages(&self) -> usize {
+        match self {
+            MoveUseType::Chance(uses, ..) | MoveUseType::User(uses) => uses.iter().map(Self::usages).sum(),
+            _ => 1,
+        }
+    }
+
 }

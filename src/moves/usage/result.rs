@@ -1,14 +1,5 @@
-use std::collections::BTreeMap;
-
 use crate::{
-    moves::{
-        MoveRef,
-        target::MoveTargetLocation,
-    },
-    pokemon::{
-        Health,
-        stat::StatStage,
-    },
+    pokemon::{stat::StatStage, Health},
     status::StatusEffectInstance,
 };
 
@@ -31,11 +22,3 @@ pub enum NoHitResult {
     Miss,
     Todo,
 }
-
-pub type MoveResults = BTreeMap<MoveTargetLocation, Vec<MoveResult>>;
-
-pub struct TurnResult {
-    pub pokemon_move: MoveRef,
-    pub results: MoveResults,
-}
-

@@ -10,6 +10,7 @@ pub struct ItemStack {
     pub count: StackSize,
 }
 
+#[deprecated(note = "move to client crate")]
 #[derive(Debug)]
 pub struct ItemStackInstance {
     pub stack: *mut ItemStack,              // we do a little trolling
@@ -63,7 +64,7 @@ impl ItemStackInstance {
             itoa::write(self.count.0.as_mut(), count).unwrap();
             self.count.1 = Some(count);
         }
-        unsafe { std::str::from_utf8_unchecked(&self.count.0) }
+        unsafe { core::str::from_utf8_unchecked(&self.count.0) }
     }
 }
 

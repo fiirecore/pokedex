@@ -1,6 +1,7 @@
 use tinystr::{TinyStr16, TinyStr4};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use core::fmt::{Display, Formatter, Result as FmtResult};
 
 use crate::{
     moves::{target::MoveTarget, usage::MoveUseType},
@@ -11,11 +12,11 @@ use crate::{
 mod category;
 pub use category::*;
 
+mod target;
+pub use target::*;
+
 pub mod instance;
-
-pub mod target;
 pub mod usage;
-
 pub mod persistent;
 
 pub type MoveId = TinyStr16;
@@ -56,6 +57,14 @@ pub struct Move {
     pub field_id: Option<FieldMoveId>,
 }
 
+impl Move {
+
+    pub(crate) fn usages(&self) -> usize {
+        self.usage.iter().map(MoveUseType::usages).sum()
+    }
+
+}
+
 impl Identifiable for Move {
     type Id = MoveId;
 
@@ -69,12 +78,13 @@ pub struct Movedex;
 
 pub type MoveRef = IdentifiableRef<Movedex>;
 
+#[deprecated(note = "remove static variables")]
 static mut MOVEDEX: Option<HashMap<MoveId, Move>> = None;
 
 impl Dex for Movedex {
     type Kind = Move;
 
-    const UNKNOWN: MoveId = crate::UNKNOWN_ID;
+    const UNKNOWN: MoveId = crate::id::UNKNOWN_ID;
 
     fn dex() -> &'static HashMap<MoveId, Self::Kind> {
         unsafe { MOVEDEX.as_ref().unwrap() }
@@ -85,8 +95,8 @@ impl Dex for Movedex {
     }
 }
 
-impl core::fmt::Display for Move {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for Move {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{}", self.name)
     }
 }

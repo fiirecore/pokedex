@@ -1,5 +1,6 @@
 use rand::Rng;
 use serde::Serialize;
+use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
 use crate::{
     id::Dex,
@@ -57,8 +58,6 @@ pub struct PokemonInstance {
 
     pub current_hp: Health,
 }
-
-// pub type BorrowedPokemon = BorrowableMut<'static, PokemonInstance>;
 
 impl PokemonInstance {
     pub fn generate(
@@ -161,14 +160,14 @@ impl PokemonInstance {
     }
 }
 
-impl core::fmt::Debug for PokemonInstance {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        core::fmt::Display::fmt(&self, f)
+impl Debug for PokemonInstance {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        Display::fmt(&self, f)
     }
 }
 
-impl core::fmt::Display for PokemonInstance {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for PokemonInstance {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "Lv. {} {}", self.level, self.name())
     }
 }

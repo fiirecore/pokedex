@@ -1,4 +1,4 @@
-use std::ops::Range;
+use core::{ops::Range, fmt::{Debug, Display, Formatter, Result as FmtResult}};
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
@@ -16,9 +16,13 @@ use hashbrown::HashMap;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+mod instance;
+mod party;
+
+pub use instance::*;
+pub use party::*;
+
 pub mod data;
-pub mod instance;
-pub mod party;
 pub mod stat;
 
 pub type PokemonId = u16;
@@ -111,6 +115,7 @@ pub struct Pokedex;
 
 pub type PokemonRef = IdentifiableRef<Pokedex>;
 
+#[deprecated(note = "remove static variables")]
 static mut POKEDEX: Option<HashMap<PokemonId, Pokemon>> = None;
 
 impl Dex for Pokedex {
@@ -135,14 +140,14 @@ pub const fn default_friendship() -> Friendship {
     70
 }
 
-impl core::fmt::Debug for Pokemon {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        core::fmt::Display::fmt(&self, f)
+impl Debug for Pokemon {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        Display::fmt(&self, f)
     }
 }
 
-impl core::fmt::Display for Pokemon {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for Pokemon {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{} ({})", self.name, self.id)
     }
 }

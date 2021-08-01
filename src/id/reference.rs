@@ -1,6 +1,6 @@
 use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::ops::Deref;
+use core::ops::Deref;
 
 use super::{Dex, Identifiable};
 

@@ -4,7 +4,7 @@ use serde::{
         Deserialize, Deserializer, Error as SerdeError, IgnoredAny, MapAccess, SeqAccess, Visitor,
     },
 };
-use std::{
+use core::{
     fmt::{self, Formatter},
     marker::PhantomData,
 };

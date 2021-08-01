@@ -1,5 +1,5 @@
+use core::ops::Range;
 use serde::{Deserialize, Serialize};
-use std::ops::Range;
 
 use crate::moves::MoveId;
 use crate::pokemon::Level;
