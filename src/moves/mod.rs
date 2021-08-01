@@ -1,12 +1,13 @@
-use tinystr::{TinyStr16, TinyStr4};
+use arrayvec::ArrayVec;
+use core::fmt::{Display, Formatter, Result as FmtResult};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
-use core::fmt::{Display, Formatter, Result as FmtResult};
+use tinystr::{TinyStr16, TinyStr4};
 
 use crate::{
+    id::{Dex, Identifiable, IdentifiableRef},
     moves::{target::MoveTarget, usage::MoveUseType},
     types::PokemonType,
-    id::{Dex, Identifiable, IdentifiableRef},
 };
 
 mod category;
@@ -16,8 +17,8 @@ mod target;
 pub use target::*;
 
 pub mod instance;
-pub mod usage;
 pub mod persistent;
+pub mod usage;
 
 pub type MoveId = TinyStr16;
 pub type Power = u8;
@@ -27,6 +28,8 @@ pub type Priority = i8;
 pub type CriticalRate = u8;
 
 pub type FieldMoveId = TinyStr4;
+
+pub type Moves<M> = ArrayVec<[M; 4]>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -58,11 +61,9 @@ pub struct Move {
 }
 
 impl Move {
-
     pub(crate) fn usages(&self) -> usize {
         self.usage.iter().map(MoveUseType::usages).sum()
     }
-
 }
 
 impl Identifiable for Move {
@@ -71,7 +72,6 @@ impl Identifiable for Move {
     fn id(&self) -> &Self::Id {
         &self.id
     }
-
 }
 
 pub struct Movedex;

@@ -4,7 +4,7 @@ use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
     moves::{
         instance::{MoveInstance, MoveInstanceSet},
-        MoveRef, Movedex,
+        MoveRef, Movedex, MoveId,
     },
     pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
@@ -12,15 +12,15 @@ use crate::{
     },
     types::PokemonType,
 };
+
+use arrayvec::ArrayVec;
 use hashbrown::HashMap;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 mod instance;
-mod party;
 
 pub use instance::*;
-pub use party::*;
 
 pub mod data;
 pub mod stat;
@@ -48,6 +48,8 @@ pub struct Pokemon {
 
     pub moves: Vec<LearnableMove>,
 }
+
+pub type Party<P> = ArrayVec<[P; 6]>;
 
 impl Pokemon {
     pub fn generate_moves(&self, level: Level) -> MoveInstanceSet {
@@ -81,25 +83,20 @@ impl Pokemon {
         ((self.training.base_exp * level as u16) / 7) as Experience
     }
 
-    pub fn moves_at_level(&self, level: Level) -> Vec<MoveRef> {
+    pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = MoveId> + '_ {
         self.moves
             .iter()
-            .filter(|m| m.level == level)
-            .flat_map(|m| Movedex::try_get(&m.id))
-            .collect()
+            .filter(move |m| m.level == level)
+            .map(|l| l.id)
     }
 
-    pub fn moves_at(&self, levels: Range<Level>) -> Vec<MoveRef> {
+    pub fn moves_at(&self, levels: Range<Level>) -> impl Iterator<Item = MoveId> + '_ {
         let levels = Range {
             start: levels.start + 1,
             end: levels.end + 1,
         };
 
-        let mut moves = Vec::new();
-
-        levels.for_each(|level| moves.extend(self.moves_at_level(level)));
-
-        moves
+        levels.into_iter().flat_map(move |level| self.moves_at_level(level))
     }
 }
 

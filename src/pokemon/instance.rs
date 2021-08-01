@@ -5,10 +5,10 @@ use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use crate::{
     id::Dex,
     item::ItemRef,
-    moves::{instance::*, MoveCategory, MoveRef},
+    moves::{instance::*, MoveCategory, MoveId},
     pokemon::{
         stat::{BaseStats, Stats},
-        Experience, Friendship, Gender, Health, Level, Pokedex, PokemonId, PokemonRef,
+        Experience, Friendship, Gender, Health, Level, Pokedex, PokemonId, PokemonRef, Party,
     },
     status::StatusEffectInstance,
     types::{Effective, PokemonType},
@@ -58,6 +58,8 @@ pub struct PokemonInstance {
 
     pub current_hp: Health,
 }
+
+pub type PokemonParty = Party<PokemonInstance>;
 
 impl PokemonInstance {
     pub fn generate(
@@ -145,7 +147,7 @@ impl PokemonInstance {
         self.moves.iter_mut().for_each(MoveInstance::restore)
     }
 
-    pub fn moves_at_level(&self) -> Vec<MoveRef> {
+    pub fn moves_at_level(&self) -> impl Iterator<Item = MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
     }
 

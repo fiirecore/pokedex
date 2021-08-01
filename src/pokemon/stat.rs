@@ -9,6 +9,9 @@ pub type Stats = StatSet<Stat>;
 mod base;
 pub use base::*;
 
+mod full;
+pub use full::*;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum StatType {
     Health,
@@ -19,13 +22,6 @@ pub enum StatType {
     Speed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-pub enum BattleStatType {
-    Basic(StatType),
-    Accuracy,
-    Evasion,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub struct StatSet<S> {
     pub hp: S,
@@ -34,13 +30,6 @@ pub struct StatSet<S> {
     pub sp_atk: S,
     pub sp_def: S,
     pub speed: S,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
-pub struct BattleStatSet<S> {
-    pub basic: StatSet<S>,
-    pub accuracy: S,
-    pub evasion: S,
 }
 
 impl<S: Sized + Copy> StatSet<S> {
@@ -78,32 +67,6 @@ impl<S> StatSet<S> {
             StatType::Speed => &mut self.speed,
         }
     }
-}
-
-impl<S: Sized + Copy> BattleStatSet<S> {
-    pub fn uniform(stat: S) -> Self {
-        Self {
-            basic: StatSet::uniform(stat),
-            accuracy: stat,
-            evasion: stat,
-        }
-    }
-
-    pub fn get(&self, stat: BattleStatType) -> &S {
-        match stat {
-            BattleStatType::Basic(stat) => self.basic.get(stat),
-            BattleStatType::Accuracy => &self.accuracy,
-            BattleStatType::Evasion => &self.evasion,
-        }
-    }
-
-    pub fn get_mut(&mut self, stat: BattleStatType) -> &mut S {
-		match stat {
-			BattleStatType::Basic(stat) => self.basic.get_mut(stat),
-			BattleStatType::Accuracy => &mut self.accuracy,
-			BattleStatType::Evasion => &mut self.evasion,
-		}
-	}
 }
 
 impl Stats {

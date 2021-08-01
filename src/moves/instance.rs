@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
-use arrayvec::ArrayVec;
+use core::ops::Deref;
 
-use crate::moves::{MoveRef, PP};
+use crate::{
+    id::Dex,
+    moves::{MoveId, MoveRef, Movedex, PP, Moves, Move},
+};
 
-pub type MoveInstanceSet = ArrayVec<[MoveInstance; 4]>;
+pub type MoveInstanceSet = Moves<MoveInstance>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MoveInstance {
@@ -13,6 +16,10 @@ pub struct MoveInstance {
 }
 
 impl MoveInstance {
+    pub fn new_id(id: &MoveId) -> Option<Self> {
+        Movedex::try_get(&id).map(Self::new)
+    }
+
     pub fn new(move_ref: MoveRef) -> Self {
         Self {
             pp: move_ref.pp,
@@ -34,5 +41,13 @@ impl MoveInstance {
 
     pub fn restore(&mut self) {
         self.pp = self.move_ref.pp;
+    }
+}
+
+impl Deref for MoveInstance {
+    type Target = Move;
+
+    fn deref(&self) -> &Self::Target {
+        &self.move_ref
     }
 }

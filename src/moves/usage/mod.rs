@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pokemon::stat::{BattleStatType, Stage},
+    pokemon::stat::{FullStatType, Stage},
     status::{Status, StatusRange},
 };
 
@@ -22,7 +22,7 @@ pub enum MoveUseType {
     Status(Status, StatusRange, Percent),
     // Ailment(Ailment, f32),
     Drain(DamageKind, i8),
-    StatStage(BattleStatType, Stage),
+    StatStage(FullStatType, Stage),
     Flinch,
     Script(String),
     Chance(Vec<Self>, Percent),

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pokemon::{Level, Pokemon};
 
-use super::{BattleStatSet, BattleStatType, Stat, StatSet, Stats};
+use super::{FullStatSet, FullStatType, Stat, StatSet, Stats};
 
 pub type BaseStat = u16;
 pub type Stage = i8;
@@ -10,14 +10,14 @@ pub type Stage = i8;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
 pub struct BaseStats {
     pub stats: StatSet<BaseStat>,
-    pub stages: BattleStatSet<Stage>,
+    pub stages: FullStatSet<Stage>,
     pub accuracy: Stage,
     pub evasion: Stage,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct StatStage {
-    pub stat: BattleStatType,
+    pub stat: FullStatType,
     pub stage: Stage,
 }
 
@@ -31,11 +31,11 @@ impl BaseStats {
         }
     }
 
-    pub fn get(&self, stat: BattleStatType) -> BaseStat {
+    pub fn get(&self, stat: FullStatType) -> BaseStat {
         StatSet::mult(
             match stat {
-                BattleStatType::Basic(stat) => *self.stats.get(stat),
-                BattleStatType::Accuracy | BattleStatType::Evasion => 100,
+                FullStatType::Basic(stat) => *self.stats.get(stat),
+                FullStatType::Accuracy | FullStatType::Evasion => 100,
             },
             *self.stages.get(stat),
         )

@@ -13,7 +13,7 @@ use crate::{
     },
     pokemon::{
         instance::PokemonInstance,
-        stat::{BaseStat, BattleStatType, StatStage},
+        stat::{BaseStat, FullStatType, StatStage},
         Health,
     },
     types::{Effective, PokemonType},
@@ -242,8 +242,8 @@ impl PokemonInstance {
         let effective = target.effective(use_type, category);
         let (attack, defense) = category.stats();
         let (attack, defense) = (
-            self.base.get(BattleStatType::Basic(attack)),
-            target.base.get(BattleStatType::Basic(defense)),
+            self.base.get(FullStatType::Basic(attack)),
+            target.base.get(FullStatType::Basic(defense)),
         );
         self.move_power_damage_stat_random(
             random,

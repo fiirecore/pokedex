@@ -9,7 +9,7 @@ use crate::{
         Move, MoveCategory, Power,
     },
     pokemon::{
-        stat::{BaseStat, BattleStatType, StatType},
+        stat::{BaseStat, FullStatType, StatType},
         Health, PokemonInstance,
     },
     types::{Effective, PokemonType},
@@ -75,7 +75,7 @@ impl PokemonInstance {
         user.move_power_damage_stat(
             effective,
             power as Power,
-            user.base.get(BattleStatType::Basic(StatType::Attack)),
+            user.base.get(FullStatType::Basic(StatType::Attack)),
             target_def as BaseStat,
             user.pokemon.primary_type == use_type,
             crit,
@@ -92,7 +92,7 @@ impl PokemonInstance {
         self.effective(pokemon_type, category)
     }
     fn defense_rhai(&mut self, category: MoveCategory) -> INT {
-        self.base.get(BattleStatType::Basic(category.defense())) as INT
+        self.base.get(FullStatType::Basic(category.defense())) as INT
     }
 
     fn current_hp(&mut self) -> INT {
