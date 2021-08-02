@@ -1,11 +1,15 @@
 [package]
 name = "firecore-pokedex"
-version = "0.5.0-beta.2021-07-31"
+version = "0.5.0-beta.2021-08-02"
 authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
 edition = "2018"
 description = "Pokemon FireRed Clone Pokedex dependency"
 readme = "README.md"
 publish = false
+
+[features]
+default = ["default_scripting"]
+default_scripting = ["rhai"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -13,4 +17,5 @@ rand = { version = "0.8", default-features = false }
 arrayvec = { version = "0.5", features = ["serde"] }
 tinystr = { version = "0.4", features = ["serde"] }
 hashbrown = "0.11"
-rhai = "1"
+log = "0.4"
+rhai = { version = "1", optional = true }

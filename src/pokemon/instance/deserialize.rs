@@ -1,24 +1,22 @@
+use core::{
+    fmt::{self, Formatter},
+    marker::PhantomData,
+};
 use serde::{
     __private::de::missing_field,
     de::{
         Deserialize, Deserializer, Error as SerdeError, IgnoredAny, MapAccess, SeqAccess, Visitor,
     },
 };
-use core::{
-    fmt::{self, Formatter},
-    marker::PhantomData,
-};
 
 use crate::{
     item::ItemRef,
-    moves::instance::MoveInstanceSet,
+    moves::MoveInstanceSet,
     pokemon::{
         data::Gender,
         default_friendship, default_iv,
-        instance::Nickname,
-        instance::PokemonInstance,
         stat::{BaseStats, Stats},
-        Experience, Friendship, Health, Level, PokemonRef,
+        Experience, Friendship, Health, Level, Nickname, PokemonInstance, PokemonRef,
     },
     status::StatusEffectInstance,
 };

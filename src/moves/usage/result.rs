@@ -21,4 +21,5 @@ pub enum NoHitResult {
     Ineffective,
     Miss,
     Todo,
+    Error,
 }

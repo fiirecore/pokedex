@@ -16,9 +16,13 @@ pub use category::*;
 mod target;
 pub use target::*;
 
-pub mod instance;
+mod instance;
+pub use instance::*;
+
 pub mod persistent;
 pub mod usage;
+
+pub mod script;
 
 pub type MoveId = TinyStr16;
 pub type Power = u8;
@@ -29,7 +33,7 @@ pub type CriticalRate = u8;
 
 pub type FieldMoveId = TinyStr4;
 
-pub type Moves<M> = ArrayVec<[M; 4]>;
+pub type MoveSet<M> = ArrayVec<[M; 4]>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]

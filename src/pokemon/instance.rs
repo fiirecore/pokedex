@@ -5,7 +5,7 @@ use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use crate::{
     id::Dex,
     item::ItemRef,
-    moves::{instance::*, MoveCategory, MoveId},
+    moves::{MoveInstance, MoveInstanceSet, MoveCategory, MoveId},
     pokemon::{
         stat::{BaseStats, Stats},
         Experience, Friendship, Gender, Health, Level, Pokedex, PokemonId, PokemonRef, Party,

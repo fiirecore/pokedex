@@ -1,15 +1,13 @@
 use core::hash::Hash;
 use hashbrown::HashMap;
 use rand::Rng;
-use rhai::{Array, Engine, Scope};
+use log::error;
 
 use crate::{
     moves::{
-        instance::MoveInstance,
-        usage::{
-            script::ScriptRandom, DamageKind, DamageResult, MoveResult, MoveUseType, NoHitResult,
-        },
-        CriticalRate, Move, MoveCategory, MoveRef, Power,
+        script::MoveEngine,
+        usage::{DamageKind, DamageResult, MoveResult, MoveUseType, NoHitResult},
+        CriticalRate, Move, MoveCategory, MoveInstance, MoveRef, Power,
     },
     pokemon::{
         instance::PokemonInstance,
@@ -25,14 +23,14 @@ impl PokemonInstance {
     }
 
     // To - do: uses PP on use
-    pub fn use_own_move<ID: Eq + Hash, R: Rng + Clone + 'static>(
+    pub fn use_own_move<ID: Eq + Hash, R: Rng + Clone + 'static, E: MoveEngine>(
         &self,
         random: &mut R,
-        engine: &Engine,
+        engine: &mut E,
         move_index: usize,
         targets: HashMap<ID, &Self>,
     ) -> (MoveRef, HashMap<ID, Vec<MoveResult>>) {
-        let pokemon_move = self
+        let used_move = self
             .moves
             .get(move_index)
             .map(|i| i.move_ref)
@@ -49,22 +47,22 @@ impl PokemonInstance {
             .map(|(id, target)| {
                 (
                     id,
-                    self.use_move_on_target(random, engine, &pokemon_move, target),
+                    self.use_move_on_target(random, engine, &used_move, target),
                 )
             })
             .collect();
 
-        (pokemon_move, targets)
+        (used_move, targets)
     }
 
-    pub fn use_move_on_target<R: Rng + Clone + 'static>(
+    pub fn use_move_on_target<R: Rng + Clone + 'static, E: MoveEngine>(
         &self,
         random: &mut R,
-        engine: &Engine,
-        pokemon_move: &Move,
+        engine: &mut E,
+        used_move: &Move,
         target: &Self,
     ) -> Vec<MoveResult> {
-        let hit = pokemon_move
+        let hit = used_move
             .accuracy
             .map(|accuracy| {
                 let hit: u8 = random.gen_range(0..=100);
@@ -75,20 +73,27 @@ impl PokemonInstance {
         match hit {
             false => vec![MoveResult::NoHit(NoHitResult::Miss)],
             true => {
-                let mut results = Vec::with_capacity(pokemon_move.usages());
-                self.move_usage(random, engine, &mut results, &pokemon_move.usage, pokemon_move, target);
+                let mut results = Vec::with_capacity(used_move.usages());
+                self.move_usage(
+                    random,
+                    engine,
+                    &mut results,
+                    &used_move.usage,
+                    used_move,
+                    target,
+                );
                 results
             }
         }
     }
 
-    fn move_usage<R: Rng + Clone + 'static>(
+    fn move_usage<R: Rng + Clone + 'static, E: MoveEngine>(
         &self,
         random: &mut R,
-        engine: &Engine,
+        engine: &mut E,
         results: &mut Vec<MoveResult>,
         usage: &Vec<MoveUseType>,
-        pokemon_move: &Move,
+        used_move: &Move,
         target: &PokemonInstance,
     ) {
         for usage in usage {
@@ -98,9 +103,9 @@ impl PokemonInstance {
                         match self.damage_kind(
                             random,
                             *kind,
-                            pokemon_move.category,
-                            pokemon_move.pokemon_type,
-                            pokemon_move.crit_rate,
+                            used_move.category,
+                            used_move.pokemon_type,
+                            used_move.crit_rate,
                             target,
                         ) {
                             Some(result) => MoveResult::Damage(result),
@@ -120,9 +125,9 @@ impl PokemonInstance {
                         match self.damage_kind(
                             random,
                             *kind,
-                            pokemon_move.category,
-                            pokemon_move.pokemon_type,
-                            pokemon_move.crit_rate,
+                            used_move.category,
+                            used_move.pokemon_type,
+                            used_move.crit_rate,
                             target,
                         ) {
                             Some(result) => {
@@ -148,37 +153,21 @@ impl PokemonInstance {
                 MoveUseType::Flinch => results.push(MoveResult::Flinch),
                 MoveUseType::Chance(usage, chance) => {
                     if random.gen_range(0..=100) < *chance {
-                        self.move_usage(random, engine, results, usage, pokemon_move, target);
+                        self.move_usage(random, engine, results, usage, used_move, target);
                     }
                 }
                 MoveUseType::User(usage) => {
                     // if !results.contains_key(&MoveTargetLocation::User) {
-                    self.move_usage(random, engine, results, usage, pokemon_move, self);
+                    self.move_usage(random, engine, results, usage, used_move, self);
                     // }
                 }
                 MoveUseType::Script(script) => {
-                    let mut scope = Scope::new();
-                    scope.push("random", ScriptRandom::from(random));
-                    scope.push("move", pokemon_move.clone());
-                    scope.push("user", self.clone());
-                    scope.push("target", target.clone());
-                    // scope.push("target_instance", target.instance.clone());
-
-                    match engine.eval_with_scope::<Array>(&mut scope, script) {
-                        Ok(hits) => {
-                            for hit in hits {
-                                match hit.try_cast::<MoveResult>() {
-                                    Some(hit) => {
-                                        results.push(hit);
-                                    }
-                                    None => panic!(
-                                        "Could not get hit result from returned array for move {}",
-                                        pokemon_move
-                                    ),
-                                }
-                            }
-                        }
-                        Err(err) => panic!("{}", err),
+                    match engine.execute(script, random, used_move, self, target) {
+                        Ok(script_results) => results.extend(script_results),
+                        Err(err) => {
+                            error!("Could not execute move script for {} with error {}", used_move.name, err);
+                            results.push(MoveResult::NoHit(NoHitResult::Error));
+                        },
                     }
                 }
                 MoveUseType::Todo => {

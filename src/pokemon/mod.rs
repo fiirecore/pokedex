@@ -1,11 +1,11 @@
-use core::{ops::Range, fmt::{Debug, Display, Formatter, Result as FmtResult}};
+use core::{
+    fmt::{Debug, Display, Formatter, Result as FmtResult},
+    ops::Range,
+};
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
-    moves::{
-        instance::{MoveInstance, MoveInstanceSet},
-        MoveRef, Movedex, MoveId,
-    },
+    moves::{MoveId, MoveInstance, MoveInstanceSet, Movedex},
     pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
         stat::Stats,
@@ -96,7 +96,9 @@ impl Pokemon {
             end: levels.end + 1,
         };
 
-        levels.into_iter().flat_map(move |level| self.moves_at_level(level))
+        levels
+            .into_iter()
+            .flat_map(move |level| self.moves_at_level(level))
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::{
-    moves::{instance::MoveInstance, MoveId},
+    moves::{MoveId, MoveInstance},
     pokemon::{stat::BaseStats, Experience, Level},
 };
 

@@ -3,10 +3,10 @@ use core::ops::Deref;
 
 use crate::{
     id::Dex,
-    moves::{MoveId, MoveRef, Movedex, PP, Moves, Move},
+    moves::{MoveId, MoveRef, Movedex, PP, MoveSet, Move},
 };
 
-pub type MoveInstanceSet = Moves<MoveInstance>;
+pub type MoveInstanceSet = MoveSet<MoveInstance>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MoveInstance {

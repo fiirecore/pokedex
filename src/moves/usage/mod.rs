@@ -11,12 +11,11 @@ pub use damage::*;
 mod result;
 pub use result::*;
 
-pub mod script;
-
 pub type Critical = bool;
 pub type Percent = u8; // 0 to 100
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+// #[serde(deny_unknown_fields)]
 pub enum MoveUseType {
     Damage(DamageKind),
     Status(Status, StatusRange, Percent),
@@ -24,9 +23,9 @@ pub enum MoveUseType {
     Drain(DamageKind, i8),
     StatStage(FullStatType, Stage),
     Flinch,
-    Script(String),
     Chance(Vec<Self>, Percent),
     User(Vec<Self>),
+    Script(String),
     Todo,
 }
 
