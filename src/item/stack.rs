@@ -1,37 +1,19 @@
-use crate::{
-    id::Dex,
-    item::{ItemId, ItemRef, Itemdex, StackSize},
-};
 use serde::{Deserialize, Serialize};
 
+use crate::item::{ItemId, ItemRef, StackSize};
+
+pub type UninitItemStack = ItemStack<ItemId>;
+pub type InitItemStack<'a> = ItemStack<ItemRef<'a>>;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ItemStack {
-    pub item: ItemRef,
+pub struct ItemStack<I> {
+    pub item: I,
     pub count: StackSize,
 }
 
-impl ItemStack {
-    pub fn new(id: &ItemId, count: StackSize) -> Self {
-        Self {
-            item: Itemdex::get(id),
-            count,
-        }
-    }
-
-    pub fn add(&mut self, stack: ItemStack) -> Option<ItemStack> {
-        self.count += stack.count;
-        let item = &*self.item;
-        match self.count > item.stack_size {
-            true => {
-                let count = self.count - item.stack_size;
-                self.count = item.stack_size;
-                Some(ItemStack {
-                    item: stack.item,
-                    count,
-                })
-            }
-            false => None,
-        }
+impl<I> ItemStack<I> {
+    pub fn new(i: I, count: StackSize) -> Self {
+        Self { item: i, count }
     }
 
     pub fn decrement(&mut self) -> bool {
@@ -40,6 +22,24 @@ impl ItemStack {
             true
         } else {
             false
+        }
+    }
+}
+
+impl<'a> InitItemStack<'a> {
+    pub fn add(&mut self, stack: InitItemStack<'a>) -> Option<InitItemStack<'a>> {
+        self.count = self.count.saturating_add(stack.count);
+        let max = self.item.stack_size;
+        match self.count > max {
+            true => {
+                let count = self.count - max;
+                self.count = max;
+                Some(ItemStack {
+                    item: stack.item,
+                    count,
+                })
+            }
+            false => None,
         }
     }
 }

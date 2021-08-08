@@ -3,35 +3,40 @@ use std::ops::Deref;
 use rhai::INT;
 
 use crate::{
-    moves::{usage::DamageResult, MoveCategory, Power},
+    moves::{usage::DamageResult, MoveCategory},
     pokemon::{
-        stat::{BaseStat, FullStatType, StatType},
-        PokemonInstance,
+        InitPokemon,
     },
     types::{Effective, PokemonType},
 };
 
 use super::ScriptDamage;
 
-#[derive(Clone)]
-pub struct ScriptPokemon(*const PokemonInstance);
+#[derive(Clone, Copy)]
+pub struct ScriptPokemon(*const InitPokemon<'static>);
 
 impl ScriptPokemon {
+
+    pub fn new<'a>(pokemon: &InitPokemon<'a>) -> Self {
+        let p = pokemon as *const InitPokemon<'a>;
+        let p = unsafe { core::mem::transmute::<*const InitPokemon<'a>, *const InitPokemon<'static>>(p) };
+        Self(p)
+    }
+
     pub fn get_damage(
         &mut self,
-        use_type: PokemonType,
+        target: ScriptPokemon,
         power: INT,
-        target_def: INT,
-        effective: Effective,
+        category: MoveCategory,
+        move_type: PokemonType,
         crit: bool,
         damage_range: INT,
     ) -> ScriptDamage {
-        self.move_power_damage_stat(
-            effective,
-            power as Power,
-            self.base.get(FullStatType::Basic(StatType::Attack)),
-            target_def as BaseStat,
-            self.pokemon.primary_type == use_type,
+        self.move_power_damage(
+            &target,
+            power as _,
+            category,
+            move_type,
             crit,
             damage_range as _,
         )
@@ -45,23 +50,14 @@ impl ScriptPokemon {
             .into(),
         )
     }
-    pub fn effective(&mut self, pokemon_type: PokemonType, category: MoveCategory) -> Effective {
-        PokemonInstance::effective(self, pokemon_type, category)
-    }
-    pub fn defense(&mut self, category: MoveCategory) -> INT {
-        self.base.get(FullStatType::Basic(category.defense())) as INT
-    }
-
     pub fn current_hp(&mut self) -> INT {
         self.hp() as INT
     }
-    pub fn primary_type(&mut self) -> PokemonType {
-        self.pokemon.primary_type
-    }
+
 }
 
 impl Deref for ScriptPokemon {
-    type Target = PokemonInstance;
+    type Target = InitPokemon<'static>;
 
     fn deref(&self) -> &Self::Target {
         unsafe { &*self.0 }

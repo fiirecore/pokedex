@@ -1,6 +1,5 @@
 use arrayvec::ArrayVec;
 use core::fmt::{Display, Formatter, Result as FmtResult};
-use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use tinystr::{TinyStr16, TinyStr4};
 
@@ -24,7 +23,7 @@ pub mod usage;
 
 pub mod script;
 
-pub type MoveId = TinyStr16;
+pub type MoveId = <Move as Identifiable>::Id;
 pub type Power = u8;
 pub type Accuracy = u8;
 pub type PP = u8;
@@ -33,7 +32,9 @@ pub type CriticalRate = u8;
 
 pub type FieldMoveId = TinyStr4;
 
-pub type MoveSet<M> = ArrayVec<[M; 4]>;
+pub const MOVESET_LENGTH: usize = 4;
+
+pub type MoveSet<M> = ArrayVec<[M; MOVESET_LENGTH]>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -65,39 +66,26 @@ pub struct Move {
 }
 
 impl Move {
+
     pub(crate) fn usages(&self) -> usize {
         self.usage.iter().map(MoveUseType::usages).sum()
     }
+
 }
 
 impl Identifiable for Move {
-    type Id = MoveId;
+    type Id = TinyStr16;
+
+    const UNKNOWN: Self::Id = crate::id::UNKNOWN_ID;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
 }
 
-pub struct Movedex;
+pub type MoveRef<'a> = IdentifiableRef<'a, Move>;
 
-pub type MoveRef = IdentifiableRef<Movedex>;
-
-#[deprecated(note = "remove static variables")]
-static mut MOVEDEX: Option<HashMap<MoveId, Move>> = None;
-
-impl Dex for Movedex {
-    type Kind = Move;
-
-    const UNKNOWN: MoveId = crate::id::UNKNOWN_ID;
-
-    fn dex() -> &'static HashMap<MoveId, Self::Kind> {
-        unsafe { MOVEDEX.as_ref().unwrap() }
-    }
-
-    fn dex_mut() -> &'static mut Option<HashMap<MoveId, Self::Kind>> {
-        unsafe { &mut MOVEDEX }
-    }
-}
+pub type Movedex = Dex<Move>;
 
 impl Display for Move {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {

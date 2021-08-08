@@ -1,67 +1,48 @@
 use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use core::ops::Deref;
 
-use super::{Dex, Identifiable};
+use super::Identifiable;
 
-pub struct IdentifiableRef<D: Dex + ?Sized>(&'static D::Kind);
+pub struct IdentifiableRef<'a, I: Identifiable>(&'a I);
 
-impl<D: Dex + ?Sized> IdentifiableRef<D> {
-    pub fn of(v: &'static D::Kind) -> Self {
-        Self(v)
+impl<'a, I: Identifiable> IdentifiableRef<'a, I> {
+    pub fn of(i: &'a I) -> Self {
+        Self(i)
     }
 }
 
-impl<D: Dex> Deref for IdentifiableRef<D> {
-    type Target = D::Kind;
+impl<'a, I: Identifiable> Deref for IdentifiableRef<'a, I> {
+    type Target = I;
 
-    fn deref(&self) -> &'static Self::Target {
-        &self.0
+    fn deref(&self) -> &Self::Target {
+        self.0
     }
 }
 
-impl<D: Dex> Serialize for IdentifiableRef<D> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.id().serialize(serializer)
-    }
-}
-
-impl<'de, DEX: Dex> Deserialize<'de> for IdentifiableRef<DEX> {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Ok(DEX::get(&<DEX::Kind as Identifiable>::Id::deserialize(deserializer)?))
-    }
-}
-
-impl<D: Dex> Default for IdentifiableRef<D> {
-    fn default() -> Self {
-        D::get(&D::UNKNOWN)
-    }
-}
-
-impl<D: Dex> Clone for IdentifiableRef<D> {
+impl<'a, I: Identifiable> Clone for IdentifiableRef<'a, I> {
     fn clone(&self) -> Self {
         Self(self.0)
     }
 }
 
-impl<D: Dex> Copy for IdentifiableRef<D> {}
+impl<'a, I: Identifiable> Copy for IdentifiableRef<'a, I> {}
 
-impl<D: Dex> Display for IdentifiableRef<D> {
+impl<'a, I: Identifiable> Display for IdentifiableRef<'a, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         Display::fmt(self.id(), f)
     }
 }
 
-impl<D: Dex> Debug for IdentifiableRef<D> {
+impl<'a, I: Identifiable> Debug for IdentifiableRef<'a, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         Display::fmt(self.id(), f)
     }
 }
 
-impl<D: Dex> PartialEq for IdentifiableRef<D> {
+impl<'a, I: Identifiable> PartialEq for IdentifiableRef<'a, I> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(other.id())
     }
 }
 
-impl<D: Dex> Eq for IdentifiableRef<D> {}
+impl<'a, I: Identifiable> Eq for IdentifiableRef<'a, I> {}

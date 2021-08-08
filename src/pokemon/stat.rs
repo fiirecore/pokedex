@@ -86,3 +86,7 @@ impl Stats {
         }
     }
 }
+
+pub fn default_iv() -> Stats {
+    Stats::uniform(15)
+}

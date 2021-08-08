@@ -1,6 +1,6 @@
 use crate::{
     pokemon::{stat::StatStage, Health},
-    status::StatusEffectInstance,
+    ailment::LiveAilment,
 };
 
 use super::DamageResult;
@@ -8,7 +8,7 @@ use super::DamageResult;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MoveResult {
     Damage(DamageResult<Health>), // bool = crit
-    Status(StatusEffectInstance),
+    Status(LiveAilment),
     Drain(DamageResult<Health>, i16), // damage, health gained/lost
     StatStage(StatStage),
     Flinch,

@@ -10,16 +10,18 @@ use serde::{
 };
 
 use crate::{
-    item::ItemRef,
     moves::MoveInstanceSet,
     pokemon::{
         data::Gender,
-        default_friendship, default_iv,
-        stat::{BaseStats, Stats},
-        Experience, Friendship, Health, Level, Nickname, PokemonInstance, PokemonRef,
+        default_friendship,
+        stat::{Stats, default_iv},
+        Experience, Friendship, Health, Level, Nickname, PokemonInstance,
     },
     status::StatusEffectInstance,
 };
+
+type ItemField = crate::item::ItemId;
+type PokemonField = crate::pokemon::PokemonId;
 
 impl<'de> Deserialize<'de> for PokemonInstance {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
@@ -114,7 +116,7 @@ impl<'de> Deserialize<'de> for PokemonInstance {
             }
             #[inline]
             fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-                let pokemon = match seq.next_element::<PokemonRef>()? {
+                let pokemon = match seq.next_element::<PokemonField>()? {
                     Some(__value) => __value,
                     None => {
                         return Err(serde::de::Error::invalid_length(
@@ -154,13 +156,13 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                 let __field9 = seq
                     .next_element::<Option<StatusEffectInstance>>()?
                     .unwrap_or_default();
-                let item = seq.next_element::<Option<ItemRef>>()?.unwrap_or_default();
-                let base = default_base(pokemon, &ivs, &evs, level);
+                let item = seq.next_element::<Option<ItemField>>()?.unwrap_or_default();
+                let base = Default::default();
                 let current_hp = seq
                     .next_element::<Health>()?
-                    .unwrap_or_else(|| default_current_hp(&base));
+                    .unwrap_or_else(|| default_current_hp(pokemon));
                 Ok(PokemonInstance {
-                    pokemon,
+                    id: pokemon,
                     nickname,
                     level,
                     gender,
@@ -171,13 +173,13 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                     moves,
                     effect: __field9,
                     item,
-                    base,
+                    stages: base,
                     current_hp,
                 })
             }
             #[inline]
             fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-                let mut pokemon: Option<PokemonRef> = None;
+                let mut pokemon: Option<PokemonField> = None;
                 let mut nickname: Option<Nickname> = None;
                 let mut level: Option<Level> = None;
                 let mut gender: Option<Gender> = None;
@@ -187,7 +189,7 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                 let mut friendship: Option<Friendship> = None;
                 let mut moves: Option<MoveInstanceSet> = None;
                 let mut effect: Option<Option<StatusEffectInstance>> = None;
-                let mut item: Option<Option<ItemRef>> = None;
+                let mut item: Option<Option<ItemField>> = None;
                 let mut current_hp: Option<Health> = None;
                 while let Some(key) = map.next_key::<Field>()? {
                     match key {
@@ -195,7 +197,7 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                             if pokemon.is_some() {
                                 return Err(SerdeError::duplicate_field("id"));
                             }
-                            pokemon = Some(map.next_value::<PokemonRef>()?);
+                            pokemon = Some(map.next_value::<PokemonField>()?);
                         }
                         Field::Nickname => {
                             if nickname.is_some() {
@@ -255,7 +257,7 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                             if item.is_some() {
                                 return Err(SerdeError::duplicate_field("item"));
                             }
-                            item = Some(map.next_value::<Option<ItemRef>>()?);
+                            item = Some(map.next_value::<Option<ItemField>>()?);
                         }
                         Field::CurrentHp => {
                             if current_hp.is_some() {
@@ -289,12 +291,10 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                 let effect = effect.unwrap_or_default();
                 let item = item.unwrap_or_default();
 
-                let base = default_base(pokemon, &ivs, &evs, level);
-
-                let current_hp = current_hp.unwrap_or_else(|| default_current_hp(&base));
+                let current_hp = current_hp.unwrap_or_else(|| default_current_hp(pokemon));
 
                 Ok(PokemonInstance {
-                    pokemon,
+                    id: pokemon,
                     nickname,
                     level,
                     gender,
@@ -305,7 +305,7 @@ impl<'de> Deserialize<'de> for PokemonInstance {
                     moves,
                     effect,
                     item,
-                    base,
+                    stages: Default::default(),
                     current_hp,
                 })
             }
@@ -335,17 +335,24 @@ impl<'de> Deserialize<'de> for PokemonInstance {
     }
 }
 
+#[deprecated]
 #[inline]
-fn default_moves(pokemon: PokemonRef, level: Level) -> MoveInstanceSet {
-    pokemon.generate_moves(level)
+fn default_moves(pokemon: PokemonField, level: Level) -> MoveInstanceSet {
+    // pokemon.generate_moves(level)
+    log::error!("cannot deserialize default moves");
+    Default::default()
 }
 
-#[inline]
-fn default_base(pokemon: PokemonRef, ivs: &Stats, evs: &Stats, level: Level) -> BaseStats {
-    BaseStats::new(&pokemon, ivs, evs, level)
-}
+// #[deprecated]
+// #[inline]
+// fn default_base(pokemon: PokemonField, ivs: &Stats, evs: &Stats, level: Level) -> BaseStats {
+//     log::error!("cannot deserialize base stats");
+//     // BaseStats::new(&pokemon, ivs, evs, level)
+//     Default::default()
+// }
 
 #[inline]
-fn default_current_hp(base: &BaseStats) -> Health {
-    base.hp()
+fn default_current_hp(pokemon: PokemonField) -> Health {
+    log::error!("cannot deserialize current hp");
+    100
 }

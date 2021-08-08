@@ -1,12 +1,10 @@
 use crate::{
-    moves::{MoveId, MoveInstance},
-    pokemon::{stat::BaseStats, Experience, Level},
+    moves::{MoveId, Movedex, InitMove},
+    pokemon::{Experience, Level},
 };
 
-use super::PokemonInstance;
-
-impl PokemonInstance {
-    pub fn add_exp(&mut self, experience: super::Experience) -> impl Iterator<Item = MoveId> + '_ {
+impl<'a> super::InitPokemon<'a> {
+    pub fn add_exp(&mut self, movedex: &'a Movedex, experience: Experience) -> impl Iterator<Item = MoveId> + '_ {
         // add exp to pokemon
 
         self.experience += experience * 5;
@@ -22,17 +20,14 @@ impl PokemonInstance {
             self.level += 1;
         }
 
-        self.on_level_up(previous)
+        self.on_level_up(movedex, previous)
     }
 
     pub fn exp_from(&self) -> Experience {
         self.pokemon.exp_from(self.level)
     }
 
-    pub fn on_level_up(&mut self, previous: Level) -> impl Iterator<Item = MoveId> + '_ {
-        // Updates base stats of pokemon
-
-        self.base = BaseStats::new(&self.pokemon, &self.ivs, &self.evs, self.level);
+    pub fn on_level_up(&mut self, movedex: &'a Movedex, previous: Level) -> impl Iterator<Item = MoveId> + '_ {
 
         // Get the moves the pokemon learns at the level it just gained.
 
@@ -42,11 +37,9 @@ impl PokemonInstance {
 
         while !self.moves.is_full() {
             match moves.next() {
-                Some(id) => {
-                    if let Some(instance) = MoveInstance::new_id(&id) {
-                        self.moves.push(instance);
-                    }
-                }
+                Some(id) => if let Some(m) = movedex.try_get(&id) {
+                    self.moves.push(InitMove::new(m))
+                },
                 None => break,
             }
         }

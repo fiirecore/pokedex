@@ -1,34 +1,30 @@
 use serde::{Deserialize, Serialize};
-use core::ops::Deref;
 
-use crate::{
-    id::Dex,
-    moves::{MoveId, MoveRef, Movedex, PP, MoveSet, Move},
-};
+use crate::moves::{MoveId, MoveRef, MoveSet, Movedex, PP};
 
-pub type MoveInstanceSet = MoveSet<MoveInstance>;
+pub type UninitMove = MoveInstance<MoveId>;
+pub type InitMove<'a> = MoveInstance<MoveRef<'a>>;
+
+pub type UninitMoveSet = MoveSet<UninitMove>;
+pub type InitMoveSet<'a> = MoveSet<InitMove<'a>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MoveInstance {
+pub struct MoveInstance<M> {
     #[serde(rename = "move")]
-    pub move_ref: MoveRef,
+    pub m: M,
     pub pp: PP,
+    // pub decrement: Option<PP>,
 }
 
-impl MoveInstance {
-    pub fn new_id(id: &MoveId) -> Option<Self> {
-        Movedex::try_get(&id).map(Self::new)
-    }
-
-    pub fn new(move_ref: MoveRef) -> Self {
-        Self {
-            pp: move_ref.pp,
-            move_ref,
+impl<M> MoveInstance<M> {
+    pub fn try_use(&mut self) -> Option<&M> {
+        match self.empty() {
+            false => {
+                self.decrement();
+                Some(&self.m)
+            }
+            true => None,
         }
-    }
-
-    pub fn get(&self) -> Option<MoveRef> {
-        (self.pp != 0).then(|| self.move_ref)
     }
 
     pub fn decrement(&mut self) {
@@ -38,16 +34,40 @@ impl MoveInstance {
     pub fn empty(&self) -> bool {
         self.pp == 0
     }
+}
 
-    pub fn restore(&mut self) {
-        self.pp = self.move_ref.pp;
+impl UninitMove {
+
+    pub fn init<'a>(self, movedex: &'a Movedex) -> Option<InitMove> {
+        Some(InitMove {
+            m: movedex.try_get(&self.m)?,
+            pp: self.pp,
+        })
     }
 }
 
-impl Deref for MoveInstance {
-    type Target = Move;
+impl<'a> InitMove<'a> {
+    pub fn new(m: MoveRef<'a>) -> Self {
+        Self { pp: m.pp, m }
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.move_ref
+    pub fn restore(&mut self, amount: Option<PP>) {
+        self.pp = amount.unwrap_or(self.m.pp).min(self.m.pp)
+    }
+
+}
+
+impl From<MoveId> for UninitMove {
+    fn from(id: MoveId) -> Self {
+        Self { m: id, pp: 0 }
+    }
+}
+
+impl<'a> From<InitMove<'a>> for UninitMove {
+    fn from(i: InitMove<'a>) -> Self {
+        Self {
+            m: i.m.id,
+            pp: i.pp,
+        }
     }
 }

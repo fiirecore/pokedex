@@ -6,10 +6,10 @@ use super::{FullStatSet, FullStatType, Stat, StatSet, Stats};
 
 pub type BaseStat = u16;
 pub type Stage = i8;
+pub type BaseStatSet = StatSet<BaseStat>;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
-pub struct BaseStats {
-    pub stats: StatSet<BaseStat>,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct StatStages {
     pub stages: FullStatSet<Stage>,
     pub accuracy: Stage,
     pub evasion: Stage,
@@ -21,28 +21,20 @@ pub struct StatStage {
     pub stage: Stage,
 }
 
-impl BaseStats {
-    pub fn new(pokemon: &Pokemon, ivs: &Stats, evs: &Stats, level: Level) -> Self {
-        Self {
-            stats: StatSet::new(pokemon, ivs, evs, level),
-            stages: Default::default(),
-            accuracy: Default::default(),
-            evasion: Default::default(),
-        }
-    }
-
-    pub fn get(&self, stat: FullStatType) -> BaseStat {
+impl StatStages {
+    pub fn get(&self, stats: &BaseStatSet, stat: FullStatType) -> BaseStat {
         StatSet::mult(
             match stat {
-                FullStatType::Basic(stat) => *self.stats.get(stat),
-                FullStatType::Accuracy | FullStatType::Evasion => 100,
+                FullStatType::Basic(stat) => *stats.get(stat),
+                FullStatType::Accuracy => Self::stage_temp(self.accuracy),
+                FullStatType::Evasion => Self::stage_temp(self.evasion),
             },
             *self.stages.get(stat),
         )
     }
 
-    pub fn hp(&self) -> BaseStat {
-        self.stats.hp
+    fn stage_temp(stage: Stage) -> BaseStat {
+        (stage * 13 + 100) as _
     }
 
     pub fn can_change_stage(&self, stat: &StatStage) -> bool {
@@ -54,7 +46,17 @@ impl BaseStats {
     }
 }
 
-impl StatSet<BaseStat> {
+impl Default for StatStages {
+    fn default() -> Self {
+        Self {
+            stages: Default::default(),
+            accuracy: 100,
+            evasion: 100,
+        }
+    }
+}
+
+impl BaseStatSet {
     pub fn new(pokemon: &Pokemon, ivs: &Stats, evs: &Stats, level: Level) -> Self {
         Self {
             hp: Self::hp(pokemon.base.hp, ivs.hp, evs.hp, level),

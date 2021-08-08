@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 use tinystr::TinyStr16;
-use hashbrown::HashMap;
 
 use crate::id::{Dex, Identifiable, IdentifiableRef};
 
@@ -13,7 +12,7 @@ mod uses;
 pub use stack::*;
 pub use uses::*;
 
-pub type ItemId = TinyStr16;
+pub type ItemId = <Item as Identifiable>::Id;
 pub type StackSize = u16;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -32,33 +31,18 @@ pub struct Item {
 }
 
 impl Identifiable for Item {
-    type Id = ItemId;
+    type Id = TinyStr16;
+
+    const UNKNOWN: Self::Id = crate::id::UNKNOWN_ID;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
 }
 
-pub struct Itemdex;
+pub type Itemdex = Dex<Item>;
 
-pub type ItemRef = IdentifiableRef<Itemdex>;
-
-#[deprecated(note = "remove static variables")]
-static mut ITEMDEX: Option<HashMap<ItemId, Item>> = None;
-
-impl Dex for Itemdex {
-    type Kind = Item;
-
-    const UNKNOWN: ItemId = crate::id::UNKNOWN_ID;
-
-    fn dex() -> &'static HashMap<ItemId, Self::Kind> {
-        unsafe { ITEMDEX.as_ref().unwrap() }
-    }
-
-    fn dex_mut() -> &'static mut Option<HashMap<ItemId, Self::Kind>> {
-        unsafe { &mut ITEMDEX }
-    }
-}
+pub type ItemRef<'a> = IdentifiableRef<'a, Item>;
 
 pub const fn default_stack_size() -> StackSize {
     999

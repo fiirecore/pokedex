@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pokemon::stat::{FullStatType, Stage},
-    status::{Status, StatusRange},
+    ailment::{Ailment, AilmentLength},
 };
 
 mod damage;
@@ -18,7 +18,7 @@ pub type Percent = u8; // 0 to 100
 // #[serde(deny_unknown_fields)]
 pub enum MoveUseType {
     Damage(DamageKind),
-    Status(Status, StatusRange, Percent),
+    Ailment(Ailment, AilmentLength, Percent),
     // Ailment(Ailment, f32),
     Drain(DamageKind, i8),
     StatStage(FullStatType, Stage),

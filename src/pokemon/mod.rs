@@ -5,16 +5,15 @@ use core::{
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
-    moves::{MoveId, MoveInstance, MoveInstanceSet, Movedex},
+    moves::{MoveCategory, MoveId, UninitMoveSet},
     pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
-        stat::Stats,
+        stat::{BaseStatSet, BaseStat, StatType, Stats},
     },
-    types::PokemonType,
+    types::{Effective, PokemonType},
 };
 
 use arrayvec::ArrayVec;
-use hashbrown::HashMap;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +24,7 @@ pub use instance::*;
 pub mod data;
 pub mod stat;
 
-pub type PokemonId = u16;
+pub type PokemonId = <Pokemon as Identifiable>::Id;
 pub type Level = u8;
 pub type Experience = u32;
 pub type Friendship = u8;
@@ -52,30 +51,42 @@ pub struct Pokemon {
 pub type Party<P> = ArrayVec<[P; 6]>;
 
 impl Pokemon {
-    pub fn generate_moves(&self, level: Level) -> MoveInstanceSet {
-        let mut moves2 = self
+    pub fn generate_moves(&self, level: Level) -> UninitMoveSet {
+        let mut learnable = self
             .moves
             .iter()
             .filter(|learnable_move| learnable_move.level <= level)
             .map(|learnable_move| learnable_move.id)
-            .rev()
-            .flat_map(|id| Movedex::try_get(&id))
-            .map(MoveInstance::new)
-            .collect::<Vec<MoveInstance>>();
-        moves2.dedup();
-        moves2.truncate(4);
-        let mut moves = MoveInstanceSet::new();
-        moves.extend(moves2);
+            .rev();
+        
+        let mut moves = UninitMoveSet::new();
+
+        while !moves.is_full() {
+            match learnable.next() {
+                Some(m) => if !moves.iter().any(|i| i.m == m) {
+                    moves.push(m.into());
+                }
+                None => break,
+            }
+        }
+
         moves
+
     }
 
-    pub fn generate_gender(&self, random: &mut impl Rng) -> Gender {
-        match self.breeding.gender {
-            Some(percentage) => match random.gen_range(Gender::RANGE) > percentage {
-                true => Gender::Male,
-                false => Gender::Female,
-            },
-            None => Gender::None,
+    pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
+        self.breeding.gender.map(|percentage| match random.gen_range(Gender::RANGE) > percentage {
+            true => Gender::Male,
+            false => Gender::Female,
+        })
+    }
+
+    pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
+        let primary = user.effective(self.primary_type, category);
+        if let Some(secondary) = self.secondary_type {
+            primary * user.effective(secondary, category)
+        } else {
+            primary
         }
     }
 
@@ -100,44 +111,57 @@ impl Pokemon {
             .into_iter()
             .flat_map(move |level| self.moves_at_level(level))
     }
+
+    pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
+        match stat {
+            StatType::Health => {
+                BaseStatSet::hp(self.base.hp, ivs.hp, evs.hp, level)
+            }
+            StatType::Attack => {
+                BaseStatSet::stat(self.base.atk, ivs.atk, evs.atk, level)
+            }
+            StatType::Defense => {
+                BaseStatSet::stat(self.base.def, ivs.def, evs.def, level)
+            }
+            StatType::SpAttack => BaseStatSet::stat(
+                self.base.sp_atk,
+                ivs.sp_atk,
+                evs.sp_atk,
+                level,
+            ),
+            StatType::SpDefense => BaseStatSet::stat(
+                self.base.sp_def,
+                ivs.sp_def,
+                evs.sp_def,
+                level,
+            ),
+            StatType::Speed => BaseStatSet::stat(
+                self.base.speed,
+                ivs.speed,
+                evs.speed,
+                level,
+            ),
+        }
+    }
+
+    pub const fn default_friendship() -> Friendship {
+        70
+    }
 }
 
 impl Identifiable for Pokemon {
-    type Id = PokemonId;
+    type Id = u16;
+
+    const UNKNOWN: Self::Id = 0;
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
 }
 
-pub struct Pokedex;
+pub type PokemonRef<'a> = IdentifiableRef<'a, Pokemon>;
 
-pub type PokemonRef = IdentifiableRef<Pokedex>;
-
-#[deprecated(note = "remove static variables")]
-static mut POKEDEX: Option<HashMap<PokemonId, Pokemon>> = None;
-
-impl Dex for Pokedex {
-    type Kind = Pokemon;
-
-    const UNKNOWN: PokemonId = 0;
-
-    fn dex() -> &'static HashMap<PokemonId, Self::Kind> {
-        unsafe { POKEDEX.as_ref().unwrap() }
-    }
-
-    fn dex_mut() -> &'static mut Option<HashMap<PokemonId, Self::Kind>> {
-        unsafe { &mut POKEDEX }
-    }
-}
-
-pub fn default_iv() -> Stats {
-    Stats::uniform(15)
-}
-
-pub const fn default_friendship() -> Friendship {
-    70
-}
+pub type Pokedex = Dex<Pokemon>;
 
 impl Debug for Pokemon {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {

@@ -12,7 +12,6 @@ pub use training::*;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum Gender {
-    None,
     Male,
     Female,
 }

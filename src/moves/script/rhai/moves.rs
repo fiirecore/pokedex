@@ -11,6 +11,11 @@ use crate::{
 pub struct ScriptMove(*const Move);
 
 impl ScriptMove {
+
+    pub fn new(m: &Move) -> Self {
+        Self(m as *const _)
+    }
+
     pub fn get_category(&mut self) -> MoveCategory {
         self.category
     }
