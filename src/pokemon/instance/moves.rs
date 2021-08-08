@@ -7,7 +7,7 @@ use crate::{
     moves::{
         script::MoveEngine,
         usage::{DamageKind, DamageResult, MoveResult, MoveUseType, NoHitResult},
-        CriticalRate, Move, MoveCategory, MoveInstance, Power,
+        CriticalRate, Move, MoveCategory, MoveInstance, Power, MoveId,
     },
     pokemon::{stat::StatStage, Health},
     types::{Effective, PokemonType},
@@ -21,7 +21,7 @@ impl<'a> super::InitPokemon<'a> {
         engine: &mut E,
         move_index: usize,
         targets: HashMap<ID, &Self>,
-    ) -> Option<(&Move, HashMap<ID, Vec<MoveResult>>)> {
+    ) -> Option<(MoveId, HashMap<ID, Vec<MoveResult>>)> {
         let used_move = self
             .moves
             .get(move_index)
@@ -38,7 +38,7 @@ impl<'a> super::InitPokemon<'a> {
             })
             .collect();
 
-        Some((used_move, targets))
+        Some((used_move.id, targets))
     }
 
     pub fn use_move_on_target<R: Rng + Clone + 'static, E: MoveEngine>(
