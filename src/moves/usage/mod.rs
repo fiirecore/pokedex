@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pokemon::stat::{FullStatType, Stage},
     ailment::{Ailment, AilmentLength},
+    pokemon::stat::{Stage, StatType},
 };
 
 mod damage;
@@ -21,7 +21,7 @@ pub enum MoveUseType {
     Ailment(Ailment, AilmentLength, Percent),
     // Ailment(Ailment, f32),
     Drain(DamageKind, i8),
-    StatStage(FullStatType, Stage),
+    StatStage(StatType, Stage),
     Flinch,
     Chance(Vec<Self>, Percent),
     User(Vec<Self>),
@@ -30,12 +30,12 @@ pub enum MoveUseType {
 }
 
 impl MoveUseType {
-
     pub(crate) fn usages(&self) -> usize {
         match self {
-            MoveUseType::Chance(uses, ..) | MoveUseType::User(uses) => uses.iter().map(Self::usages).sum(),
+            MoveUseType::Chance(uses, ..) | MoveUseType::User(uses) => {
+                uses.iter().map(Self::usages).sum()
+            }
             _ => 1,
         }
     }
-
 }

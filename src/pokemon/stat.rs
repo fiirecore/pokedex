@@ -4,25 +4,35 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 pub type Stat = u8;
+pub type BaseStat = u16;
+pub type Stage = i8;
 pub type Stats = StatSet<Stat>;
-
-mod base;
-pub use base::*;
-
-mod full;
-pub use full::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum StatType {
     Health,
     Attack,
     Defense,
+    /// Special Attack
     SpAttack,
+    /// Special Defense
     SpDefense,
+    /// The speed of a pokemon decides if it moves before another. If a pokemon's speed is higher than another's, it goes first.
     Speed,
+
+    /// Chance to land an attack. Does not have a base statistic, only a stage.
+    Accuracy,
+    /// Change to avoid an attack. Does not have a base statistic, only a stage.
+    Evasion,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct StatStage {
+    pub stat: StatType,
+    pub stage: Stage,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
 pub struct StatSet<S> {
     pub hp: S,
     pub atk: S,
@@ -32,7 +42,7 @@ pub struct StatSet<S> {
     pub speed: S,
 }
 
-impl<S: Sized + Copy> StatSet<S> {
+impl<S: Copy> StatSet<S> {
     pub fn uniform(stat: S) -> Self {
         Self {
             hp: stat,
@@ -41,30 +51,6 @@ impl<S: Sized + Copy> StatSet<S> {
             sp_atk: stat,
             sp_def: stat,
             speed: stat,
-        }
-    }
-}
-
-impl<S> StatSet<S> {
-    pub fn get(&self, stat: StatType) -> &S {
-        match stat {
-            StatType::Health => &self.hp,
-            StatType::Attack => &self.atk,
-            StatType::Defense => &self.def,
-            StatType::SpAttack => &self.sp_atk,
-            StatType::SpDefense => &self.sp_def,
-            StatType::Speed => &self.speed,
-        }
-    }
-
-    pub fn get_mut(&mut self, stat: StatType) -> &mut S {
-        match stat {
-            StatType::Health => &mut self.hp,
-            StatType::Attack => &mut self.atk,
-            StatType::Defense => &mut self.def,
-            StatType::SpAttack => &mut self.sp_atk,
-            StatType::SpDefense => &mut self.sp_def,
-            StatType::Speed => &mut self.speed,
         }
     }
 }
@@ -85,8 +71,20 @@ impl Stats {
             speed: random.gen_range(Self::EV_RANGE),
         }
     }
-}
 
-pub fn default_iv() -> Stats {
-    Stats::uniform(15)
+    pub fn get(&self, stat: StatType) -> Stat {
+        match stat {
+            StatType::Health => self.hp,
+            StatType::Attack => self.atk,
+            StatType::Defense => self.def,
+            StatType::SpAttack => self.sp_atk,
+            StatType::SpDefense => self.sp_def,
+            StatType::Speed => self.speed,
+            stat => panic!("Cannot get stat for {:?}", stat),
+        }
+    }
+
+    pub fn default_iv() -> Self {
+        Self::uniform(15)
+    }
 }

@@ -8,12 +8,11 @@ use crate::{
     moves::{MoveCategory, MoveId, UninitMoveSet},
     pokemon::{
         data::{Breeding, Gender, LearnableMove, PokedexData, Training},
-        stat::{BaseStatSet, BaseStat, StatType, Stats},
+        stat::{BaseStat, Stat, StatType, Stats},
     },
     types::{Effective, PokemonType},
 };
 
-use arrayvec::ArrayVec;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +47,7 @@ pub struct Pokemon {
     pub moves: Vec<LearnableMove>,
 }
 
-pub type Party<P> = ArrayVec<[P; 6]>;
+pub type Party<P> = arrayvec::ArrayVec<[P; 6]>;
 
 impl Pokemon {
     pub fn generate_moves(&self, level: Level) -> UninitMoveSet {
@@ -58,27 +57,30 @@ impl Pokemon {
             .filter(|learnable_move| learnable_move.level <= level)
             .map(|learnable_move| learnable_move.id)
             .rev();
-        
+
         let mut moves = UninitMoveSet::new();
 
         while !moves.is_full() {
             match learnable.next() {
-                Some(m) => if !moves.iter().any(|i| i.m == m) {
-                    moves.push(m.into());
+                Some(m) => {
+                    if !moves.iter().any(|i| i.m == m) {
+                        moves.push(m.into());
+                    }
                 }
                 None => break,
             }
         }
 
         moves
-
     }
 
     pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
-        self.breeding.gender.map(|percentage| match random.gen_range(Gender::RANGE) > percentage {
-            true => Gender::Male,
-            false => Gender::Female,
-        })
+        self.breeding.gender.map(
+            |percentage| match random.gen_range(Gender::RANGE) > percentage {
+                true => Gender::Male,
+                false => Gender::Female,
+            },
+        )
     }
 
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
@@ -114,34 +116,23 @@ impl Pokemon {
 
     pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
         match stat {
-            StatType::Health => {
-                BaseStatSet::hp(self.base.hp, ivs.hp, evs.hp, level)
-            }
-            StatType::Attack => {
-                BaseStatSet::stat(self.base.atk, ivs.atk, evs.atk, level)
-            }
-            StatType::Defense => {
-                BaseStatSet::stat(self.base.def, ivs.def, evs.def, level)
-            }
-            StatType::SpAttack => BaseStatSet::stat(
-                self.base.sp_atk,
-                ivs.sp_atk,
-                evs.sp_atk,
-                level,
-            ),
-            StatType::SpDefense => BaseStatSet::stat(
-                self.base.sp_def,
-                ivs.sp_def,
-                evs.sp_def,
-                level,
-            ),
-            StatType::Speed => BaseStatSet::stat(
-                self.base.speed,
-                ivs.speed,
-                evs.speed,
-                level,
-            ),
+            StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
+            StatType::Accuracy | StatType::Evasion => 100,
+            stat => Self::base_stat(self.base.get(stat), ivs.get(stat), evs.get(stat), level),
         }
+    }
+
+    pub fn base_stat(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
+        //add item check
+        let nature = 1.0;
+        (((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + 5.0).floor()
+            * nature)
+            .floor() as BaseStat
+    }
+
+    pub fn base_hp(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
+        ((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + level as f32 + 10.0)
+            .floor() as BaseStat
     }
 
     pub const fn default_friendship() -> Friendship {

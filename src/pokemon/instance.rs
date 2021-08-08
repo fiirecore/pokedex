@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ailment::LiveAilment,
-    item::ItemId,
-    moves::{InitMove, MoveId, MoveSet, Movedex, UninitMove, MOVESET_LENGTH, PP},
+    item::{ItemId, ItemRef, Itemdex},
+    moves::{MoveId, MoveInstance, MoveRef, MoveSet, Movedex, MOVESET_LENGTH, PP},
     pokemon::{
-        stat::{default_iv, BaseStat, StatType, Stats},
+        stat::{BaseStat, StatType, Stats},
         Experience, Friendship, Gender, Health, Level, Party, Pokedex, Pokemon, PokemonId,
         PokemonRef,
     },
@@ -17,14 +17,14 @@ mod exp;
 mod item;
 mod moves;
 
-pub type UninitPokemon = PokemonInstance<PokemonId, UninitMove>;
-pub type InitPokemon<'a> = PokemonInstance<PokemonRef<'a>, InitMove<'a>>;
+pub type UninitPokemon = PokemonInstance<PokemonId, MoveId, ItemId>;
+pub type InitPokemon<'a> = PokemonInstance<PokemonRef<'a>, MoveRef<'a>, ItemRef<'a>>;
 
 pub type UninitParty = Party<UninitPokemon>;
 pub type InitParty<'a> = Party<InitPokemon<'a>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PokemonInstance<P, M> {
+pub struct PokemonInstance<P, M, I> {
     /// Pokemon Identifier
     pub pokemon: P,
 
@@ -38,19 +38,19 @@ pub struct PokemonInstance<P, M> {
     #[serde(default)]
     pub gender: Option<Gender>,
 
-    #[serde(default)]
-    pub moves: MoveSet<M>,
+    #[serde(default = "MoveSet::new")]
+    pub moves: MoveSet<MoveInstance<M>>,
 
-    #[serde(default = "default_hp_marker")]
+    #[serde(default = "UninitPokemon::default_hp_marker")]
     pub hp: Health,
 
     #[serde(default)]
-    pub item: Option<ItemId>,
+    pub item: Option<I>,
 
     #[serde(default)]
     pub ailment: Option<LiveAilment>,
 
-    #[serde(default = "default_iv")]
+    #[serde(default = "Stats::default_iv")]
     pub ivs: Stats,
     #[serde(default)]
     pub evs: Stats,
@@ -62,20 +62,16 @@ pub struct PokemonInstance<P, M> {
     pub friendship: Friendship,
 }
 
-impl<P, M> PokemonInstance<P, M> {
+impl<P, M, I> PokemonInstance<P, M, I> {
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
 
-    pub fn replace_move(&mut self, index: usize, m: M) {
+    pub fn replace_move(&mut self, index: usize, m: MoveInstance<M>) {
         if index < MOVESET_LENGTH {
             self.moves[index] = m;
         }
     }
-}
-
-pub fn default_hp_marker() -> Health {
-    Health::MAX
 }
 
 impl UninitPokemon {
@@ -92,7 +88,7 @@ impl UninitPokemon {
             level,
             gender: gender,
             moves: Default::default(),
-            hp: default_hp_marker(),
+            hp: Self::default_hp_marker(),
             ivs: ivs.unwrap_or_else(|| Stats::random(random)),
             evs: Default::default(),
             item: None,
@@ -107,6 +103,7 @@ impl UninitPokemon {
         random: &mut impl Rng,
         pokedex: &'a Pokedex,
         movedex: &'a Movedex,
+        itemdex: &'a Itemdex,
     ) -> Option<InitPokemon<'a>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let moves = if self.moves.is_empty() {
@@ -117,6 +114,7 @@ impl UninitPokemon {
         .into_iter()
         .flat_map(|i| i.init(movedex))
         .collect();
+        let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
         let gender = self.gender.or_else(|| pokemon.generate_gender(random));
         Some(InitPokemon {
             pokemon,
@@ -129,9 +127,13 @@ impl UninitPokemon {
             friendship: self.friendship,
             moves,
             ailment: self.ailment,
-            item: self.item,
+            item,
             hp: self.hp,
         })
+    }
+
+    pub fn default_hp_marker() -> Health {
+        Health::MAX
     }
 }
 
@@ -184,7 +186,7 @@ impl<'a> From<InitPokemon<'a>> for UninitPokemon {
             gender: p.gender,
             moves: p.moves.into_iter().map(Into::into).collect(),
             hp: p.hp,
-            item: p.item,
+            item: p.item.map(|item| item.id),
             ailment: p.ailment,
             ivs: p.ivs,
             evs: p.evs,
