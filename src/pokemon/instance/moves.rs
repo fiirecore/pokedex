@@ -16,19 +16,17 @@ use crate::{
 impl<'a> super::InitPokemon<'a> {
     // To - do: uses PP on use
     pub fn use_own_move<ID: Eq + Hash, R: Rng + Clone + 'static, E: MoveEngine>(
-        &mut self,
+        &self,
         random: &mut R,
         engine: &mut E,
         move_index: usize,
         targets: HashMap<ID, &Self>,
     ) -> Option<(&Move, HashMap<ID, Vec<MoveResult>>)> {
-        self
+        let used_move = self
             .moves
-            .get_mut(move_index)
+            .get(move_index)
             .map(MoveInstance::try_use)
             .flatten()?;
-
-        let used_move = &*self.moves[move_index].m;
 
         let targets = targets
             .into_iter()

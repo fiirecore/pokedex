@@ -17,12 +17,9 @@ pub struct MoveInstance<M> {
 }
 
 impl<M> MoveInstance<M> {
-    pub fn try_use(&mut self) -> Option<&M> {
+    pub fn try_use(&self) -> Option<&M> {
         match self.empty() {
-            false => {
-                self.decrement();
-                Some(&self.m)
-            }
+            false => Some(&self.m),
             true => None,
         }
     }
