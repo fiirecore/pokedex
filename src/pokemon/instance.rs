@@ -24,6 +24,11 @@ pub type UninitParty = Party<UninitPokemon>;
 pub type InitParty<'a> = Party<InitPokemon<'a>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Test {
+    Send(UninitPokemon),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PokemonInstance<P, M, I> {
     /// Pokemon Identifier
     pub pokemon: P,
@@ -44,7 +49,7 @@ pub struct PokemonInstance<P, M, I> {
     #[serde(default = "UninitPokemon::default_hp_marker")]
     pub hp: Health,
 
-    #[serde(default)]
+    #[serde(default = "Option::default")]
     pub item: Option<I>,
 
     #[serde(default)]
@@ -84,17 +89,17 @@ impl UninitPokemon {
     ) -> Self {
         Self {
             pokemon,
-            nickname: None,
             level,
-            gender: gender,
-            moves: Default::default(),
-            hp: Self::default_hp_marker(),
+            gender,
             ivs: ivs.unwrap_or_else(|| Stats::random(random)),
-            evs: Default::default(),
-            item: None,
-            ailment: None,
-            experience: 0,
             friendship: Pokemon::default_friendship(),
+            hp: Self::default_hp_marker(),
+            nickname: Default::default(),
+            moves: Default::default(),
+            evs: Default::default(),
+            item: Default::default(),
+            ailment: Default::default(),
+            experience: Default::default(),
         }
     }
 
