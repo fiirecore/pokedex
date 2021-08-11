@@ -13,7 +13,10 @@ pub enum DamageKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DamageResult<INT> {
+    /// Inflicted damage
     pub damage: INT,
+    /// Whether the attack was effective
     pub effective: Effective,
+    /// If the attack was a critical hit
     pub crit: bool,
 }

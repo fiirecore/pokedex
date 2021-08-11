@@ -3,7 +3,7 @@ use core::ops::{Deref, DerefMut};
 use rand::Rng;
 use rhai::INT;
 
-use crate::pokemon::PokemonInstance;
+use crate::pokemon::OwnedPokemon as P;
 
 #[derive(Clone)]
 pub struct ScriptRandom<R: Rng + Clone + 'static>(*mut R);
@@ -13,10 +13,10 @@ impl<R: Rng + Clone + 'static> ScriptRandom<R> {
         Self(random as _)
     }
     pub fn crit(&mut self, rate: INT) -> bool {
-        PokemonInstance::crit(self.deref_mut(), rate as _)
+        P::crit(self.deref_mut(), rate as _)
     }
     pub fn damage_range(&mut self) -> INT {
-        PokemonInstance::damage_range(self.deref_mut()) as _
+        P::damage_range(self.deref_mut()) as _
     }
 }
 

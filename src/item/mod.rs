@@ -2,15 +2,16 @@ use serde::{Deserialize, Serialize};
 
 use tinystr::TinyStr16;
 
-use crate::id::{Dex, Identifiable, IdentifiableRef};
+use crate::{
+    id::{Dex, Identifiable, IdentifiableRef},
+    item::usage::ItemUsage,
+};
 
 pub mod bag;
-pub mod script;
-mod stack;
-mod uses;
+pub mod usage;
 
+mod stack;
 pub use stack::*;
-pub use uses::*;
 
 pub type ItemId = <Item as Identifiable>::Id;
 pub type StackSize = u16;
@@ -26,8 +27,8 @@ pub struct Item {
     #[serde(default = "default_stack_size")]
     pub stack_size: StackSize,
 
-    #[serde(default, rename = "use")]
-    pub usage: ItemUseType,
+    #[serde(default)]
+    pub usage: ItemUsage,
 }
 
 impl Identifiable for Item {

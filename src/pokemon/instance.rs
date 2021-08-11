@@ -8,7 +8,7 @@ use crate::{
     moves::{MoveId, MoveInstance, MoveRef, MoveSet, Movedex, MOVESET_LENGTH, PP},
     pokemon::{
         stat::{BaseStat, StatType, Stats},
-        Experience, Friendship, Gender, Health, Level, Party, Pokedex, Pokemon, PokemonId,
+        Experience, Friendship, Gender, Health, Level, Pokedex, Pokemon, PokemonId,
         PokemonRef,
     },
 };
@@ -17,19 +17,11 @@ mod exp;
 mod item;
 mod moves;
 
-pub type UninitPokemon = PokemonInstance<PokemonId, MoveId, ItemId>;
-pub type InitPokemon<'a> = PokemonInstance<PokemonRef<'a>, MoveRef<'a>, ItemRef<'a>>;
-
-pub type UninitParty = Party<UninitPokemon>;
-pub type InitParty<'a> = Party<InitPokemon<'a>>;
+pub type UninitPokemon = OwnedPokemon<PokemonId, MoveId, ItemId>;
+pub type InitPokemon<'a> = OwnedPokemon<PokemonRef<'a>, MoveRef<'a>, ItemRef<'a>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Test {
-    Send(UninitPokemon),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PokemonInstance<P, M, I> {
+pub struct OwnedPokemon<P, M, I> {
     /// Pokemon Identifier
     pub pokemon: P,
 
@@ -67,7 +59,7 @@ pub struct PokemonInstance<P, M, I> {
     pub friendship: Friendship,
 }
 
-impl<P, M, I> PokemonInstance<P, M, I> {
+impl<P, M, I> OwnedPokemon<P, M, I> {
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
@@ -180,25 +172,31 @@ impl<'a> InitPokemon<'a> {
     pub fn moves_at_level(&self) -> impl Iterator<Item = MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
     }
-}
 
-impl<'a> From<InitPokemon<'a>> for UninitPokemon {
-    fn from(p: InitPokemon<'a>) -> Self {
-        Self {
-            pokemon: p.pokemon.id,
-            level: p.level,
-            nickname: p.nickname,
-            gender: p.gender,
-            moves: p.moves.into_iter().map(Into::into).collect(),
-            hp: p.hp,
-            item: p.item.map(|item| item.id),
-            ailment: p.ailment,
-            ivs: p.ivs,
-            evs: p.evs,
-            experience: p.experience,
-            friendship: p.friendship,
+    pub fn uninit(self) -> UninitPokemon {
+        UninitPokemon {
+            pokemon: self.pokemon.id,
+            level: self.level,
+            nickname: self.nickname,
+            gender: self.gender,
+            moves: self.moves.into_iter().map(Into::into).collect(),
+            hp: self.hp,
+            item: self.item.map(|item| item.id),
+            ailment: self.ailment,
+            ivs: self.ivs,
+            evs: self.evs,
+            experience: self.experience,
+            friendship: self.friendship,
         }
     }
+
+    pub fn use_held_item(&mut self) -> bool {
+        match self.item.take() {
+            Some(item) => self.try_use_item(&item),
+            None => false,
+        }
+    }
+
 }
 
 impl Display for UninitPokemon {

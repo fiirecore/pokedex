@@ -10,7 +10,7 @@ mod training;
 pub use breeding::*;
 pub use training::*;
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Gender {
     Male,
     Female,
@@ -27,7 +27,7 @@ pub struct PokedexData {
     pub weight: u16,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LearnableMove {
     #[serde(rename = "move")]
     pub id: MoveId,

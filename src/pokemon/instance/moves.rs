@@ -6,10 +6,10 @@ use rand::Rng;
 use crate::{
     moves::{
         script::MoveEngine,
-        usage::{DamageKind, DamageResult, MoveResult, MoveUseType, NoHitResult},
+        usage::{DamageKind, DamageResult, MoveResult, MoveUsageKind, MoveAction, NoHitResult, MoveResults},
         CriticalRate, Move, MoveCategory, MoveInstance, Power, MoveId,
     },
-    pokemon::{stat::StatStage, Health},
+    pokemon::Health,
     types::{Effective, PokemonType},
 };
 
@@ -21,7 +21,7 @@ impl<'a> super::InitPokemon<'a> {
         engine: &mut E,
         move_index: usize,
         targets: HashMap<ID, &Self>,
-    ) -> Option<(MoveId, HashMap<ID, Vec<MoveResult>>)> {
+    ) -> Option<(MoveId, HashMap<ID, MoveResults>)> {
         let used_move = self
             .moves
             .get(move_index)
@@ -47,7 +47,7 @@ impl<'a> super::InitPokemon<'a> {
         engine: &mut E,
         used_move: &Move,
         target: &Self,
-    ) -> Vec<MoveResult> {
+    ) -> MoveResults {
         let hit = used_move
             .accuracy
             .map(|accuracy| {
@@ -57,14 +57,21 @@ impl<'a> super::InitPokemon<'a> {
             .unwrap_or(true);
 
         match hit {
-            false => vec![MoveResult::NoHit(NoHitResult::Miss)],
+            false => 
+            MoveResults {
+                user: Default::default(),
+                target: vec![MoveResult::NoHit(NoHitResult::Miss)],
+            },
             true => {
-                let mut results = Vec::with_capacity(used_move.usages());
+                let mut results = 
+                MoveResults {
+                    user: Vec::with_capacity(used_move.usage.user.len()),
+                    target: Vec::with_capacity(used_move.usage.target.len()),
+                };
                 self.move_usage(
                     random,
                     engine,
                     &mut results,
-                    &used_move.usage,
                     used_move,
                     target,
                 );
@@ -77,14 +84,53 @@ impl<'a> super::InitPokemon<'a> {
         &self,
         random: &mut R,
         engine: &mut E,
-        results: &mut Vec<MoveResult>,
-        usage: &Vec<MoveUseType>,
+        results: &mut MoveResults,
         used_move: &Move,
         target: &Self,
     ) {
-        for usage in usage {
-            match usage {
-                MoveUseType::Damage(kind) => {
+        self.move_usages(random, engine, &mut results.target, used_move, &used_move.usage.target, target, false);
+        self.move_usages(random, engine, &mut results.user, used_move, &used_move.usage.user, self, true);
+    }
+
+    fn move_usages<R: Rng + Clone + 'static, E: MoveEngine>(
+        &self,
+        random: &mut R,
+        engine: &mut E,
+        results: &mut Vec<MoveResult>,
+        used_move: &Move,
+        usage: &MoveUsageKind,
+        target: &Self,
+        is_user: bool,
+    ) {
+        match usage {
+            MoveUsageKind::Actions(actions) => self.move_actions(random, results, actions, used_move, target),
+            MoveUsageKind::Script => {
+                match engine.execute(random, used_move, self, target, is_user) {
+                    Ok(script_results) => results.extend(script_results),
+                    Err(err) => {
+                        error!(
+                            "Could not execute move script for {} with error {}",
+                            used_move.name, err
+                        );
+                        results.push(MoveResult::NoHit(NoHitResult::Error));
+                    }
+                }
+            }
+            MoveUsageKind::Todo => results.push(MoveResult::NoHit(NoHitResult::Todo)),
+        }
+    }
+
+    fn move_actions<R: Rng + Clone + 'static>(
+        &self,
+        random: &mut R,
+        results: &mut Vec<MoveResult>,
+        actions: &Vec<MoveAction>,
+        used_move: &Move,
+        target: &Self,
+    ) {
+        for action in actions {
+            match action {
+                MoveAction::Damage(kind) => {
                     results.push(
                         match self.damage_kind(
                             random,
@@ -99,14 +145,14 @@ impl<'a> super::InitPokemon<'a> {
                         },
                     );
                 }
-                MoveUseType::Ailment(status, length, chance) => {
+                MoveAction::Ailment(status, length, chance) => {
                     if target.ailment.is_none() {
                         if random.gen_bool(*chance as f64 / 100.0) {
-                            results.push(MoveResult::Status(length.init(*status, random)));
+                            results.push(MoveResult::Ailment(length.init(*status, random)));
                         }
                     }
                 }
-                MoveUseType::Drain(kind, percent) => {
+                MoveAction::Drain(kind, percent) => {
                     results.push(
                         match self.damage_kind(
                             random,
@@ -124,44 +170,22 @@ impl<'a> super::InitPokemon<'a> {
                         },
                     );
                 }
-                MoveUseType::StatStage(stat, stage) => {
-                    let stat = StatStage {
-                        stat: *stat,
-                        stage: *stage,
-                    };
-                    log::error!("to-do: stat stage check");
+                MoveAction::Stat(stat, stage) => {
+                    log::debug!("to-do: maybe stat stage check");
                     // if target.stages.can_change_stage(&stat) {
-                    results.push(MoveResult::StatStage(stat));
+                    results.push(MoveResult::Stat(*stat, *stage));
                     // }
                 }
+                MoveAction::Accuracy(stage) => results.push(MoveResult::Accuracy(*stage)),
+                MoveAction::Evasion(stage) => results.push(MoveResult::Evasion(*stage)),
                 // MoveUseType::Linger(..) => {
                 // 	results.insert(target.instance, Some(MoveResult::Todo));
                 // }
-                MoveUseType::Flinch => results.push(MoveResult::Flinch),
-                MoveUseType::Chance(usage, chance) => {
+                MoveAction::Flinch => results.push(MoveResult::Flinch),
+                MoveAction::Chance(actions, chance) => {
                     if random.gen_range(0..=100) < *chance {
-                        self.move_usage(random, engine, results, usage, used_move, target);
+                        self.move_actions(random, results, actions, used_move, target);
                     }
-                }
-                MoveUseType::User(usage) => {
-                    // if !results.contains_key(&MoveTargetLocation::User) {
-                    self.move_usage(random, engine, results, usage, used_move, self);
-                    // }
-                }
-                MoveUseType::Script(script) => {
-                    match engine.execute(script, random, used_move, self, target) {
-                        Ok(script_results) => results.extend(script_results),
-                        Err(err) => {
-                            error!(
-                                "Could not execute move script for {} with error {}",
-                                used_move.name, err
-                            );
-                            results.push(MoveResult::NoHit(NoHitResult::Error));
-                        }
-                    }
-                }
-                MoveUseType::Todo => {
-                    results.push(MoveResult::NoHit(NoHitResult::Todo));
                 }
             }
         }

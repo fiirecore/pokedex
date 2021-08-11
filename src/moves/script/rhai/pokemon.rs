@@ -1,5 +1,6 @@
-use core::ops::Deref;
+use core::{ops::{Deref, DerefMut}, marker::PhantomData};
 
+use rand::Rng;
 use rhai::INT;
 
 use crate::{
@@ -10,35 +11,36 @@ use crate::{
     types::{Effective, PokemonType},
 };
 
-use super::ScriptDamage;
+use super::{ScriptDamage, ScriptRandom};
 
 #[derive(Clone, Copy)]
-pub struct ScriptPokemon(*const InitPokemon<'static>);
+pub struct ScriptPokemon<R: Rng + Clone + 'static>(*const InitPokemon<'static>, PhantomData<R>);
 
-impl ScriptPokemon {
+impl<R: Rng + Clone + 'static> ScriptPokemon<R> {
 
     pub fn new<'a>(pokemon: &InitPokemon<'a>) -> Self {
         let p = pokemon as *const InitPokemon<'a>;
         let p = unsafe { core::mem::transmute::<*const InitPokemon<'a>, *const InitPokemon<'static>>(p) };
-        Self(p)
+        Self(p, PhantomData)
     }
 
     pub fn get_damage(
         &mut self,
-        target: ScriptPokemon,
+        random: ScriptRandom<R>,
+        target: ScriptPokemon<R>,
         power: INT,
         category: MoveCategory,
         move_type: PokemonType,
-        crit: bool,
-        damage_range: INT,
+        crit_rate: INT,
     ) -> ScriptDamage {
-        self.move_power_damage(
+        let mut random = random;
+        self.move_power_damage_random(
+            random.deref_mut(),
             &target,
             power as _,
             category,
             move_type,
-            crit,
-            damage_range as _,
+            crit_rate as _,
         )
         .map(ScriptDamage::from)
         .unwrap_or(
@@ -56,7 +58,7 @@ impl ScriptPokemon {
 
 }
 
-impl Deref for ScriptPokemon {
+impl<R: Rng + Clone + 'static> Deref for ScriptPokemon<R> {
     type Target = InitPokemon<'static>;
 
     fn deref(&self) -> &Self::Target {

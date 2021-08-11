@@ -19,20 +19,9 @@ pub enum StatType {
     SpDefense,
     /// The speed of a pokemon decides if it moves before another. If a pokemon's speed is higher than another's, it goes first.
     Speed,
-
-    /// Chance to land an attack. Does not have a base statistic, only a stage.
-    Accuracy,
-    /// Change to avoid an attack. Does not have a base statistic, only a stage.
-    Evasion,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct StatStage {
-    pub stat: StatType,
-    pub stage: Stage,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct StatSet<S> {
     pub hp: S,
     pub atk: S,
@@ -80,7 +69,6 @@ impl Stats {
             StatType::SpAttack => self.sp_atk,
             StatType::SpDefense => self.sp_def,
             StatType::Speed => self.speed,
-            stat => panic!("Cannot get stat for {:?}", stat),
         }
     }
 

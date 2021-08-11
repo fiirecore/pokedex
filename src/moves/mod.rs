@@ -5,7 +5,7 @@ use tinystr::{TinyStr16, TinyStr4};
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
-    moves::usage::MoveUseType,
+    moves::usage::MoveUsage,
     types::PokemonType,
 };
 
@@ -51,7 +51,7 @@ pub struct Move {
     #[serde(default)]
     pub priority: Priority,
 
-    pub usage: Vec<MoveUseType>,
+    pub usage: MoveUsage,
 
     #[serde(default)]
     pub target: MoveTarget,
@@ -63,14 +63,6 @@ pub struct Move {
     pub crit_rate: CriticalRate,
 
     pub field_id: Option<FieldMoveId>,
-}
-
-impl Move {
-
-    pub(crate) fn usages(&self) -> usize {
-        self.usage.iter().map(MoveUseType::usages).sum()
-    }
-
 }
 
 impl Identifiable for Move {

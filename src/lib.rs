@@ -1,7 +1,7 @@
+pub mod ailment;
 pub mod item;
 pub mod moves;
 pub mod pokemon;
-pub mod ailment;
 pub mod types;
 
 mod id;

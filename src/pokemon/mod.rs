@@ -1,5 +1,5 @@
 use core::{
-    fmt::{Debug, Display, Formatter, Result as FmtResult},
+    fmt::{Display, Formatter, Result as FmtResult},
     ops::Range,
 };
 
@@ -29,7 +29,7 @@ pub type Experience = u32;
 pub type Friendship = u8;
 pub type Health = stat::BaseStat;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pokemon {
     pub id: PokemonId,
     pub name: String,
@@ -48,6 +48,10 @@ pub struct Pokemon {
 }
 
 pub type Party<P> = arrayvec::ArrayVec<[P; 6]>;
+
+pub type PokemonRef<'a> = IdentifiableRef<'a, Pokemon>;
+
+pub type Pokedex = Dex<Pokemon>;
 
 impl Pokemon {
     pub fn generate_moves(&self, level: Level) -> UninitMoveSet {
@@ -117,7 +121,6 @@ impl Pokemon {
     pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
         match stat {
             StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
-            StatType::Accuracy | StatType::Evasion => 100,
             stat => Self::base_stat(self.base.get(stat), ivs.get(stat), evs.get(stat), level),
         }
     }
@@ -150,18 +153,8 @@ impl Identifiable for Pokemon {
     }
 }
 
-pub type PokemonRef<'a> = IdentifiableRef<'a, Pokemon>;
-
-pub type Pokedex = Dex<Pokemon>;
-
-impl Debug for Pokemon {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        Display::fmt(&self, f)
-    }
-}
-
 impl Display for Pokemon {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "{} ({})", self.name, self.id)
+        write!(f, "#{} {}", self.id, self.name)
     }
 }
