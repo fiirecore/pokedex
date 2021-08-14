@@ -42,3 +42,18 @@ impl<'d, U> DerefMut for MoveRefSet<'d, U> {
         &mut self.set
     }
 }
+
+impl<'d, U> Clone for MoveRefSet<'d, U> {
+    fn clone(&self) -> Self {
+        Self {
+            movedex: self.movedex,
+            set: self.set.clone(),
+        }
+    }
+}
+
+impl<'d, U> core::fmt::Debug for MoveRefSet<'d, U> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        core::fmt::Debug::fmt(&self.set, f)
+    }
+}
