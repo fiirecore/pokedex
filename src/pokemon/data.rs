@@ -1,6 +1,28 @@
+use core::ops::Range;
 use serde::{Deserialize, Serialize};
 
-use crate::pokemon::{Experience, Level};
+use crate::{
+    moves::MoveId,
+    pokemon::{Level, Experience},
+};
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub enum Gender {
+    Male,
+    Female,
+}
+
+impl Gender {
+    pub(crate) const RANGE: Range<u8> = 0..8;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LearnableMove {
+    #[serde(rename = "move")]
+    pub id: MoveId,
+    pub level: Level,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Training {
@@ -10,6 +32,14 @@ pub struct Training {
     //pub ev_yield: Option<(String, usize)>,
     //pub catch_rate: Option<u8>,
     //pub base_friendship: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Breeding {
+    // pub groups: Vec<EggGroup>,
+    /// Pokemon gender chance: None = no gender, 0 = 100% female, 7 = 100% male (0-8 scale)
+    pub gender: Option<u8>,
+    // pub cycles: Option<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
