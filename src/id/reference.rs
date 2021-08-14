@@ -1,4 +1,4 @@
-use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use core::fmt::{Display, Formatter, Result as FmtResult};
 use core::ops::Deref;
 
 use super::Identifiable;
@@ -32,17 +32,3 @@ impl<'a, I: Identifiable> Display for IdentifiableRef<'a, I> {
         Display::fmt(self.id(), f)
     }
 }
-
-impl<'a, I: Identifiable> Debug for IdentifiableRef<'a, I> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        Display::fmt(self.id(), f)
-    }
-}
-
-impl<'a, I: Identifiable> PartialEq for IdentifiableRef<'a, I> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id().eq(other.id())
-    }
-}
-
-impl<'a, I: Identifiable> Eq for IdentifiableRef<'a, I> {}

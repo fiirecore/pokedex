@@ -5,9 +5,9 @@ use core::{
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
-    moves::{MoveCategory, MoveId, UninitMoveSet},
+    moves::{MoveCategory, MoveId, MoveSet, OwnedIdMove},
     pokemon::{
-        data::{Breeding, Gender, LearnableMove, PokedexData, Training},
+        data::{Breeding, Training},
         stat::{BaseStat, Stat, StatType, Stats},
     },
     types::{Effective, PokemonType},
@@ -16,11 +16,12 @@ use crate::{
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-mod instance;
+mod owned;
+pub use owned::*;
 
-pub use instance::*;
+mod data;
+pub use data::*;
 
-pub mod data;
 pub mod stat;
 
 pub type PokemonId = <Pokemon as Identifiable>::Id;
@@ -37,24 +38,26 @@ pub struct Pokemon {
     pub primary_type: PokemonType,
     pub secondary_type: Option<PokemonType>,
 
+    pub moves: Vec<LearnableMove>,
     pub base: Stats,
 
-    pub data: PokedexData,
-
+    pub species: String,
+    pub height: u8,
+    pub weight: u16,
     pub training: Training,
     pub breeding: Breeding,
-
-    pub moves: Vec<LearnableMove>,
 }
 
-pub type Party<P> = arrayvec::ArrayVec<[P; 6]>;
+pub const PARTY_LENGTH: usize = 6;
+
+pub type Party<P> = arrayvec::ArrayVec<[P; PARTY_LENGTH]>;
 
 pub type PokemonRef<'a> = IdentifiableRef<'a, Pokemon>;
 
 pub type Pokedex = Dex<Pokemon>;
 
 impl Pokemon {
-    pub fn generate_moves(&self, level: Level) -> UninitMoveSet {
+    pub fn generate_moves(&self, level: Level) -> MoveSet<OwnedIdMove> {
         let mut learnable = self
             .moves
             .iter()
@@ -62,7 +65,7 @@ impl Pokemon {
             .map(|learnable_move| learnable_move.id)
             .rev();
 
-        let mut moves = UninitMoveSet::new();
+        let mut moves = MoveSet::<OwnedIdMove>::new();
 
         while !moves.is_full() {
             match learnable.next() {

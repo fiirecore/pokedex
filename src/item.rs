@@ -16,6 +16,10 @@ pub use stack::*;
 pub type ItemId = <Item as Identifiable>::Id;
 pub type StackSize = u16;
 
+pub type Itemdex = Dex<Item>;
+
+pub type ItemRef<'a> = IdentifiableRef<'a, Item>;
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Item {
@@ -24,7 +28,10 @@ pub struct Item {
     pub name: String,
     pub description: Vec<String>,
 
-    #[serde(default = "default_stack_size")]
+    #[serde(default)]
+    pub category: ItemCategory,
+
+    #[serde(default = "Item::default_stack_size")]
     pub stack_size: StackSize,
 
     #[serde(default)]
@@ -41,10 +48,23 @@ impl Identifiable for Item {
     }
 }
 
-pub type Itemdex = Dex<Item>;
+impl Item {
 
-pub type ItemRef<'a> = IdentifiableRef<'a, Item>;
+    pub const fn default_stack_size() -> StackSize {
+        999
+    }
+    
+}
 
-pub const fn default_stack_size() -> StackSize {
-    999
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub enum ItemCategory {
+    Items,
+    KeyItems,
+    Pokeballs,
+}
+
+impl Default for ItemCategory {
+    fn default() -> Self {
+        Self::Items
+    }
 }

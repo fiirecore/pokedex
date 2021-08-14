@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::item::{ItemId, ItemRef, StackSize};
+use crate::item::{ItemId, ItemRef, StackSize, Itemdex};
 
-pub type UninitItemStack = ItemStack<ItemId>;
-pub type InitItemStack<'a> = ItemStack<ItemRef<'a>>;
+pub type ItemIdStack = ItemStack<ItemId>;
+pub type ItemRefStack<'a> = ItemStack<ItemRef<'a>>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemStack<I> {
@@ -26,8 +26,19 @@ impl<I> ItemStack<I> {
     }
 }
 
-impl<'a> InitItemStack<'a> {
-    pub fn add(&mut self, stack: InitItemStack<'a>) -> Option<InitItemStack<'a>> {
+impl ItemIdStack {
+
+    pub fn init<'d>(self, itemdex: &'d Itemdex) -> Option<ItemRefStack<'d>> {
+        Some(ItemRefStack {
+            item: itemdex.try_get(&self.item)?,
+            count: self.count,
+        })
+    }
+
+}
+
+impl<'a> ItemRefStack<'a> {
+    pub fn add(&mut self, stack: ItemRefStack<'a>) -> Option<ItemRefStack<'a>> {
         self.count = self.count.saturating_add(stack.count);
         let max = self.item.stack_size;
         match self.count > max {
@@ -40,6 +51,13 @@ impl<'a> InitItemStack<'a> {
                 })
             }
             false => None,
+        }
+    }
+
+    pub fn uninit(self) -> ItemIdStack {
+        ItemIdStack {
+            item: self.item.id,
+            count: self.count,
         }
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub type Stat = u8;
 pub type BaseStat = u16;
-pub type Stage = i8;
+
 pub type Stats = StatSet<Stat>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

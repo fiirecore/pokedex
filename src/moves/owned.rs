@@ -1,22 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-use crate::moves::{MoveId, MoveRef, MoveSet, Movedex, PP};
+use crate::moves::{MoveId, MoveRef, Movedex, PP};
 
-pub type UninitMove = MoveInstance<MoveId>;
-pub type InitMove<'a> = MoveInstance<MoveRef<'a>>;
-
-pub type UninitMoveSet = MoveSet<UninitMove>;
-pub type InitMoveSet<'a> = MoveSet<InitMove<'a>>;
+pub type OwnedIdMove = OwnedMove<MoveId>;
+pub type OwnedRefMove<'d, U> = OwnedMove<MoveRef<'d, U>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MoveInstance<M> {
+pub struct OwnedMove<M> {
     #[serde(rename = "move")]
     pub m: M,
     pub pp: PP,
     // pub decrement: Option<PP>,
 }
 
-impl<M> MoveInstance<M> {
+impl<M> OwnedMove<M> {
     pub fn try_use(&self) -> Option<&M> {
         match self.empty() {
             false => Some(&self.m),
@@ -33,18 +30,18 @@ impl<M> MoveInstance<M> {
     }
 }
 
-impl UninitMove {
+impl OwnedIdMove {
 
-    pub fn init<'a>(self, movedex: &'a Movedex) -> Option<InitMove> {
-        Some(InitMove {
+    pub fn init<'d, U>(self, movedex: &'d Movedex<U>) -> Option<OwnedRefMove<U>> {
+        Some(OwnedRefMove {
             m: movedex.try_get(&self.m)?,
             pp: self.pp,
         })
     }
 }
 
-impl<'a> InitMove<'a> {
-    pub fn new(m: MoveRef<'a>) -> Self {
+impl<'d, U> OwnedRefMove<'d, U> {
+    pub fn new(m: MoveRef<'d, U>) -> Self {
         Self { pp: m.pp, m }
     }
 
@@ -52,19 +49,17 @@ impl<'a> InitMove<'a> {
         self.pp = amount.unwrap_or(self.m.pp).min(self.m.pp)
     }
 
+    pub fn uninit(self) -> OwnedIdMove {
+        OwnedIdMove {
+            m: self.m.id,
+            pp: self.pp,
+        }
+    }
+
 }
 
-impl From<MoveId> for UninitMove {
+impl From<MoveId> for OwnedIdMove {
     fn from(id: MoveId) -> Self {
         Self { m: id, pp: 0 }
-    }
-}
-
-impl<'a> From<InitMove<'a>> for UninitMove {
-    fn from(i: InitMove<'a>) -> Self {
-        Self {
-            m: i.m.id,
-            pp: i.pp,
-        }
     }
 }

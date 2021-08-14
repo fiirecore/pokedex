@@ -20,13 +20,6 @@ impl Gender {
     pub(crate) const RANGE: Range<u8> = 0..8;
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PokedexData {
-    pub species: String,
-    pub height: u8,
-    pub weight: u16,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LearnableMove {
     #[serde(rename = "move")]
