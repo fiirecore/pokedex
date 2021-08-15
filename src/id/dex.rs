@@ -1,12 +1,13 @@
 use hashbrown::HashMap;
+use serde::{Deserialize, Serialize};
 
 use crate::{name, Identifiable, IdentifiableRef as Ref};
 
-#[derive(Default)]
+#[repr(transparent)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Dex<I: Identifiable>(HashMap<I::Id, I>);
 
 impl<I: Identifiable> Dex<I> {
-
     pub fn new(dex: HashMap<I::Id, I>) -> Self {
         Self(dex)
     }

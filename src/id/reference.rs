@@ -9,6 +9,9 @@ impl<'a, I: Identifiable> IdentifiableRef<'a, I> {
     pub fn of(i: &'a I) -> Self {
         Self(i)
     }
+    pub fn value(self) -> &'a I {
+        self.0
+    }
 }
 
 impl<'a, I: Identifiable> Deref for IdentifiableRef<'a, I> {
