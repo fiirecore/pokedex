@@ -2,15 +2,17 @@ use hashbrown::HashMap;
 
 use crate::{name, Identifiable, IdentifiableRef as Ref};
 
-pub struct Dex<K: Identifiable>(HashMap<K::Id, K>);
+#[derive(Default)]
+pub struct Dex<I: Identifiable>(HashMap<I::Id, I>);
 
 impl<I: Identifiable> Dex<I> {
-    pub fn new() -> Self {
-        Self(HashMap::new())
+
+    pub fn new(dex: HashMap<I::Id, I>) -> Self {
+        Self(dex)
     }
 
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self(HashMap::with_capacity(capacity))
+    pub fn inner_mut(&mut self) -> &mut HashMap<I::Id, I> {
+        &mut self.0
     }
 
     pub fn try_get<'a>(&'a self, id: &I::Id) -> Option<Ref<'a, I>> {
@@ -27,7 +29,7 @@ impl<I: Identifiable> Dex<I> {
         // })
     }
 
-    #[deprecated(note = "having a panicing function here is bad")]
+    #[deprecated(note = "having a panicking function here is bad")]
     pub fn get<'a>(&'a self, id: &I::Id) -> Ref<'a, I> {
         self.try_get(id)
             .or_else(|| self.unknown())
@@ -41,15 +43,7 @@ impl<I: Identifiable> Dex<I> {
             })
     }
 
-    pub fn set(&mut self, map: HashMap<I::Id, I>) {
-        self.0 = map;
-    }
-
     pub fn len(&self) -> usize {
         self.0.len()
-    }
-
-    pub fn insert(&mut self, id: I::Id, i: I) -> Option<I> {
-        self.0.insert(id, i)
     }
 }
