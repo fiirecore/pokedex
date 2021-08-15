@@ -2,19 +2,14 @@ use core::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::Range,
 };
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     id::{Dex, Identifiable, IdentifiableRef},
     moves::{MoveCategory, MoveId, MoveSet, OwnedIdMove},
-    pokemon::{
-        data::{Breeding, Training},
-        stat::{BaseStat, Stat, StatType, Stats},
-    },
     types::{Effective, PokemonType},
 };
-
-use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 mod owned;
 pub use owned::*;
@@ -23,6 +18,7 @@ mod data;
 pub use data::*;
 
 pub mod stat;
+use self::stat::{BaseStat, Stat, StatType, Stats};
 
 pub type PokemonId = <Pokemon as Identifiable>::Id;
 pub type Level = u8;
