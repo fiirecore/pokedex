@@ -123,7 +123,7 @@ impl OwnedIdPokemon {
 }
 
 impl<'a, U> OwnedRefPokemon<'a, U> {
-    pub fn name<'_: 'a>(&self) -> &str {
+    pub fn name(&self) -> &str {
         self.nickname.as_ref().unwrap_or(&self.pokemon.name)
     }
 
