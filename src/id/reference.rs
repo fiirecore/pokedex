@@ -24,7 +24,7 @@ impl<'a, I: Identifiable> Deref for IdentifiableRef<'a, I> {
 
 impl<'a, I: Identifiable> Clone for IdentifiableRef<'a, I> {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
 

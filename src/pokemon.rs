@@ -57,8 +57,8 @@ impl Pokemon {
         let mut learnable = self
             .moves
             .iter()
-            .filter(|learnable_move| learnable_move.level <= level)
-            .map(|learnable_move| learnable_move.id)
+            .filter(|learnable_move| learnable_move.0 <= level)
+            .map(|learnable_move| learnable_move.1)
             .rev();
 
         let mut moves = MoveSet::<OwnedIdMove>::new();
@@ -102,8 +102,8 @@ impl Pokemon {
     pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = MoveId> + '_ {
         self.moves
             .iter()
-            .filter(move |m| m.level == level)
-            .map(|l| l.id)
+            .filter(move |m| m.0 == level)
+            .map(|l| l.1)
     }
 
     pub fn moves_at(&self, levels: Range<Level>) -> impl Iterator<Item = MoveId> + '_ {

@@ -6,17 +6,17 @@ pub const MOVESET_LENGTH: usize = 4;
 
 pub type MoveSet<M> = arrayvec::ArrayVec<[M; MOVESET_LENGTH]>;
 
-pub type OwnedMoveSet<M> = MoveSet<OwnedMove<M>>;
+pub type OwnedMoveSet<M, P> = MoveSet<OwnedMove<M, P>>;
 
-type RefSet<'d, U> = MoveSet<OwnedRefMove<'d, U>>;
+type RefSet<'d> = MoveSet<OwnedRefMove<'d>>;
 
-pub struct MoveRefSet<'d, U> {
-    pub movedex: &'d Movedex<U>,
-    pub set: RefSet<'d, U>,
+pub struct MoveRefSet<'d> {
+    pub movedex: &'d Movedex,
+    pub set: RefSet<'d>,
 }
 
-impl<'d, U> MoveRefSet<'d, U> {
-    pub fn new(movedex: &'d Movedex<U>, set: RefSet<'d, U>) -> Self {
+impl<'d> MoveRefSet<'d> {
+    pub fn new(movedex: &'d Movedex, set: RefSet<'d>) -> Self {
         Self {
             movedex,
             set,
@@ -29,21 +29,21 @@ impl<'d, U> MoveRefSet<'d, U> {
 
 }
 
-impl<'d, U> Deref for MoveRefSet<'d, U> {
-    type Target = RefSet<'d, U>;
+impl<'d> Deref for MoveRefSet<'d> {
+    type Target = RefSet<'d>;
 
     fn deref(&self) -> &Self::Target {
         &self.set
     }
 }
 
-impl<'d, U> DerefMut for MoveRefSet<'d, U> {
+impl<'d> DerefMut for MoveRefSet<'d> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.set
     }
 }
 
-impl<'d, U> Clone for MoveRefSet<'d, U> {
+impl<'d> Clone for MoveRefSet<'d> {
     fn clone(&self) -> Self {
         Self {
             movedex: self.movedex,
@@ -52,7 +52,7 @@ impl<'d, U> Clone for MoveRefSet<'d, U> {
     }
 }
 
-impl<'d, U> core::fmt::Debug for MoveRefSet<'d, U> {
+impl<'d> core::fmt::Debug for MoveRefSet<'d> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         core::fmt::Debug::fmt(&self.set, f)
     }

@@ -2,19 +2,34 @@ use serde::{Deserialize, Serialize};
 
 use crate::moves::{MoveId, MoveRef, Movedex, PP};
 
-pub type OwnedIdMove = OwnedMove<MoveId>;
-pub type OwnedRefMove<'d, U> = OwnedMove<MoveRef<'d, U>>;
+pub type OwnedIdMove = OwnedMove<MoveId, Option<PP>>;
+pub type OwnedRefMove<'d> = OwnedMove<MoveRef<'d>, PP>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OwnedMove<M> {
+pub struct OwnedMove<M, P> {
     #[serde(rename = "move")]
     pub m: M,
-    pub pp: PP,
+    pub pp: P,
     // pub decrement: Option<PP>,
 }
 
-impl<M> OwnedMove<M> {
-    pub fn try_use(&self) -> Option<&M> {
+impl OwnedIdMove {
+
+    pub fn init<'d>(self, movedex: &'d Movedex) -> Option<OwnedRefMove> {
+        let m = movedex.try_get(&self.m)?;
+        Some(OwnedRefMove {
+            pp: self.pp.unwrap_or(m.pp),
+            m
+        })
+    }
+}
+
+impl<'d> OwnedRefMove<'d> {
+    pub fn new(m: MoveRef<'d>) -> Self {
+        Self { pp: m.pp, m }
+    }
+
+    pub fn try_use(&self) -> Option<&MoveRef<'d>> {
         match self.empty() {
             false => Some(&self.m),
             true => None,
@@ -28,22 +43,6 @@ impl<M> OwnedMove<M> {
     pub fn empty(&self) -> bool {
         self.pp == 0
     }
-}
-
-impl OwnedIdMove {
-
-    pub fn init<'d, U>(self, movedex: &'d Movedex<U>) -> Option<OwnedRefMove<U>> {
-        Some(OwnedRefMove {
-            m: movedex.try_get(&self.m)?,
-            pp: self.pp,
-        })
-    }
-}
-
-impl<'d, U> OwnedRefMove<'d, U> {
-    pub fn new(m: MoveRef<'d, U>) -> Self {
-        Self { pp: m.pp, m }
-    }
 
     pub fn restore(&mut self, amount: Option<PP>) {
         self.pp = amount.unwrap_or(self.m.pp).min(self.m.pp)
@@ -52,7 +51,7 @@ impl<'d, U> OwnedRefMove<'d, U> {
     pub fn uninit(self) -> OwnedIdMove {
         OwnedIdMove {
             m: self.m.id,
-            pp: self.pp,
+            pp: Some(self.pp),
         }
     }
 
@@ -60,6 +59,6 @@ impl<'d, U> OwnedRefMove<'d, U> {
 
 impl From<MoveId> for OwnedIdMove {
     fn from(id: MoveId) -> Self {
-        Self { m: id, pp: 0 }
+        Self { m: id, pp: None }
     }
 }

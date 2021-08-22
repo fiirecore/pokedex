@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub type OwnedIdPokemon = OwnedPokemon<PokemonId, MoveSet<OwnedIdMove>, ItemId, Option<Health>>;
-pub type OwnedRefPokemon<'d, U> = OwnedPokemon<PokemonRef<'d>, MoveRefSet<'d, U>, ItemRef<'d>, Health>;
+pub type OwnedRefPokemon<'d> = OwnedPokemon<PokemonRef<'d>, MoveRefSet<'d>, ItemRef<'d>, Health>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OwnedPokemon<P, M, I, H> {
@@ -81,13 +81,13 @@ impl OwnedIdPokemon {
         }
     }
 
-    pub fn init<'a, U>(
+    pub fn init<'d>(
         self,
         random: &mut impl Rng,
-        pokedex: &'a Pokedex,
-        movedex: &'a Movedex<U>,
-        itemdex: &'a Itemdex,
-    ) -> Option<OwnedRefPokemon<'a, U>> {
+        pokedex: &'d Pokedex,
+        movedex: &'d Movedex,
+        itemdex: &'d Itemdex,
+    ) -> Option<OwnedRefPokemon<'d>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let hp = self
             .hp
@@ -122,7 +122,7 @@ impl OwnedIdPokemon {
     }
 }
 
-impl<'a, U> OwnedRefPokemon<'a, U> {
+impl<'a> OwnedRefPokemon<'a> {
     pub fn name(&self) -> &str {
         self.nickname.as_ref().unwrap_or(&self.pokemon.name)
     }
@@ -244,8 +244,7 @@ impl<'a, U> OwnedRefPokemon<'a, U> {
                     }
                 }
             }
-            ItemUsageKind::Script => log::error!("to-do: item script engines"),
-            ItemUsageKind::Pokeball | ItemUsageKind::None => return false,
+            ItemUsageKind::Script | ItemUsageKind::Pokeball | ItemUsageKind::None => return false,
         }
         true
     }
@@ -281,7 +280,7 @@ impl Display for OwnedIdPokemon {
     }
 }
 
-impl<'a, U> Display for OwnedRefPokemon<'a, U> {
+impl<'a> Display for OwnedRefPokemon<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "Lv. {} {}", self.level, self.pokemon.name)
     }

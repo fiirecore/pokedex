@@ -18,11 +18,7 @@ impl Gender {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LearnableMove {
-    #[serde(rename = "move")]
-    pub id: MoveId,
-    pub level: Level,
-}
+pub struct LearnableMove(pub Level, pub MoveId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Training {

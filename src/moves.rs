@@ -20,13 +20,13 @@ pub type Accuracy = u8;
 pub type PP = u8;
 pub type Priority = i8;
 
-pub type MoveRef<'a, U> = IdentifiableRef<'a, Move<U>>;
+pub type MoveRef<'a> = IdentifiableRef<'a, Move>;
 
-pub type Movedex<U> = Dex<Move<U>>;
+pub type Movedex = Dex<Move>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct Move<U> {
+pub struct Move {
     pub id: MoveId,
 
     pub name: String,
@@ -35,18 +35,17 @@ pub struct Move<U> {
     pub pokemon_type: PokemonType,
 
     pub accuracy: Option<Accuracy>,
+    pub power: Option<Power>,
     pub pp: PP,
     #[serde(default)]
     pub priority: Priority,
-
-    pub usage: U,
 
     /// World moves are also known as field moves. This boolean tells if this move is a world move.
     #[serde(default)]
     pub world: bool,
 }
 
-impl<U> Identifiable for Move<U> {
+impl Identifiable for Move {
     type Id = MoveId;
 
     const UNKNOWN: Self::Id = crate::id::UNKNOWN_ID;
@@ -83,7 +82,7 @@ impl MoveCategory {
     }
 }
 
-impl<U> Display for Move<U> {
+impl Display for Move {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         Display::fmt(&self.name, f)
     }
