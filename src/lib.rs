@@ -4,8 +4,11 @@ pub mod moves;
 pub mod pokemon;
 pub mod types;
 
-mod id;
-pub use id::*;
+mod dex;
+pub use dex::*;
+
+pub mod id;
+pub use id::{IdRef, Identifiable};
 
 fn name<T: ?Sized>() -> &'static str {
     let name = core::any::type_name::<T>();

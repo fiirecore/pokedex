@@ -2,9 +2,6 @@ use core::{fmt::Display, hash::Hash};
 use serde::{de::DeserializeOwned, Serialize};
 use tinystr::TinyStr16;
 
-mod dex;
-pub use dex::*;
-
 mod reference;
 pub use reference::*;
 

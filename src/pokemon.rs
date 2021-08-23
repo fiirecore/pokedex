@@ -6,9 +6,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    id::{Dex, Identifiable, IdentifiableRef},
     moves::{MoveCategory, MoveId, MoveSet, OwnedIdMove},
     types::{Effective, PokemonType},
+    Dex, Identifiable, IdRef,
 };
 
 mod owned;
@@ -20,7 +20,7 @@ pub use data::*;
 pub mod stat;
 use self::stat::{BaseStat, Stat, StatType, Stats};
 
-pub type PokemonId = <Pokemon as Identifiable>::Id;
+pub type PokemonId = u16;
 pub type Level = u8;
 pub type Experience = u32;
 pub type Friendship = u8;
@@ -48,7 +48,7 @@ pub const PARTY_LENGTH: usize = 6;
 
 pub type Party<P> = arrayvec::ArrayVec<[P; PARTY_LENGTH]>;
 
-pub type PokemonRef<'a> = IdentifiableRef<'a, Pokemon>;
+pub type PokemonRef<'d> = IdRef<'d, Pokemon>;
 
 pub type Pokedex = Dex<Pokemon>;
 
@@ -100,10 +100,7 @@ impl Pokemon {
     }
 
     pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = MoveId> + '_ {
-        self.moves
-            .iter()
-            .filter(move |m| m.0 == level)
-            .map(|l| l.1)
+        self.moves.iter().filter(move |m| m.0 == level).map(|l| l.1)
     }
 
     pub fn moves_at(&self, levels: Range<Level>) -> impl Iterator<Item = MoveId> + '_ {
@@ -143,7 +140,7 @@ impl Pokemon {
 }
 
 impl Identifiable for Pokemon {
-    type Id = u16;
+    type Id = PokemonId;
 
     const UNKNOWN: Self::Id = 0;
 

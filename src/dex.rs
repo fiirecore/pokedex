@@ -1,7 +1,7 @@
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize, Serializer, Deserializer};
 
-use crate::{name, Identifiable, IdentifiableRef as Ref};
+use crate::{name, Identifiable, IdRef};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Default)]
@@ -16,32 +16,23 @@ impl<I: Identifiable> Dex<I> {
         &mut self.0
     }
 
-    pub fn try_get<'a>(&'a self, id: &I::Id) -> Option<Ref<'a, I>> {
-        self.0.get(id).map(Ref::of)
+    pub fn try_get<'a>(&'a self, id: &I::Id) -> Option<IdRef<'a, I>> {
+        self.0.get(id).map(IdRef::of)
     }
 
-    pub fn unknown<'a>(&'a self) -> Option<Ref<'a, I>> {
+    pub fn unknown<'a>(&'a self) -> IdRef<'a, I> {
         self.try_get(&I::UNKNOWN)
-        // .unwrap_or_else(|| {
-        //     panic!(
-        //         "Could not get unknown {} for dex \"{}\"",
-        //         name::<I>(), name::<Self>()
-        //     )
-        // })
+        .unwrap_or_else(|| {
+            panic!(
+                "Could not get unknown {} for \"{}\"",
+                name::<I>(), name::<Self>()
+            )
+        })
     }
 
-    #[deprecated(note = "having a panicking function here is bad")]
-    pub fn get<'a>(&'a self, id: &I::Id) -> Ref<'a, I> {
+    pub fn get<'a>(&'a self, id: &I::Id) -> IdRef<'a, I> {
         self.try_get(id)
-            .or_else(|| self.unknown())
-            .unwrap_or_else(|| {
-                panic!(
-                    "Could not get {} with id \"{}\" in {}.",
-                    name::<I>(),
-                    id,
-                    name::<Self>()
-                )
-            })
+            .unwrap_or_else(|| self.unknown())
     }
 
     pub fn len(&self) -> usize {

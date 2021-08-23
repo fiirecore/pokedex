@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tinystr::TinyStr16;
 
 use crate::{
-    id::{Dex, Identifiable, IdentifiableRef},
+    Dex, Identifiable, IdRef,
     item::usage::ItemUsage,
 };
 
@@ -13,12 +13,12 @@ pub mod usage;
 mod stack;
 pub use stack::*;
 
-pub type ItemId = <Item as Identifiable>::Id;
+pub type ItemId = TinyStr16;
 pub type StackSize = u16;
 
 pub type Itemdex = Dex<Item>;
 
-pub type ItemRef<'a> = IdentifiableRef<'a, Item>;
+pub type ItemRef<'a> = IdRef<'a, Item>;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -39,7 +39,7 @@ pub struct Item {
 }
 
 impl Identifiable for Item {
-    type Id = TinyStr16;
+    type Id = ItemId;
 
     const UNKNOWN: Self::Id = crate::id::UNKNOWN_ID;
 
