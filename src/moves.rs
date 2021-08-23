@@ -71,6 +71,14 @@ pub struct Move {
     pub world: bool,
 }
 
+impl Move {
+    pub fn try_hit(&self, random: &mut impl rand::Rng) -> bool {
+        self.accuracy
+            .map(|accuracy| random.gen_range(0..100) < accuracy)
+            .unwrap_or(true)
+    }
+}
+
 impl Identifiable for Move {
     type Id = MoveId;
 
