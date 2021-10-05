@@ -6,6 +6,9 @@ edition = "2018"
 description = "A pokedex library"
 repository = "https://github.com/DoNotDoughnut/firecore-pokedex/"
 readme = "README.md"
+license = "MIT"
+keywords = ["pokemon", "pokedex"]
+categories = ["game-development"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
