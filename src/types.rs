@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::moves::MoveCategory;
 
+/// Pokemon types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum PokemonType {
     Unknown,
@@ -30,6 +31,7 @@ pub enum PokemonType {
     Fairy,
 }
 
+/// Pokemon Type effectiveness
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum Effective {
     Effective,
@@ -39,6 +41,7 @@ pub enum Effective {
 }
 
 impl Effective {
+    /// The multiplier of an effect a pokemon type would have on another pokemon type
     pub const fn multiplier(self) -> f32 {
         match self {
             Effective::Ineffective => 0.0,
@@ -50,6 +53,7 @@ impl Effective {
 }
 
 impl PokemonType {
+    /// Hardcoded effectiveness of a pokemon type on another pokemon type by move category.
     pub const fn effective(&self, target: Self, category: MoveCategory) -> Effective {
         match category {
             MoveCategory::Status => Effective::Ineffective,

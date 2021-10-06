@@ -1,3 +1,6 @@
+//! Types and structs related to Pokemon
+//! 
+
 use core::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::Range,
@@ -20,12 +23,20 @@ pub use data::*;
 pub mod stat;
 use self::stat::{BaseStat, Stat, StatType, Stats};
 
+/// The identifier of a Pokemon.
 pub type PokemonId = u16;
+/// The level of a pokemon. Usually 1 - 100.
+/// Levels determine a Pokemon's power, and higher is better.
 pub type Level = u8;
+/// How much experience a Pokemon has.
+/// Experience is progress between a Pokemon's levels.
 pub type Experience = u32;
+/// The friendship value of a Pokemon. 0 - 255.
 pub type Friendship = u8;
+/// The amount of health a pokemon has.
 pub type Health = stat::BaseStat;
 
+/// A Pokemon.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pokemon {
     pub id: PokemonId,
@@ -44,15 +55,21 @@ pub struct Pokemon {
     pub breeding: Breeding,
 }
 
+/// Common maximum size of a Pokemon party.
 pub const PARTY_LENGTH: usize = 6;
 
+/// A type that represents a Pokemon party.
+/// A Party is a collection of pokemon a trainer can use.
 pub type Party<P> = arrayvec::ArrayVec<[P; PARTY_LENGTH]>;
 
+/// A reference to a Pokemon.
 pub type PokemonRef<'d> = IdRef<'d, Pokemon>;
 
+/// Stores Pokemon and can return a reference if given an identifier.
 pub type Pokedex = Dex<Pokemon>;
 
 impl Pokemon {
+    /// Generate a set of moves given this pokemon and a level.
     pub fn generate_moves(&self, level: Level) -> MoveSet<OwnedIdMove> {
         let mut learnable = self
             .moves
@@ -77,6 +94,7 @@ impl Pokemon {
         moves
     }
 
+    /// Generate a pokemon's gender based on its percent to be a certain gender and a random number generator.
     pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
         self.breeding.gender.map(
             |percentage| match random.gen_range(Gender::RANGE) > percentage {
@@ -86,6 +104,7 @@ impl Pokemon {
         )
     }
 
+    /// Check how effective a pokemon type is on this pokemon.
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
         let primary = user.effective(self.primary_type, category);
         if let Some(secondary) = self.secondary_type {
@@ -95,14 +114,17 @@ impl Pokemon {
         }
     }
 
+    /// Get the amount of exp that can be gained from defeating this pokemon at a certain level.
     pub fn exp_from(&self, level: Level) -> Experience {
         ((self.training.base_exp * level as u16) / 7) as Experience
     }
 
+    /// Get the moves of a pokemon at a certain level.
     pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = MoveId> + '_ {
         self.moves.iter().filter(move |m| m.0 == level).map(|l| l.1)
     }
 
+    /// Get an iterator of the moves a pokemon can get from a range of levels.
     pub fn moves_at(&self, levels: Range<Level>) -> impl Iterator<Item = MoveId> + '_ {
         let levels = Range {
             start: levels.start + 1,
@@ -114,6 +136,7 @@ impl Pokemon {
             .flat_map(move |level| self.moves_at_level(level))
     }
 
+    /// Get the value of a base stat from basic stats.
     pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
         match stat {
             StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
@@ -121,6 +144,7 @@ impl Pokemon {
         }
     }
 
+    /// Get the value of a base stat from basic stats, excluding health.
     pub fn base_stat(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
         //add item check
         let nature = 1.0;
@@ -129,9 +153,10 @@ impl Pokemon {
             .floor() as BaseStat
     }
 
-    pub fn base_hp(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
+    /// Get the base health of a pokemon from basic stats.
+    pub fn base_hp(base: Stat, iv: Stat, ev: Stat, level: Level) -> Health {
         ((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + level as f32 + 10.0)
-            .floor() as BaseStat
+            .floor() as Health
     }
 
     pub const fn default_friendship() -> Friendship {
