@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// The target of the move.
+/// The target of a [Move].
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum MoveTarget {
     Any,

@@ -1,18 +1,24 @@
 [package]
 name = "firecore-pokedex"
-version = "0.0.2" # 0.5.0-beta.2021-08-22
-authors = ["Rhys Holloway <rhyswilliamholloway@gmail.com>"]
+version = "0.0.3" # 0.5.0-beta.2021-08-22
+authors = ["Rhys H <donotdoughnut99@gmail.com>"]
 edition = "2018"
 description = "A pokedex library"
-repository = "https://github.com/DoNotDoughnut/firecore-pokedex/"
+repository = "https://github.com/fiirecore/pokedex/"
 readme = "README.md"
 license = "MIT"
 keywords = ["pokemon", "pokedex"]
 categories = ["game-development"]
 
+[features]
+default = ["dex_types", "move_set_types", "party_types"]
+dex_types = ["hashbrown"]
+move_set_types = ["arrayvec"]
+party_types = ["arrayvec"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 rand = { version = "0.8", default-features = false }
-arrayvec = { version = "0.5", features = ["serde"] }
 tinystr = { version = "0.4", features = ["serde"] }
-hashbrown = { version = "0.11", features = ["serde"] }
+hashbrown = { version = "0.11", features = ["serde"], optional = true }
+arrayvec = { version = "0.5", features = ["serde"], optional = true }

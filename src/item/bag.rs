@@ -1,12 +1,15 @@
-use crate::item::{ItemId, ItemIdStack, ItemRefStack, Itemdex};
+use crate::{
+    item::{Item, ItemId, ItemStack},
+    Dex, Initializable, Uninitializable,
+};
 
-pub struct Bag<'d> {
-    pub itemdex: &'d Itemdex,
-    pub items: Vec<ItemRefStack<'d>>,
+pub struct Bag<'d, D: Dex<Item>> {
+    pub itemdex: &'d D,
+    pub items: Vec<ItemStack<&'d Item>>,
 }
 
-impl<'d> Bag<'d> {
-    pub fn init(itemdex: &'d Itemdex, items: Vec<ItemIdStack>) -> Self {
+impl<'d, D: Dex<Item>> Bag<'d, D> {
+    pub fn init(itemdex: &'d D, items: Vec<ItemStack<ItemId>>) -> Self {
         let items = items.into_iter().flat_map(|s| s.init(itemdex)).collect();
         Self { itemdex, items }
     }
@@ -22,7 +25,7 @@ impl<'d> Bag<'d> {
     }
 
     /// Adds an item stack to the bag. Returns extra items if bag is filled.
-    pub fn add_item(&mut self, stack: ItemRefStack<'d>) -> Option<ItemRefStack<'d>> {
+    pub fn add_item(&mut self, stack: ItemStack<&'d Item>) -> Option<ItemStack<&'d Item>> {
         match self.position(&stack.item.id) {
             Some(pos) => self.items[pos].add(stack),
             None => {
@@ -31,13 +34,17 @@ impl<'d> Bag<'d> {
             }
         }
     }
+}
 
-    pub fn uninit(self) -> Vec<ItemIdStack> {
-        self.items.into_iter().map(ItemRefStack::uninit).collect()
+impl<'d, D: Dex<Item>> Uninitializable for Bag<'d, D> {
+    type Output = Vec<ItemStack<ItemId>>;
+
+    fn uninit(self) -> Self::Output {
+        self.items.into_iter().map(ItemStack::uninit).collect()
     }
 }
 
-impl<'d> Clone for Bag<'d> {
+impl<'d, D: Dex<Item>> Clone for Bag<'d, D> {
     fn clone(&self) -> Self {
         Self {
             itemdex: self.itemdex,

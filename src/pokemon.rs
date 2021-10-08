@@ -3,19 +3,22 @@
 
 use core::{
     fmt::{Display, Formatter, Result as FmtResult},
-    ops::Range,
+    ops::RangeBounds,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    moves::{MoveCategory, MoveId, MoveSet, OwnedIdMove},
+    moves::{MoveCategory, MoveId},
     types::{Effective, PokemonType},
-    Dex, Identifiable, IdRef,
+    Identifiable,
 };
 
 mod owned;
 pub use owned::*;
+
+mod party;
+pub use party::*;
 
 mod data;
 pub use data::*;
@@ -55,44 +58,11 @@ pub struct Pokemon {
     pub breeding: Breeding,
 }
 
-/// Common maximum size of a Pokemon party.
-pub const PARTY_LENGTH: usize = 6;
-
-/// A type that represents a Pokemon party.
-/// A Party is a collection of pokemon a trainer can use.
-pub type Party<P> = arrayvec::ArrayVec<[P; PARTY_LENGTH]>;
-
-/// A reference to a Pokemon.
-pub type PokemonRef<'d> = IdRef<'d, Pokemon>;
-
-/// Stores Pokemon and can return a reference if given an identifier.
-pub type Pokedex = Dex<Pokemon>;
-
 impl Pokemon {
     /// Generate a set of moves given this pokemon and a level.
-    pub fn generate_moves(&self, level: Level) -> MoveSet<OwnedIdMove> {
-        let mut learnable = self
-            .moves
-            .iter()
-            .filter(|learnable_move| learnable_move.0 <= level)
-            .map(|learnable_move| learnable_move.1)
-            .rev();
-
-        let mut moves = MoveSet::<OwnedIdMove>::new();
-
-        while !moves.is_full() {
-            match learnable.next() {
-                Some(m) => {
-                    if !moves.iter().any(|i| i.m == m) {
-                        moves.push(m.into());
-                    }
-                }
-                None => break,
-            }
-        }
-
-        moves
-    }
+    // pub fn generate_moves(&self, level: Level) -> impl Iterator<Item = &MoveId> + {
+    //     self.moves.
+    // }
 
     /// Generate a pokemon's gender based on its percent to be a certain gender and a random number generator.
     pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
@@ -120,20 +90,13 @@ impl Pokemon {
     }
 
     /// Get the moves of a pokemon at a certain level.
-    pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = MoveId> + '_ {
-        self.moves.iter().filter(move |m| m.0 == level).map(|l| l.1)
+    pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = &MoveId> + '_ {
+        self.moves_at(level..=level)
     }
 
     /// Get an iterator of the moves a pokemon can get from a range of levels.
-    pub fn moves_at(&self, levels: Range<Level>) -> impl Iterator<Item = MoveId> + '_ {
-        let levels = Range {
-            start: levels.start + 1,
-            end: levels.end + 1,
-        };
-
-        levels
-            .into_iter()
-            .flat_map(move |level| self.moves_at_level(level))
+    pub fn moves_at<'s, R: RangeBounds<Level> + 's>(&'s self, levels: R) -> impl Iterator<Item = &MoveId> + 's {
+        self.moves.iter().filter(move |m| levels.contains(&m.0)).map(|m| &m.1)
     }
 
     /// Get the value of a base stat from basic stats.
@@ -172,10 +135,70 @@ impl Identifiable for Pokemon {
     fn id(&self) -> &Self::Id {
         &self.id
     }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
 }
 
 impl Display for Pokemon {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "#{} {}", self.id, self.name)
     }
+}
+
+#[test]
+fn tests() {
+
+    use crate::{BasicDex, Dex, pokemon::stat::StatSet, moves::{Move, MoveCategory, MoveTarget, Power, PP, MoveSet}};
+
+    let mut pokedex = BasicDex::default();
+
+    let test = "test".parse().unwrap();
+
+    let v = Pokemon {
+        id: 0,
+        name: "Test".to_owned(),
+        primary_type: PokemonType::Bug,
+        secondary_type: Some(PokemonType::Dragon),
+        moves: vec![LearnableMove(1, test)],
+        base: StatSet::uniform(60),
+        species: "Test Species".to_owned(),
+        height: 6_5,
+        weight: 100,
+        training: Training { base_exp: 200, growth_rate: Default::default() },
+        breeding: Breeding { gender: None },
+    };
+
+    pokedex.insert(v);
+
+    let mut movedex = BasicDex::default();
+
+    let v = Move {
+        id: test,
+        name: "Test Move".to_owned(),
+        category: MoveCategory::Physical,
+        pokemon_type: PokemonType::Bug,
+        accuracy: None,
+        power: Some(Power::MAX),
+        pp: PP::MAX,
+        priority: 0,
+        target: MoveTarget::Opponent,
+        contact: false,
+        crit_rate: 1,
+    };
+    
+    movedex.insert(v);
+
+    let itemdex = BasicDex::default();
+
+    let mut rng = rand::rngs::mock::StepRng::new(12, 24);
+
+    let pokemon = OwnedIdPokemon::<crate::moves::MoveIdSet>::generate(&mut rng, 0, 30, None, None);
+
+    let pokemon = pokemon.init(&mut rng, &pokedex, &movedex, &itemdex).unwrap();
+
+    assert!(pokemon.moves.len() != 0)
+
 }

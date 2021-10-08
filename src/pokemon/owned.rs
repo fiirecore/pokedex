@@ -6,20 +6,23 @@ use crate::{
     ailment::LiveAilment,
     item::{
         usage::{ItemAction, ItemCondition, ItemUsageKind},
-        Item, ItemId, ItemRef, Itemdex,
+        Item, ItemId,
     },
-    moves::{OwnedRefMove, MoveId, MoveRefSet, MoveSet, Movedex, OwnedIdMove, MOVESET_LENGTH, PP},
+    moves::{Move, MoveId, MoveSet, PP},
     pokemon::{
         stat::{BaseStat, StatType, Stats},
-        Experience, Friendship, Gender, Health, Level, Pokedex, Pokemon, PokemonId, PokemonRef,
+        Experience, Friendship, Gender, Health, Level, Pokemon, PokemonId,
     },
+    Dex, Identifiable, Initializable, Uninitializable,
 };
 
-pub type OwnedIdPokemon = OwnedPokemon<PokemonId, MoveSet<OwnedIdMove>, ItemId, Option<Health>>;
-pub type OwnedRefPokemon<'d> = OwnedPokemon<PokemonRef<'d>, MoveRefSet<'d>, ItemRef<'d>, Health>;
+// pub type HP = crate::MaximumNumber<Health>;
+
+pub type OwnedIdPokemon<M> = OwnedPokemon<PokemonId, M, ItemId, Option<Health>>;
+pub type OwnedRefPokemon<'d, M> = OwnedPokemon<&'d Pokemon, M, &'d Item, Health>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OwnedPokemon<P, M, I, H> {
+pub struct OwnedPokemon<P, M: MoveSet, I, H> {
     /// Pokemon Identifier
     pub pokemon: P,
 
@@ -57,7 +60,7 @@ pub struct OwnedPokemon<P, M, I, H> {
     pub friendship: Friendship,
 }
 
-impl OwnedIdPokemon {
+impl<M: MoveSet + Default> OwnedIdPokemon<M> {
     pub fn generate(
         random: &mut impl Rng,
         pokemon: PokemonId,
@@ -80,32 +83,32 @@ impl OwnedIdPokemon {
             experience: Default::default(),
         }
     }
+}
 
-    pub fn init<'d>(
+impl<'d, MU: MoveSet> OwnedIdPokemon<MU> {
+    pub fn init<R: Rng, PDEX: Dex<Pokemon>, MDEX: Dex<Move>, IDEX: Dex<Item>, MI: MoveSet>(
         self,
-        random: &mut impl Rng,
-        pokedex: &'d Pokedex,
-        movedex: &'d Movedex,
-        itemdex: &'d Itemdex,
-    ) -> Option<OwnedRefPokemon<'d>> {
+        random: &mut R,
+        pokedex: &'d PDEX,
+        movedex: &'d MDEX,
+        itemdex: &'d IDEX,
+    ) -> Option<OwnedRefPokemon<'d, MI>>
+    where
+        MU: Initializable<'d, MDEX, Identifier = Move, Output = MI>,
+    {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let hp = self
             .hp
             .unwrap_or_else(|| pokemon.stat(&self.ivs, &self.evs, self.level, StatType::Health));
-        let moves = MoveRefSet::new(
-            movedex,
-            if self.moves.is_empty() {
-                pokemon.generate_moves(self.level)
-            } else {
-                self.moves
+        let mut moves = self.moves.init(movedex)?;
+        if moves.is_empty() {
+            for m in pokemon.moves_at(1..=self.level).take(4) {
+                moves.add_move(None, m);
             }
-            .into_iter()
-            .flat_map(|i| i.init(movedex))
-            .collect(),
-        );
+        }
         let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
         let gender = self.gender.or_else(|| pokemon.generate_gender(random));
-        Some(OwnedRefPokemon {
+        Some(OwnedPokemon {
             pokemon,
             nickname: self.nickname,
             level: self.level,
@@ -122,9 +125,11 @@ impl OwnedIdPokemon {
     }
 }
 
-impl<'a> OwnedRefPokemon<'a> {
+impl<'a, M: MoveSet> OwnedRefPokemon<'a, M> {
     pub fn name(&self) -> &str {
-        self.nickname.as_ref().unwrap_or(&self.pokemon.name)
+        self.nickname
+            .as_deref()
+            .unwrap_or_else(|| self.pokemon.name())
     }
 
     pub fn hp(&self) -> Health {
@@ -145,7 +150,7 @@ impl<'a> OwnedRefPokemon<'a> {
 
     pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
         self.heal_hp(hp);
-        self.heal_pp(pp);
+        self.moves.restore(None, pp);
     }
 
     pub fn heal_hp(&mut self, amount: Option<Health>) {
@@ -153,27 +158,15 @@ impl<'a> OwnedRefPokemon<'a> {
         self.hp = amount.unwrap_or(max).min(max);
     }
 
-    pub fn heal_pp(&mut self, amount: Option<PP>) {
-        self.moves.iter_mut().for_each(|i| i.restore(amount))
-    }
-
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
 
-    pub fn replace_move(&mut self, index: usize, id: &MoveId) {
-        if index < MOVESET_LENGTH {
-            if let Some(m) = self.moves.movedex.try_get(id) {
-                self.moves[index] = OwnedRefMove::new(m);
-            }
-        }
-    }
-
-    pub fn moves_at_level(&self) -> impl Iterator<Item = MoveId> + '_ {
+    pub fn moves_at_level(&self) -> impl Iterator<Item = &MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
     }
 
-    pub fn add_exp(&mut self, experience: Experience) -> impl Iterator<Item = MoveId> + '_ {
+    pub fn add_exp(&mut self, experience: Experience) -> impl Iterator<Item = &MoveId> + '_ {
         // add exp to pokemon
 
         self.experience += experience * 5;
@@ -196,7 +189,7 @@ impl<'a> OwnedRefPokemon<'a> {
         self.pokemon.exp_from(self.level)
     }
 
-    pub fn on_level_up(&mut self, previous: Level) -> impl Iterator<Item = MoveId> + '_ {
+    pub fn on_level_up(&mut self, previous: Level) -> impl Iterator<Item = &MoveId> + '_ {
         // Get the moves the pokemon learns at the level it just gained.
 
         let mut moves = self.pokemon.moves_at(previous..self.level).into_iter();
@@ -206,9 +199,7 @@ impl<'a> OwnedRefPokemon<'a> {
         while !self.moves.is_full() {
             match moves.next() {
                 Some(id) => {
-                    if let Some(m) = self.moves.movedex.try_get(&id) {
-                        self.moves.push(OwnedRefMove::new(m))
-                    }
+                    self.moves.add_move(None, id);
                 }
                 None => break,
             }
@@ -249,13 +240,26 @@ impl<'a> OwnedRefPokemon<'a> {
         true
     }
 
-    pub fn uninit(self) -> OwnedIdPokemon {
+    pub fn use_held_item(&mut self) -> bool {
+        match self.item.take() {
+            Some(item) => self.try_use_item(&item),
+            None => false,
+        }
+    }
+}
+
+impl<'d, MU: MoveSet, MI: MoveSet + Uninitializable<Output = MU>> Uninitializable
+    for OwnedRefPokemon<'d, MI>
+{
+    type Output = OwnedIdPokemon<MU>;
+
+    fn uninit(self) -> Self::Output {
         OwnedIdPokemon {
             pokemon: self.pokemon.id,
             level: self.level,
             nickname: self.nickname,
             gender: self.gender,
-            moves: self.moves.set.into_iter().map(OwnedRefMove::uninit).collect(),
+            moves: self.moves.uninit(),
             hp: Some(self.hp),
             item: self.item.map(|item| item.id),
             ailment: self.ailment,
@@ -265,22 +269,15 @@ impl<'a> OwnedRefPokemon<'a> {
             friendship: self.friendship,
         }
     }
-
-    pub fn use_held_item(&mut self) -> bool {
-        match self.item.take() {
-            Some(item) => self.try_use_item(&item),
-            None => false,
-        }
-    }
 }
 
-impl Display for OwnedIdPokemon {
+impl<M: MoveSet> Display for OwnedIdPokemon<M> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "ID {}, Lv. {}", self.pokemon, self.level)
     }
 }
 
-impl<'a> Display for OwnedRefPokemon<'a> {
+impl<'a, M: MoveSet> Display for OwnedRefPokemon<'a, M> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "Lv. {} {}", self.level, self.pokemon.name)
     }

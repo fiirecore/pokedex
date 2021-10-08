@@ -1,59 +1,198 @@
-use core::ops::{Deref, DerefMut};
+use core::slice::{Iter, IterMut};
 
-use super::{OwnedRefMove, Movedex, OwnedMove, MoveId};
+use crate::{
+    moves::{Move, PP},
+    Identifiable,
+};
 
-pub const MOVESET_LENGTH: usize = 4;
+pub const DEFAULT_SIZE: usize = 4;
 
-pub type MoveSet<M> = arrayvec::ArrayVec<[M; MOVESET_LENGTH]>;
+pub trait MoveSet {
+    const SIZE: usize = DEFAULT_SIZE;
 
-pub type OwnedMoveSet<M, P> = MoveSet<OwnedMove<M, P>>;
+    type Move;
 
-type RefSet<'d> = MoveSet<OwnedRefMove<'d>>;
+    fn iter(&self) -> Iter<'_, Self::Move>;
 
-pub struct MoveRefSet<'d> {
-    pub movedex: &'d Movedex,
-    pub set: RefSet<'d>,
+    fn iter_mut(&mut self) -> IterMut<'_, Self::Move>;
+
+    fn is_empty(&self) -> bool;
+
+    fn is_full(&self) -> bool;
+
+    fn len(&self) -> usize;
+
+    fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id);
+
+    fn restore(&mut self, index: Option<usize>, amount: Option<PP>);
 }
 
-impl<'d> MoveRefSet<'d> {
-    pub fn new(movedex: &'d Movedex, set: RefSet<'d>) -> Self {
-        Self {
-            movedex,
-            set,
+#[cfg(feature = "move_set_types")]
+pub use defaults::{MoveIdSet, MoveRefSet};
+
+#[cfg(feature = "move_set_types")]
+mod defaults {
+    use core::slice::{Iter, IterMut};
+
+    use serde::{Deserialize, Serialize};
+
+    use crate::{Dex, Identifiable, Initializable, Uninitializable, moves::{Move, OwnedIdMove, OwnedMove, OwnedRefMove, PP}};
+
+    use super::{MoveSet, DEFAULT_SIZE};
+
+    type A<O> = arrayvec::ArrayVec<[O; DEFAULT_SIZE]>;
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct MoveIdSet(A<<Self as MoveSet>::Move>);
+
+    impl MoveSet for MoveIdSet {
+        type Move = OwnedMove<<Move as Identifiable>::Id, Option<PP>>;
+
+        fn iter(&self) -> Iter<'_, Self::Move> {
+            self.0.iter()
+        }
+
+        fn iter_mut(&mut self) -> IterMut<'_, Self::Move> {
+            self.0.iter_mut()
+        }
+
+        fn is_empty(&self) -> bool {
+            self.0.is_empty()
+        }
+
+        fn is_full(&self) -> bool {
+            self.0.is_full()
+        }
+
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id) {
+            let m = OwnedMove { m: *id, pp: None };
+            match self.0.is_full() {
+                true => {
+                    if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
+                        *i = m
+                    }
+                }
+                false => self.0.push(m),
+            }
+        }
+
+        fn restore(&mut self, index: Option<usize>, amount: Option<PP>) {
+            fn m(o: &mut OwnedIdMove, amount: Option<PP>) {
+                match amount {
+                    Some(add) => {
+                        if let Some(pp) = o.pp.as_mut() {
+                            *pp = pp.saturating_add(add);
+                        }
+                    }
+                    None => o.pp = None,
+                }
+            }
+
+            match index {
+                Some(index) => {
+                    if let Some(o) = self.0.get_mut(index) {
+                        m(o, amount)
+                    }
+                }
+                None => self.iter_mut().for_each(|o| m(o, amount)),
+            }
         }
     }
 
-    pub fn world_moves(&self) -> impl Iterator<Item = &MoveId> + '_ {
-        self.set.iter().filter(|o| o.m.world).map(|o| &o.m.id)
-    }
+    impl<'d, D: Dex<Move> + 'd> Initializable<'d, D> for MoveIdSet {
 
-}
+        type Identifier = Move;
 
-impl<'d> Deref for MoveRefSet<'d> {
-    type Target = RefSet<'d>;
+        type Output = MoveRefSet<'d, D>;
 
-    fn deref(&self) -> &Self::Target {
-        &self.set
-    }
-}
-
-impl<'d> DerefMut for MoveRefSet<'d> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.set
-    }
-}
-
-impl<'d> Clone for MoveRefSet<'d> {
-    fn clone(&self) -> Self {
-        Self {
-            movedex: self.movedex,
-            set: self.set.clone(),
+        fn init(self, dex: &'d D) -> Option<Self::Output> {
+            let mut moves: A<<Self::Output as MoveSet>::Move> = Default::default();
+            for m in self.0.into_iter().map(|o| o.init(dex)) {
+                match m {
+                    Some(m) => moves.push(m),
+                    None => todo!(),
+                }
+            }
+            Some(MoveRefSet(moves, dex))
         }
     }
-}
 
-impl<'d> core::fmt::Debug for MoveRefSet<'d> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        core::fmt::Debug::fmt(&self.set, f)
+    impl Default for MoveIdSet {
+        fn default() -> Self {
+            Self(Default::default())
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct MoveRefSet<'d, D: Dex<Move>>(A<<Self as MoveSet>::Move>, &'d D);
+
+    impl<'d, D: Dex<Move>> MoveSet for MoveRefSet<'d, D> {
+        type Move = OwnedMove<&'d Move, PP>;
+
+        fn iter(&self) -> Iter<'_, Self::Move> {
+            self.0.iter()
+        }
+
+        fn iter_mut(&mut self) -> IterMut<'_, Self::Move> {
+            self.0.iter_mut()
+        }
+
+        fn is_empty(&self) -> bool {
+            self.0.is_empty()
+        }
+
+        fn is_full(&self) -> bool {
+            self.0.is_full()
+        }
+
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id) {
+            if let Some(m) = self.1.try_get(id) {
+                let m = OwnedMove { m, pp: m.pp };
+                match self.0.is_full() {
+                    true => {
+                        if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
+                            *i = m
+                        }
+                    }
+                    false => self.0.push(m),
+                }
+            }
+        }
+
+        fn restore(&mut self, index: Option<usize>, amount: Option<PP>) {
+
+            fn m(o: &mut OwnedRefMove<'_>, amount: Option<PP>) {
+                match amount {
+                    Some(amount) => o.pp = o.pp.saturating_add((o.pp + amount).min(o.m.pp)),
+                    None => o.pp = o.m.pp,
+                }
+            }
+
+            match index {
+                Some(index) => {
+                    if let Some(o) = self.0.get_mut(index) {
+                        m(o, amount)
+                    }
+                }
+                None => self.iter_mut().for_each(|o| m(o, amount)),
+            }
+        }
+    }
+
+    impl<D: Dex<Move>> Uninitializable for MoveRefSet<'_, D> {
+
+        type Output = MoveIdSet;
+
+        fn uninit(self) -> Self::Output {
+            MoveIdSet(self.0.into_iter().map(|o| o.uninit()).collect())
+        }
     }
 }

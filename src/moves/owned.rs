@@ -1,35 +1,48 @@
 use serde::{Deserialize, Serialize};
 
-use crate::moves::{MoveId, MoveRef, Movedex, PP};
+use crate::{Dex, Initializable, Uninitializable, moves::{Move, MoveId, PP}};
 
 pub type OwnedIdMove = OwnedMove<MoveId, Option<PP>>;
-pub type OwnedRefMove<'d> = OwnedMove<MoveRef<'d>, PP>;
+pub type OwnedRefMove<'d> = OwnedMove<&'d Move, PP>;
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OwnedMove<M, P> {
+pub struct OwnedMove<M, PP> {
     #[serde(rename = "move")]
     pub m: M,
-    pub pp: P,
+    pub pp: PP,
     // pub decrement: Option<PP>,
 }
 
-impl OwnedIdMove {
+impl<'d, D: Dex<Move> + 'd> Initializable<'d, D> for OwnedIdMove {
 
-    pub fn init<'d>(self, movedex: &'d Movedex) -> Option<OwnedRefMove> {
-        let m = movedex.try_get(&self.m)?;
-        Some(OwnedRefMove {
-            pp: self.pp.unwrap_or(m.pp),
-            m
-        })
+    type Output = OwnedRefMove<'d>;
+
+    type Identifier = Move;
+
+    fn init(self, dex: &'d D) -> Option<Self::Output> {
+        dex.try_get(&self.m).map(|m| Self::Output { pp: m.pp, m })
+    }
+}
+
+impl<'d> Uninitializable for OwnedRefMove<'d> {
+
+    type Output = OwnedIdMove;
+
+    fn uninit(self) -> Self::Output {
+        Self::Output {
+            m: self.m.id,
+            pp: Some(self.pp),
+        }
     }
 }
 
 impl<'d> OwnedRefMove<'d> {
-    pub fn new(m: MoveRef<'d>) -> Self {
+    pub fn new(m: &'d Move) -> Self {
         Self { pp: m.pp, m }
     }
 
-    pub fn try_use(&self) -> Option<&MoveRef<'d>> {
+    pub fn try_use(&self) -> Option<&'d Move> {
         match self.empty() {
             false => Some(&self.m),
             true => None,
@@ -47,14 +60,6 @@ impl<'d> OwnedRefMove<'d> {
     pub fn restore(&mut self, amount: Option<PP>) {
         self.pp = amount.unwrap_or(self.m.pp).min(self.m.pp)
     }
-
-    pub fn uninit(self) -> OwnedIdMove {
-        OwnedIdMove {
-            m: self.m.id,
-            pp: Some(self.pp),
-        }
-    }
-
 }
 
 impl From<MoveId> for OwnedIdMove {
