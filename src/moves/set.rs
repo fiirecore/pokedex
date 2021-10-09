@@ -12,6 +12,10 @@ pub trait MoveSet {
 
     type Move;
 
+    fn get(&self, index: usize) -> Option<&Self::Move>;
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move>;
+
     fn iter(&self) -> Iter<'_, Self::Move>;
 
     fn iter_mut(&mut self) -> IterMut<'_, Self::Move>;
@@ -36,17 +40,28 @@ mod defaults {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::{Dex, Identifiable, Initializable, Uninitializable, moves::{Move, OwnedIdMove, OwnedMove, OwnedRefMove, PP}};
+    use crate::{
+        moves::{Move, OwnedIdMove, OwnedMove, OwnedRefMove, PP},
+        Dex, Identifiable, Initializable, Uninitializable,
+    };
 
     use super::{MoveSet, DEFAULT_SIZE};
 
     type A<O> = arrayvec::ArrayVec<[O; DEFAULT_SIZE]>;
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct MoveIdSet(A<<Self as MoveSet>::Move>);
 
     impl MoveSet for MoveIdSet {
         type Move = OwnedMove<<Move as Identifiable>::Id, Option<PP>>;
+
+        fn get(&self, index: usize) -> Option<&Self::Move> {
+            self.0.get(index)
+        }
+
+        fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move> {
+            self.0.get_mut(index)
+        }
 
         fn iter(&self) -> Iter<'_, Self::Move> {
             self.0.iter()
@@ -104,7 +119,6 @@ mod defaults {
     }
 
     impl<'d, D: Dex<Move> + 'd> Initializable<'d, D> for MoveIdSet {
-
         type Identifier = Move;
 
         type Output = MoveRefSet<'d, D>;
@@ -127,11 +141,19 @@ mod defaults {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct MoveRefSet<'d, D: Dex<Move>>(A<<Self as MoveSet>::Move>, &'d D);
 
     impl<'d, D: Dex<Move>> MoveSet for MoveRefSet<'d, D> {
         type Move = OwnedMove<&'d Move, PP>;
+
+        fn get(&self, index: usize) -> Option<&Self::Move> {
+            self.0.get(index)
+        }
+
+        fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move> {
+            self.0.get_mut(index)
+        }
 
         fn iter(&self) -> Iter<'_, Self::Move> {
             self.0.iter()
@@ -168,7 +190,6 @@ mod defaults {
         }
 
         fn restore(&mut self, index: Option<usize>, amount: Option<PP>) {
-
             fn m(o: &mut OwnedRefMove<'_>, amount: Option<PP>) {
                 match amount {
                     Some(amount) => o.pp = o.pp.saturating_add((o.pp + amount).min(o.m.pp)),
@@ -188,7 +209,6 @@ mod defaults {
     }
 
     impl<D: Dex<Move>> Uninitializable for MoveRefSet<'_, D> {
-
         type Output = MoveIdSet;
 
         fn uninit(self) -> Self::Output {
