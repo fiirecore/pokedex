@@ -1,218 +1,72 @@
-use core::slice::{Iter, IterMut};
-
 use crate::{
-    moves::{Move, PP},
-    Identifiable,
+    moves::{
+        owned::{OwnedMove, SavedMove},
+        Move,
+    },
+    Dex, Identifiable, Initializable, Uninitializable,
 };
 
 pub const DEFAULT_SIZE: usize = 4;
 
-pub trait MoveSet {
-    const SIZE: usize = DEFAULT_SIZE;
+pub type SavedMoveSet = arrayvec::ArrayVec<[SavedMove; DEFAULT_SIZE]>;
 
-    type Move;
+impl<'d, D: Dex<Move>> Initializable<'d, D> for SavedMoveSet {
 
-    fn get(&self, index: usize) -> Option<&Self::Move>;
+    type Output = OwnedMoveSet<'d>;
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move>;
-
-    fn iter(&self) -> Iter<'_, Self::Move>;
-
-    fn iter_mut(&mut self) -> IterMut<'_, Self::Move>;
-
-    fn is_empty(&self) -> bool;
-
-    fn is_full(&self) -> bool;
-
-    fn len(&self) -> usize;
-
-    fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id);
-
-    fn restore(&mut self, index: Option<usize>, amount: Option<PP>);
+    fn init(self, dex: &'d D) -> Option<Self::Output> {
+        Some(OwnedMoveSet(dex, self.into_iter().flat_map(|s| s.init(dex)).collect()))
+    }
 }
 
-#[cfg(feature = "move_set_types")]
-pub use defaults::{MoveIdSet, MoveRefSet};
+pub struct OwnedMoveSet<'d>(&'d dyn Dex<Move>, arrayvec::ArrayVec<[OwnedMove<'d>; DEFAULT_SIZE]>);
 
-#[cfg(feature = "move_set_types")]
-mod defaults {
-    use core::slice::{Iter, IterMut};
+impl<'d> OwnedMoveSet<'d> {
 
-    use serde::{Deserialize, Serialize};
+    pub fn get(&self, index: usize) -> Option<&OwnedMove<'d>> {
+        self.1.get(index)
+    }
 
-    use crate::{
-        moves::{Move, OwnedIdMove, OwnedMove, OwnedRefMove, PP},
-        Dex, Identifiable, Initializable, Uninitializable,
-    };
+    pub fn iter(&self) -> impl Iterator<Item = &OwnedMove<'d>> {
+        self.1.iter()
+    }
 
-    use super::{MoveSet, DEFAULT_SIZE};
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut OwnedMove<'d>> {
+        self.1.iter_mut()
+    }
 
-    type A<O> = arrayvec::ArrayVec<[O; DEFAULT_SIZE]>;
+    pub fn is_empty(&self) -> bool {
+        self.1.is_empty()
+    }
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct MoveIdSet(A<<Self as MoveSet>::Move>);
+    pub fn is_full(&self) -> bool {
+        self.1.is_full()
+    }
 
-    impl MoveSet for MoveIdSet {
-        type Move = OwnedMove<<Move as Identifiable>::Id, Option<PP>>;
+    pub fn len(&self) -> usize {
+        self.1.len()
+    }
 
-        fn get(&self, index: usize) -> Option<&Self::Move> {
-            self.0.get(index)
-        }
-
-        fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move> {
-            self.0.get_mut(index)
-        }
-
-        fn iter(&self) -> Iter<'_, Self::Move> {
-            self.0.iter()
-        }
-
-        fn iter_mut(&mut self) -> IterMut<'_, Self::Move> {
-            self.0.iter_mut()
-        }
-
-        fn is_empty(&self) -> bool {
-            self.0.is_empty()
-        }
-
-        fn is_full(&self) -> bool {
-            self.0.is_full()
-        }
-
-        fn len(&self) -> usize {
-            self.0.len()
-        }
-
-        fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id) {
-            let m = OwnedMove { m: *id, pp: None };
-            match self.0.is_full() {
+    pub fn add(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id) {
+        if let Some(m) = self.0.try_get(id) {
+            let m = OwnedMove::new(m);
+            match self.1.is_full() {
                 true => {
-                    if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
+                    if let Some(i) = index.map(|i| self.1.get_mut(i)).flatten() {
                         *i = m
                     }
                 }
-                false => self.0.push(m),
-            }
-        }
-
-        fn restore(&mut self, index: Option<usize>, amount: Option<PP>) {
-            fn m(o: &mut OwnedIdMove, amount: Option<PP>) {
-                match amount {
-                    Some(add) => {
-                        if let Some(pp) = o.pp.as_mut() {
-                            *pp = pp.saturating_add(add);
-                        }
-                    }
-                    None => o.pp = None,
-                }
-            }
-
-            match index {
-                Some(index) => {
-                    if let Some(o) = self.0.get_mut(index) {
-                        m(o, amount)
-                    }
-                }
-                None => self.iter_mut().for_each(|o| m(o, amount)),
+                false => self.1.push(m),
             }
         }
     }
 
-    impl<'d, D: Dex<Move> + 'd> Initializable<'d, D> for MoveIdSet {
-        type Identifier = Move;
+}
 
-        type Output = MoveRefSet<'d, D>;
+impl Uninitializable for OwnedMoveSet<'_> {
+    type Output = SavedMoveSet;
 
-        fn init(self, dex: &'d D) -> Option<Self::Output> {
-            let mut moves: A<<Self::Output as MoveSet>::Move> = Default::default();
-            for m in self.0.into_iter().map(|o| o.init(dex)) {
-                match m {
-                    Some(m) => moves.push(m),
-                    None => todo!(),
-                }
-            }
-            Some(MoveRefSet(moves, dex))
-        }
-    }
-
-    impl Default for MoveIdSet {
-        fn default() -> Self {
-            Self(Default::default())
-        }
-    }
-
-    #[derive(Debug, Clone)]
-    pub struct MoveRefSet<'d, D: Dex<Move>>(A<<Self as MoveSet>::Move>, &'d D);
-
-    impl<'d, D: Dex<Move>> MoveSet for MoveRefSet<'d, D> {
-        type Move = OwnedMove<&'d Move, PP>;
-
-        fn get(&self, index: usize) -> Option<&Self::Move> {
-            self.0.get(index)
-        }
-
-        fn get_mut(&mut self, index: usize) -> Option<&mut Self::Move> {
-            self.0.get_mut(index)
-        }
-
-        fn iter(&self) -> Iter<'_, Self::Move> {
-            self.0.iter()
-        }
-
-        fn iter_mut(&mut self) -> IterMut<'_, Self::Move> {
-            self.0.iter_mut()
-        }
-
-        fn is_empty(&self) -> bool {
-            self.0.is_empty()
-        }
-
-        fn is_full(&self) -> bool {
-            self.0.is_full()
-        }
-
-        fn len(&self) -> usize {
-            self.0.len()
-        }
-
-        fn add_move(&mut self, index: Option<usize>, id: &<Move as Identifiable>::Id) {
-            if let Some(m) = self.1.try_get(id) {
-                let m = OwnedMove { m, pp: m.pp };
-                match self.0.is_full() {
-                    true => {
-                        if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
-                            *i = m
-                        }
-                    }
-                    false => self.0.push(m),
-                }
-            }
-        }
-
-        fn restore(&mut self, index: Option<usize>, amount: Option<PP>) {
-            fn m(o: &mut OwnedRefMove<'_>, amount: Option<PP>) {
-                match amount {
-                    Some(amount) => o.pp = o.pp.saturating_add((o.pp + amount).min(o.m.pp)),
-                    None => o.pp = o.m.pp,
-                }
-            }
-
-            match index {
-                Some(index) => {
-                    if let Some(o) = self.0.get_mut(index) {
-                        m(o, amount)
-                    }
-                }
-                None => self.iter_mut().for_each(|o| m(o, amount)),
-            }
-        }
-    }
-
-    impl<D: Dex<Move>> Uninitializable for MoveRefSet<'_, D> {
-        type Output = MoveIdSet;
-
-        fn uninit(self) -> Self::Output {
-            MoveIdSet(self.0.into_iter().map(|o| o.uninit()).collect())
-        }
+    fn uninit(self) -> Self::Output {
+        self.1.into_iter().map(|o| o.uninit()).collect()
     }
 }

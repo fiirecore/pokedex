@@ -2,14 +2,6 @@ use crate::Identifiable;
 
 /// A Dex is used to hold types with an identifiable value (see [Identifiable]).
 pub trait Dex<I: Identifiable> {
-    type Inner: Sized + Default;
-
-    /// Create a new Dex from an inner type.
-    fn new(dex: Self::Inner) -> Self;
-
-    /// Get the inner type of a Dex.
-    fn inner_mut(&mut self) -> &mut Self::Inner;
-
     /// Inserts a value to the Dex.
     fn insert(&mut self, v: I) -> Option<I>;
 
@@ -34,6 +26,8 @@ pub use defaults::BasicDex;
 #[cfg(feature = "dex_types")]
 mod defaults {
 
+    use core::hash::Hash;
+
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     use crate::Identifiable;
@@ -47,22 +41,26 @@ mod defaults {
 
     /// Basic Dex implementation using hashbrown crate.
     #[repr(transparent)]
-    #[derive(Debug)]
-    pub struct BasicDex<I: Identifiable>(<Self as Dex<I>>::Inner);
+    #[derive(Debug, Clone)]
+    pub struct BasicDex<I: Identifiable>(hashbrown::HashMap<I::Id, I>)
+    where
+        I::Id: Hash + Eq;
 
-    impl<I: Identifiable> Dex<I> for BasicDex<I> {
-        type Inner = hashbrown::HashMap<I::Id, I>;
-
-        fn new(inner: Self::Inner) -> Self {
+    impl<I: Identifiable> BasicDex<I>
+    where
+        I::Id: Hash + Eq,
+    {
+        pub fn new(inner: hashbrown::HashMap<I::Id, I>) -> Self {
             Self(inner)
         }
+    }
 
-        fn inner_mut(&mut self) -> &mut Self::Inner {
-            &mut self.0
-        }
-
+    impl<I: Identifiable> Dex<I> for BasicDex<I>
+    where
+        I::Id: Hash + Eq,
+    {
         fn insert(&mut self, v: I) -> Option<I> {
-            self.0.insert(*v.id(), v)
+            self.0.insert(v.id().clone(), v)
         }
 
         fn try_get(&self, id: &I::Id) -> Option<&I> {
@@ -84,24 +82,30 @@ mod defaults {
         }
     }
 
-    impl<I: Identifiable> Default for BasicDex<I> {
+    impl<I: Identifiable> Default for BasicDex<I>
+    where
+        I::Id: Hash + Eq {
         fn default() -> Self {
             Self(Default::default())
         }
     }
 
     /// Serialize Dex as a Vec
-    impl<I: Identifiable + Serialize> Serialize for BasicDex<I> {
+    impl<I: Identifiable + Serialize> Serialize for BasicDex<I>
+    where
+        I::Id: Hash + Eq {
         fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
             serializer.collect_seq(self.0.values())
         }
     }
 
     /// Deserialize Dex from a Vec
-    impl<'de, I: Identifiable + Deserialize<'de>> Deserialize<'de> for BasicDex<I> {
+    impl<'de, I: Identifiable + Deserialize<'de>> Deserialize<'de> for BasicDex<I>
+    where
+        I::Id: Hash + Eq {
         fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
             Vec::<I>::deserialize(deserializer)
-                .map(|i| Self(i.into_iter().map(|i| (*i.id(), i)).collect()))
+                .map(|i| Self(i.into_iter().map(|i| (i.id().clone(), i)).collect()))
         }
     }
 }

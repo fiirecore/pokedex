@@ -2,68 +2,62 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Dex, Initializable, Uninitializable, moves::{Move, MoveId, PP}};
 
-pub type OwnedIdMove = OwnedMove<MoveId, Option<PP>>;
-pub type OwnedRefMove<'d> = OwnedMove<&'d Move, PP>;
-
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OwnedMove<M, PP> {
-    #[serde(rename = "move")]
-    pub m: M,
-    pub pp: PP,
-    // pub decrement: Option<PP>,
-}
+pub struct SavedMove(pub MoveId, Option<PP>);
 
-impl<'d, D: Dex<Move> + 'd> Initializable<'d, D> for OwnedIdMove {
+#[derive(Debug, Clone, Copy)]
+pub struct OwnedMove<'d>(pub &'d Move, PP);
 
-    type Output = OwnedRefMove<'d>;
+impl<'d, D: Dex<Move>> Initializable<'d, D> for SavedMove {
 
-    type Identifier = Move;
+    type Output = OwnedMove<'d>;
 
     fn init(self, dex: &'d D) -> Option<Self::Output> {
-        dex.try_get(&self.m).map(|m| Self::Output { pp: m.pp, m })
+        dex.try_get(&self.0).map(|m| OwnedMove(m, self.1.unwrap_or(m.pp)))
     }
 }
 
-impl<'d> Uninitializable for OwnedRefMove<'d> {
+impl<'d> Uninitializable for OwnedMove<'d> {
 
-    type Output = OwnedIdMove;
+    type Output = SavedMove;
 
     fn uninit(self) -> Self::Output {
-        Self::Output {
-            m: self.m.id,
-            pp: Some(self.pp),
-        }
+        SavedMove(self.0.id, Some(self.1))
     }
 }
 
-impl<'d> OwnedRefMove<'d> {
+impl<'d> OwnedMove<'d> {
     pub fn new(m: &'d Move) -> Self {
-        Self { pp: m.pp, m }
+        Self(m, m.pp)
     }
 
     pub fn try_use(&self) -> Option<&'d Move> {
         match self.empty() {
-            false => Some(&self.m),
+            false => Some(&self.0),
             true => None,
         }
     }
 
+    pub fn uses(&self) -> PP {
+        self.1
+    }
+
     pub fn decrement(&mut self) {
-        self.pp = self.pp.saturating_sub(1);
+        self.1 = self.1.saturating_sub(1);
     }
 
     pub fn empty(&self) -> bool {
-        self.pp == 0
+        self.1 == 0
     }
 
     pub fn restore(&mut self, amount: Option<PP>) {
-        self.pp = amount.unwrap_or(self.m.pp).min(self.m.pp)
+        let max = self.0.pp;
+        self.1 = amount.unwrap_or(max).min(max)
     }
 }
 
-impl From<MoveId> for OwnedIdMove {
+impl From<MoveId> for SavedMove {
     fn from(id: MoveId) -> Self {
-        Self { m: id, pp: None }
+        Self(id, None)
     }
 }

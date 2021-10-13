@@ -8,14 +8,8 @@ use tinystr::TinyStr16;
 
 use crate::{pokemon::stat::StatType, types::PokemonType, Identifiable, UNKNOWN_ID};
 
-mod owned;
-pub use owned::*;
-
-mod set;
-pub use set::*;
-
-mod target;
-pub use target::*;
+pub mod owned;
+pub mod set;
 
 /// An identifier for a [Move].
 pub type MoveId = TinyStr16;
@@ -55,7 +49,7 @@ pub struct Move {
     pub priority: Priority,
 
     #[serde(default)]
-    pub target: target::MoveTarget,
+    pub target: MoveTarget,
 
     /// If the move makes contact with the target.
     #[serde(default)]
@@ -66,15 +60,6 @@ pub struct Move {
     pub crit_rate: CriticalRate,
 
 }
-
-// impl Move {
-//     /// Tries to determine if a move should hit or not, depending on a random number generator and accuracy.
-//     pub fn try_hit(&self, accuracy: Stage, random: &mut impl rand::Rng) -> bool {
-//         self.accuracy
-//             .map(|accuracy| random.gen_range(0..100) < accuracy)
-//             .unwrap_or(true)
-//     }
-// }
 
 impl Identifiable for Move {
     type Id = MoveId;
@@ -126,5 +111,29 @@ impl MoveCategory {
             MoveCategory::Special => StatType::SpDefense,
             MoveCategory::Status => unreachable!("Cannot get defense stat for status move!"),
         }
+    }
+}
+
+/// The target of a [Move].
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+pub enum MoveTarget {
+    Any,
+    Ally,
+    Allies,
+    UserOrAlly,
+    UserAndAllies,
+    // UserOrAllies,
+    User,
+    Opponent,
+    AllOpponents,
+    RandomOpponent,
+    AllOtherPokemon,
+    AllPokemon,
+    None,
+}
+
+impl Default for MoveTarget {
+    fn default() -> Self {
+        Self::None
     }
 }

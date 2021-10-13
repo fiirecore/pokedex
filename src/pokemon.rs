@@ -1,5 +1,5 @@
 //! Types and structs related to Pokemon
-//! 
+//!
 
 use core::{
     fmt::{Display, Formatter, Result as FmtResult},
@@ -14,11 +14,9 @@ use crate::{
     Identifiable,
 };
 
-mod owned;
-pub use owned::*;
+pub mod owned;
 
-mod party;
-pub use party::*;
+pub mod party;
 
 mod data;
 pub use data::*;
@@ -95,8 +93,14 @@ impl Pokemon {
     }
 
     /// Get an iterator of the moves a pokemon can get from a range of levels.
-    pub fn moves_at<'s, R: RangeBounds<Level> + 's>(&'s self, levels: R) -> impl Iterator<Item = &MoveId> + 's {
-        self.moves.iter().filter(move |m| levels.contains(&m.0)).map(|m| &m.1)
+    pub fn moves_at<'s, R: RangeBounds<Level> + 's>(
+        &'s self,
+        levels: R,
+    ) -> impl Iterator<Item = &MoveId> + 's {
+        self.moves
+            .iter()
+            .filter(move |m| levels.contains(&m.0))
+            .map(|m| &m.1)
     }
 
     /// Get the value of a base stat from basic stats.
@@ -139,7 +143,6 @@ impl Identifiable for Pokemon {
     fn name(&self) -> &str {
         &self.name
     }
-
 }
 
 impl Display for Pokemon {
@@ -150,8 +153,11 @@ impl Display for Pokemon {
 
 #[test]
 fn tests() {
-
-    use crate::{BasicDex, Dex, pokemon::stat::StatSet, moves::{Move, MoveCategory, MoveTarget, Power, PP, MoveSet}};
+    use crate::{
+        moves::{Move, MoveCategory, MoveTarget, Power, PP},
+        pokemon::{owned::SavedPokemon, stat::StatSet},
+        BasicDex, Dex,
+    };
 
     let mut pokedex = BasicDex::default();
 
@@ -167,7 +173,10 @@ fn tests() {
         species: "Test Species".to_owned(),
         height: 6_5,
         weight: 100,
-        training: Training { base_exp: 200, growth_rate: Default::default() },
+        training: Training {
+            base_exp: 200,
+            growth_rate: Default::default(),
+        },
         breeding: Breeding { gender: None },
     };
 
@@ -188,17 +197,18 @@ fn tests() {
         contact: false,
         crit_rate: 1,
     };
-    
+
     movedex.insert(v);
 
     let itemdex = BasicDex::default();
 
     let mut rng = rand::rngs::mock::StepRng::new(12, 24);
 
-    let pokemon = OwnedIdPokemon::<crate::moves::MoveIdSet>::generate(&mut rng, 0, 30, None, None);
+    let pokemon = SavedPokemon::generate(&mut rng, 0, 30, None, None);
 
-    let pokemon = pokemon.init(&mut rng, &pokedex, &movedex, &itemdex).unwrap();
+    let pokemon = pokemon
+        .init(&mut rng, &pokedex, &movedex, &itemdex)
+        .unwrap();
 
     assert!(pokemon.moves.len() != 0)
-
 }

@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Dex, Initializable, Uninitializable, item::{Item, ItemId, StackSize}};
+use crate::{
+    item::{Item, ItemId, StackSize},
+    Dex, Initializable, Uninitializable,
+};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemStack<I> {
@@ -23,15 +26,12 @@ impl<I> ItemStack<I> {
     }
 }
 
-impl<'d, D: Dex<Item> + 'd> Initializable<'d, D> for ItemStack<ItemId> {
-
+impl<'d, D: Dex<Item>> Initializable<'d, D> for ItemStack<ItemId> {
     type Output = ItemStack<&'d Item>;
 
-    type Identifier = Item;
-
-    fn init(self, itemdex: &'d D) -> Option<Self::Output> {
+    fn init(self, dex: &'d D) -> Option<Self::Output> {
         Some(Self::Output {
-            item: itemdex.try_get(&self.item)?,
+            item: dex.try_get(&self.item)?,
             count: self.count,
         })
     }
@@ -53,7 +53,6 @@ impl<'d> ItemStack<&'d Item> {
             false => None,
         }
     }
-
 }
 
 impl<'d> Uninitializable for ItemStack<&'d Item> {
@@ -62,7 +61,7 @@ impl<'d> Uninitializable for ItemStack<&'d Item> {
     fn uninit(self) -> Self::Output {
         Self::Output {
             item: self.item.id,
-            count: self.count
+            count: self.count,
         }
     }
 }

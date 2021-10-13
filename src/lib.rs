@@ -1,5 +1,5 @@
 //! Basic pokedex library written in Rust.
-//! 
+//!
 
 #![deny(unsafe_code)]
 // #![deny(missing_docs)]
@@ -15,12 +15,13 @@ pub use dex::*;
 
 /// A TinyStr16 that holds the value "unknown"
 #[allow(unsafe_code)]
-pub const UNKNOWN_ID: tinystr::TinyStr16 = unsafe { tinystr::TinyStr16::new_unchecked(31093567915781749) };
+pub const UNKNOWN_ID: tinystr::TinyStr16 =
+    unsafe { tinystr::TinyStr16::new_unchecked(31093567915781749) };
 
 /// A trait that helps identify which value of a type is which.
 pub trait Identifiable {
     /// The type that identifies this type.
-    type Id: serde::de::DeserializeOwned + serde::Serialize + core::fmt::Debug + core::fmt::Display + Copy + Eq + core::hash::Hash;
+    type Id: PartialEq + Clone;
 
     /// The identifier to fallback to when an unknown value is needed.
     const UNKNOWN: Self::Id;
@@ -30,33 +31,42 @@ pub trait Identifiable {
 
     /// The name of this value.
     fn name(&self) -> &str;
-
 }
 
 /// A trait that helps initialize values.
-pub trait Initializable<'d, D: Dex<Self::Identifier> + 'd> {
-
+pub trait Initializable<'i, I> {
     /// The output of initialization.
     type Output;
 
-    /// What dex this type uses to initialize itself.
-    type Identifier: Identifiable;
-
     /// The function to initialize this value.
-    fn init(self, dex: &'d D) -> Option<Self::Output>;
-
+    fn init(self, initializer: &'i I) -> Option<Self::Output>;
 }
 
 /// A trait that helps uninitialize values (mostly into a non-borrowing form).
 pub trait Uninitializable {
-
     /// The uninitialized value.
     type Output;
 
     /// The function to uninitialize this value.
     fn uninit(self) -> Self::Output;
-
 }
+
+#[derive(Debug)]
+pub struct IdentifiablePtr<'i, I: Identifiable>(pub &'i I);
+
+impl<'i, I: Identifiable> PartialEq for IdentifiablePtr<'i, I> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.id() == other.0.id()
+    }
+}
+
+impl<'i, I: Identifiable> Clone for IdentifiablePtr<'i, I> {
+    fn clone(&self) -> Self {
+        Self(self.0)
+    }
+}
+
+impl<'i, I: Identifiable> Copy for IdentifiablePtr<'i, I> {}
 
 // #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 // pub struct MaximumNumber<N: Restorable, D, I: Identifiable>(pub N, #[serde(skip)] Option<N>);
