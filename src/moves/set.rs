@@ -27,6 +27,10 @@ impl<'d> OwnedMoveSet<'d> {
         self.1.get(index)
     }
 
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut OwnedMove<'d>> {
+        self.1.get_mut(index)
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &OwnedMove<'d>> {
         self.1.iter()
     }
