@@ -6,10 +6,9 @@ pub trait PartyTrait {
     const SIZE: usize = PARTY_SIZE;
 }
 
-#[cfg(feature = "party_types")]
 pub use defaults::*;
 
-#[cfg(feature = "party_types")]
+
 mod defaults {
     use super::PARTY_SIZE;
 
