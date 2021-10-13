@@ -70,3 +70,15 @@ impl Uninitializable for OwnedMoveSet<'_> {
         self.1.into_iter().map(|o| o.uninit()).collect()
     }
 }
+
+impl core::fmt::Debug for OwnedMoveSet<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Debug::fmt(&self.1, f)
+    }
+}
+
+impl Clone for OwnedMoveSet<'_> {
+    fn clone(&self) -> Self {
+        Self(self.0, self.1.clone())
+    }
+}
