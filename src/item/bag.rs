@@ -3,13 +3,13 @@ use crate::{
     Dex, Initializable, Uninitializable,
 };
 
-pub struct Bag<'d, D: Dex<Item>> {
-    pub itemdex: &'d D,
+pub struct Bag<'d> {
+    pub itemdex: &'d dyn Dex<Item>,
     pub items: Vec<ItemStack<&'d Item>>,
 }
 
-impl<'d, D: Dex<Item>> Bag<'d, D> {
-    pub fn init(itemdex: &'d D, items: Vec<ItemStack<ItemId>>) -> Self {
+impl<'d> Bag<'d> {
+    pub fn init(itemdex: &'d dyn Dex<Item>, items: Vec<ItemStack<ItemId>>) -> Self {
         let items = items.into_iter().flat_map(|s| s.init(itemdex)).collect();
         Self { itemdex, items }
     }
@@ -36,7 +36,7 @@ impl<'d, D: Dex<Item>> Bag<'d, D> {
     }
 }
 
-impl<'d, D: Dex<Item>> Uninitializable for Bag<'d, D> {
+impl<'d> Uninitializable for Bag<'d> {
     type Output = Vec<ItemStack<ItemId>>;
 
     fn uninit(self) -> Self::Output {
@@ -44,7 +44,7 @@ impl<'d, D: Dex<Item>> Uninitializable for Bag<'d, D> {
     }
 }
 
-impl<'d, D: Dex<Item>> Clone for Bag<'d, D> {
+impl<'d> Clone for Bag<'d> {
     fn clone(&self) -> Self {
         Self {
             itemdex: self.itemdex,

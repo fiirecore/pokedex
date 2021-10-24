@@ -40,7 +40,7 @@ mod defaults {
     /// Basic Dex implementation using hashbrown crate.
     #[repr(transparent)]
     #[derive(Debug, Clone)]
-    pub struct BasicDex<I: Identifiable>(hashbrown::HashMap<I::Id, I>)
+    pub struct BasicDex<I: Identifiable>(pub hashbrown::HashMap<I::Id, I>)
     where
         I::Id: Hash + Eq;
 
@@ -55,6 +55,11 @@ mod defaults {
         pub fn insert(&mut self, v: I) -> Option<I> {
             self.0.insert(v.id().clone(), v)
         }
+
+        pub fn into_inner(self) -> hashbrown::HashMap<I::Id, I> {
+            self.0
+        }
+
     }
 
     impl<I: Identifiable> Dex<I> for BasicDex<I>
