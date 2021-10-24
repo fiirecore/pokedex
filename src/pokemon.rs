@@ -156,7 +156,7 @@ fn tests() {
     use crate::{
         moves::{Move, MoveCategory, MoveTarget, Power, PP},
         pokemon::{owned::SavedPokemon, stat::StatSet},
-        BasicDex, Dex,
+        BasicDex,
     };
 
     let mut pokedex = BasicDex::default();

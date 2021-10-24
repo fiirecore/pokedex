@@ -1,6 +1,6 @@
 [package]
 name = "firecore-pokedex"
-version = "0.0.4" # 0.5.0-beta.2021-08-22
+version = "0.0.5" # 0.5.0-beta.2021-08-22
 authors = ["Rhys H <donotdoughnut99@gmail.com>"]
 edition = "2018"
 description = "A pokedex library"
@@ -17,6 +17,6 @@ dex_types = ["hashbrown"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 rand = { version = "0.8", default-features = false }
-tinystr = { version = "0.4", features = ["serde"] }
+tinystr = { version = "0.4", features = ["serde"], default-features = false }
 hashbrown = { version = "0.11", features = ["serde"], optional = true }
 arrayvec = { version = "0.5", features = ["serde"] }

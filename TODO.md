@@ -2,7 +2,8 @@
 
 * 0.1.0 crates.io publish: full documentation
 * MoveTarget nesting and functions
-* move Move::try_hit to battle crate
+
+* Default values for Pokemon, Move and Items
 
 ## Roadmap
 
@@ -11,6 +12,5 @@
 
 ### maybe:
 
-- [ ] Finish naming OwnedPokemon/OwnedMove types
 - [ ] Easier generics for Owned Types
 - [ ] Regeneratable trait for HP and PP

@@ -10,11 +10,11 @@ pub const DEFAULT_SIZE: usize = 4;
 
 pub type SavedMoveSet = arrayvec::ArrayVec<[SavedMove; DEFAULT_SIZE]>;
 
-impl<'d, D: Dex<Move>> Initializable<'d, D> for SavedMoveSet {
+impl<'d> Initializable<'d, Move> for SavedMoveSet {
 
     type Output = OwnedMoveSet<'d>;
 
-    fn init(self, dex: &'d D) -> Option<Self::Output> {
+    fn init(self, dex: &'d dyn Dex<Move>) -> Option<Self::Output> {
         Some(OwnedMoveSet(dex, self.into_iter().flat_map(|s| s.init(dex)).collect()))
     }
 }

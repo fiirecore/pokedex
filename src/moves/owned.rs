@@ -8,11 +8,11 @@ pub struct SavedMove(pub MoveId, Option<PP>);
 #[derive(Debug, Clone, Copy)]
 pub struct OwnedMove<'d>(pub &'d Move, PP);
 
-impl<'d, D: Dex<Move>> Initializable<'d, D> for SavedMove {
+impl<'d> Initializable<'d, Move> for SavedMove {
 
     type Output = OwnedMove<'d>;
 
-    fn init(self, dex: &'d D) -> Option<Self::Output> {
+    fn init(self, dex: &'d dyn Dex<Move>) -> Option<Self::Output> {
         dex.try_get(&self.0).map(|m| OwnedMove(m, self.1.unwrap_or(m.pp)))
     }
 }

@@ -34,12 +34,12 @@ pub trait Identifiable {
 }
 
 /// A trait that helps initialize values.
-pub trait Initializable<'i, I> {
+pub trait Initializable<'i, I: Identifiable> {
     /// The output of initialization.
     type Output;
 
     /// The function to initialize this value.
-    fn init(self, initializer: &'i I) -> Option<Self::Output>;
+    fn init(self, initializer: &'i dyn Dex<I>) -> Option<Self::Output>;
 }
 
 /// A trait that helps uninitialize values (mostly into a non-borrowing form).

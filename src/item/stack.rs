@@ -26,10 +26,10 @@ impl<I> ItemStack<I> {
     }
 }
 
-impl<'d, D: Dex<Item>> Initializable<'d, D> for ItemStack<ItemId> {
+impl<'d> Initializable<'d, Item> for ItemStack<ItemId> {
     type Output = ItemStack<&'d Item>;
 
-    fn init(self, dex: &'d D) -> Option<Self::Output> {
+    fn init(self, dex: &'d dyn Dex<Item>) -> Option<Self::Output> {
         Some(Self::Output {
             item: dex.try_get(&self.item)?,
             count: self.count,

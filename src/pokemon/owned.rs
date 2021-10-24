@@ -88,12 +88,12 @@ impl SavedPokemon {
 }
 
 impl<'d> SavedPokemon {
-    pub fn init<R: Rng, PDEX: Dex<Pokemon>, MDEX: Dex<Move>, IDEX: Dex<Item>>(
+    pub fn init<R: Rng>(
         self,
         random: &mut R,
-        pokedex: &'d PDEX,
-        movedex: &'d MDEX,
-        itemdex: &'d IDEX,
+        pokedex: &'d dyn Dex<Pokemon>,
+        movedex: &'d dyn Dex<Move>,
+        itemdex: &'d dyn Dex<Item>,
     ) -> Option<OwnedPokemon<'d>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let hp = self

@@ -2,8 +2,6 @@ use crate::Identifiable;
 
 /// A Dex is used to hold types with an identifiable value (see [Identifiable]).
 pub trait Dex<I: Identifiable> {
-    /// Inserts a value to the Dex.
-    fn insert(&mut self, v: I) -> Option<I>;
 
     /// Try to get an identifiable value from the Dex.
     fn try_get(&self, id: &I::Id) -> Option<&I>;
@@ -53,15 +51,16 @@ mod defaults {
         pub fn new(inner: hashbrown::HashMap<I::Id, I>) -> Self {
             Self(inner)
         }
+        
+        pub fn insert(&mut self, v: I) -> Option<I> {
+            self.0.insert(v.id().clone(), v)
+        }
     }
 
     impl<I: Identifiable> Dex<I> for BasicDex<I>
     where
         I::Id: Hash + Eq,
     {
-        fn insert(&mut self, v: I) -> Option<I> {
-            self.0.insert(v.id().clone(), v)
-        }
 
         fn try_get(&self, id: &I::Id) -> Option<&I> {
             self.0.get(id)
