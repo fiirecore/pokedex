@@ -18,8 +18,8 @@ pub mod owned;
 
 pub mod party;
 
-mod data;
-pub use data::*;
+pub mod data;
+use self::data::*;
 
 pub mod stat;
 use self::stat::{BaseStat, Stat, StatType, Stats};
@@ -57,12 +57,12 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
-    /// Generate a set of moves given this pokemon and a level.
+    // /// Generate a set of moves given this pokemon and a level.
     // pub fn generate_moves(&self, level: Level) -> impl Iterator<Item = &MoveId> + {
     //     self.moves.
     // }
 
-    /// Generate a pokemon's gender based on its percent to be a certain gender and a random number generator.
+    /// Generate a pokemon's [Gender] based on its percent to be a certain gender and a random number generator.
     pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
         self.breeding.gender.map(
             |percentage| match random.gen_range(Gender::RANGE) > percentage {
@@ -72,7 +72,7 @@ impl Pokemon {
         )
     }
 
-    /// Check how effective a pokemon type is on this pokemon.
+    /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
         let primary = user.effective(self.primary_type, category);
         if let Some(secondary) = self.secondary_type {
@@ -82,12 +82,12 @@ impl Pokemon {
         }
     }
 
-    /// Get the amount of exp that can be gained from defeating this pokemon at a certain level.
+    /// Get the amount of [Experience] that can be gained from defeating this pokemon at a certain [Level].
     pub fn exp_from(&self, level: Level) -> Experience {
         ((self.training.base_exp * level as u16) / 7) as Experience
     }
 
-    /// Get the moves of a pokemon at a certain level.
+    /// Get the moves of a pokemon at a certain [Level].
     pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = &MoveId> + '_ {
         self.moves_at(level..=level)
     }
@@ -103,7 +103,7 @@ impl Pokemon {
             .map(|m| &m.1)
     }
 
-    /// Get the value of a base stat from basic stats.
+    /// Get the value of a [BaseStat] from basic stats.
     pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
         match stat {
             StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
@@ -111,7 +111,7 @@ impl Pokemon {
         }
     }
 
-    /// Get the value of a base stat from basic stats, excluding health.
+    /// Get the value of a [BaseStat] from basic stats, excluding health.
     pub fn base_stat(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
         //add item check
         let nature = 1.0;
@@ -120,12 +120,13 @@ impl Pokemon {
             .floor() as BaseStat
     }
 
-    /// Get the base health of a pokemon from basic stats.
+    /// Get the base [Health] of a pokemon from basic stats.
     pub fn base_hp(base: Stat, iv: Stat, ev: Stat, level: Level) -> Health {
         ((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + level as f32 + 10.0)
             .floor() as Health
     }
 
+    /// The default [Friendship] of a pokemon.
     pub const fn default_friendship() -> Friendship {
         70
     }

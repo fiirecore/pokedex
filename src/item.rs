@@ -1,3 +1,7 @@
+//! Items
+//! 
+//! This module is incomplete and due to change.
+
 use serde::{Deserialize, Serialize};
 
 use tinystr::TinyStr16;
@@ -15,6 +19,7 @@ pub type ItemId = TinyStr16;
 /// The amount of items in a group of items (a stack).
 pub type StackSize = u16;
 
+/// An item.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Item {

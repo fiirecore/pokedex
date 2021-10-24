@@ -1,3 +1,7 @@
+//! Status effects implementation
+//! 
+//! This module is very incomplete and likely to change
+
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 

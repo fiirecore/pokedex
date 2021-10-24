@@ -13,7 +13,7 @@ pub mod types;
 mod dex;
 pub use dex::*;
 
-/// A TinyStr16 that holds the value "unknown"
+/// An ascii string that holds the value "unknown"
 #[allow(unsafe_code)]
 pub const UNKNOWN_ID: tinystr::TinyStr16 =
     unsafe { tinystr::TinyStr16::new_unchecked(31093567915781749) };
@@ -33,13 +33,13 @@ pub trait Identifiable {
     fn name(&self) -> &str;
 }
 
-/// A trait that helps initialize values.
-pub trait Initializable<'i, I: Identifiable> {
+/// A trait that helps initialize values with a Dex.
+pub trait Initializable<'d, I: Identifiable> {
     /// The output of initialization.
     type Output;
 
     /// The function to initialize this value.
-    fn init(self, initializer: &'i dyn Dex<I>) -> Option<Self::Output>;
+    fn init(self, initializer: &'d dyn Dex<I>) -> Option<Self::Output>;
 }
 
 /// A trait that helps uninitialize values (mostly into a non-borrowing form).
@@ -50,23 +50,6 @@ pub trait Uninitializable {
     /// The function to uninitialize this value.
     fn uninit(self) -> Self::Output;
 }
-
-#[derive(Debug)]
-pub struct IdentifiablePtr<'i, I: Identifiable>(pub &'i I);
-
-impl<'i, I: Identifiable> PartialEq for IdentifiablePtr<'i, I> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.id() == other.0.id()
-    }
-}
-
-impl<'i, I: Identifiable> Clone for IdentifiablePtr<'i, I> {
-    fn clone(&self) -> Self {
-        Self(self.0)
-    }
-}
-
-impl<'i, I: Identifiable> Copy for IdentifiablePtr<'i, I> {}
 
 // #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 // pub struct MaximumNumber<N: Restorable, D, I: Identifiable>(pub N, #[serde(skip)] Option<N>);

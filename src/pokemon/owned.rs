@@ -20,9 +20,14 @@ use crate::{
 
 // pub type HP = crate::MaximumNumber<Health>;
 
+/// A pokemon owned by a player.
+/// This can be (de)serialized and does not borrow values.
 pub type SavedPokemon = OwnablePokemon<PokemonId, SavedMoveSet, ItemId, Option<Health>>;
+/// A pokemon owned by a player.
+/// This struct has borrowed values from multiple [Dex]es.
 pub type OwnedPokemon<'d> = OwnablePokemon<&'d Pokemon, OwnedMoveSet<'d>, &'d Item, Health>;
 
+/// The base struct for a pokemon owned by a player.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OwnablePokemon<P, M, I, H> {
     /// Pokemon Identifier
@@ -63,6 +68,7 @@ pub struct OwnablePokemon<P, M, I, H> {
 }
 
 impl SavedPokemon {
+    /// Generate an owned pokemon.
     pub fn generate(
         random: &mut impl Rng,
         pokemon: PokemonId,
@@ -74,7 +80,7 @@ impl SavedPokemon {
             pokemon,
             level,
             gender,
-            ivs: ivs.unwrap_or_else(|| Stats::random(random)),
+            ivs: ivs.unwrap_or_else(|| Stats::random_iv(random)),
             friendship: Pokemon::default_friendship(),
             hp: Default::default(),
             nickname: Default::default(),
@@ -88,6 +94,7 @@ impl SavedPokemon {
 }
 
 impl<'d> SavedPokemon {
+    /// Initialize this owned pokemon struct into an [OwnedPokemon] so it can perform more functions.
     pub fn init<R: Rng>(
         self,
         random: &mut R,
@@ -125,46 +132,57 @@ impl<'d> SavedPokemon {
 }
 
 impl<'d> OwnedPokemon<'d> {
+    /// Get the name of this pokemon.
+    /// Returns the nickname or the pokemon's name.
     pub fn name(&self) -> &str {
         self.nickname
             .as_deref()
             .unwrap_or_else(|| self.pokemon.name())
     }
 
+    /// Get the current [Health] of this pokemon.
     pub fn hp(&self) -> Health {
         self.hp
     }
 
+    /// Get the maximum [Health] of this pokemon.
     pub fn max_hp(&self) -> Health {
         self.stat(StatType::Health)
     }
 
+    /// Get the current [Health] of this pokemon as a percentage.
     pub fn percent_hp(&self) -> f32 {
         self.hp() as f32 / self.max_hp() as f32
     }
 
+    /// Get a [BaseStat] for this pokemon.
     pub fn stat(&self, stat: StatType) -> BaseStat {
         self.pokemon.stat(&self.ivs, &self.evs, self.level, stat)
     }
 
+    /// Heal this pokemon with an optional amount of [Health] and restore all its move's [PP] by an optional amount.
     pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
         self.heal_hp(hp);
         self.moves.iter_mut().for_each(|o| o.restore(pp));
     }
 
+    /// Heal this pokemon with an optional amount of [Health].
     pub fn heal_hp(&mut self, amount: Option<Health>) {
         let max = self.max_hp();
         self.hp = amount.unwrap_or(max).min(max);
     }
 
+    /// Has the pokemon fainted.
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
 
+    /// Get this pokemon's moves at its current [Level].
     pub fn moves_at_level(&self) -> impl Iterator<Item = &MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
     }
 
+    /// Add [Experience] to this pokemon, and also handle level ups.
     pub fn add_exp(&mut self, experience: Experience) -> impl Iterator<Item = &MoveId> + '_ {
         // add exp to pokemon
 
@@ -184,10 +202,12 @@ impl<'d> OwnedPokemon<'d> {
         self.on_level_up(previous)
     }
 
+    /// Get the [Experience] from this pokemon at its current [Level].
     pub fn exp_from(&self) -> Experience {
         self.pokemon.exp_from(self.level)
     }
 
+    /// Handle leveling up.
     pub fn on_level_up(&mut self, previous: Level) -> impl Iterator<Item = &MoveId> + '_ {
         // Get the moves the pokemon learns at the level it just gained.
 
@@ -207,6 +227,8 @@ impl<'d> OwnedPokemon<'d> {
         moves
     }
 
+    /// Try to use an [Item] and return true if it succeeds.
+    /// This function is incomplete and may change.
     pub fn try_use_item(&mut self, item: &Item) -> bool {
         if !item.usage.conditions.iter().any(|c| match c {
             ItemCondition::Fainted => self.fainted(),
@@ -239,6 +261,9 @@ impl<'d> OwnedPokemon<'d> {
         true
     }
 
+    /// Try to use the current [Item] the pokemon is holding.
+    /// This function is incomplete and due to change.
+    /// !!! Always uses the held item.
     pub fn use_held_item(&mut self) -> bool {
         match self.item.take() {
             Some(item) => self.try_use_item(&item),

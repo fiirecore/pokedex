@@ -5,6 +5,9 @@ use crate::{
     Dex, Initializable, Uninitializable,
 };
 
+pub type SavedItemStack = ItemStack<ItemId>;
+pub type OwnedItemStack<'d> = ItemStack<&'d Item>;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemStack<I> {
     pub item: I,
@@ -26,8 +29,8 @@ impl<I> ItemStack<I> {
     }
 }
 
-impl<'d> Initializable<'d, Item> for ItemStack<ItemId> {
-    type Output = ItemStack<&'d Item>;
+impl<'d> Initializable<'d, Item> for SavedItemStack {
+    type Output = OwnedItemStack<'d>;
 
     fn init(self, dex: &'d dyn Dex<Item>) -> Option<Self::Output> {
         Some(Self::Output {
@@ -37,7 +40,7 @@ impl<'d> Initializable<'d, Item> for ItemStack<ItemId> {
     }
 }
 
-impl<'d> ItemStack<&'d Item> {
+impl<'d> OwnedItemStack<'d> {
     pub fn add(&mut self, stack: Self) -> Option<Self> {
         self.count = self.count.saturating_add(stack.count);
         let max = self.item.stack_size;
@@ -55,8 +58,8 @@ impl<'d> ItemStack<&'d Item> {
     }
 }
 
-impl<'d> Uninitializable for ItemStack<&'d Item> {
-    type Output = ItemStack<ItemId>;
+impl<'d> Uninitializable for OwnedItemStack<'d> {
+    type Output = SavedItemStack;
 
     fn uninit(self) -> Self::Output {
         Self::Output {

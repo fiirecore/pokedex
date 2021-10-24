@@ -1,3 +1,5 @@
+//! Structs/enums that represent something for a Pokemon
+
 use core::ops::Range;
 use serde::{Deserialize, Serialize};
 
@@ -7,6 +9,7 @@ use crate::{
 };
 
 
+/// The gender of a Pokemon. Usually used as Option<Gender> to included Pokemon with no gender.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Gender {
     Male,
@@ -14,12 +17,16 @@ pub enum Gender {
 }
 
 impl Gender {
-    pub(crate) const RANGE: Range<u8> = 0..8;
+    /// The chance of a pokemon being a certain gender.
+    /// Pokemon gender chance: 0 = 100% female, 7 = 100% male (0-8 scale)
+    pub const RANGE: Range<u8> = 0..8;
 }
 
+/// A Move a pokemon can learn at a certain level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LearnableMove(pub Level, pub MoveId);
 
+/// Data category
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Training {
     pub base_exp: u16,
@@ -30,6 +37,7 @@ pub struct Training {
     //pub base_friendship: Option<u8>,
 }
 
+/// Data category
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Breeding {
     // pub groups: Vec<EggGroup>,
@@ -38,6 +46,7 @@ pub struct Breeding {
     // pub cycles: Option<u8>,
 }
 
+/// How fast a pokemon can level up.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GrowthRate {
     Slow,
@@ -55,6 +64,7 @@ impl Default for GrowthRate {
 }
 
 impl GrowthRate {
+    /// Get the amount of [Experience] needed to [Level] up.
     pub fn max_exp(self, level: Level) -> Experience {
         (match level as i32 {
             0 => 0,
