@@ -17,6 +17,7 @@ impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedBag {
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct OwnedBag<I: Deref<Target = Item>> {
     pub items: Vec<ItemStack<I>>,
 }
