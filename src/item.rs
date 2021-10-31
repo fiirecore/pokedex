@@ -54,9 +54,16 @@ impl Identifiable for Item {
 }
 
 impl Item {
+
+    pub const fn should_consume(&self) -> bool {
+        self.usage.consume
+    }
+
+
     pub const fn default_stack_size() -> StackSize {
         999
     }
+
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]

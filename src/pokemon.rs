@@ -83,7 +83,7 @@ impl Pokemon {
     }
 
     /// Get the amount of [Experience] that can be gained from defeating this pokemon at a certain [Level].
-    pub fn exp_from(&self, level: Level) -> Experience {
+    pub const fn exp_from(&self, level: Level) -> Experience {
         ((self.training.base_exp * level as u16) / 7) as Experience
     }
 

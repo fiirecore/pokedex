@@ -1,16 +1,17 @@
+use core::ops::Deref;
+
 use crate::Identifiable;
 
 /// A Dex is used to hold types with an identifiable value (see [Identifiable]).
-pub trait Dex<I: Identifiable> {
-
+pub trait Dex<'d, I: Identifiable, O: Deref<Target = I>> {
     /// Try to get an identifiable value from the Dex.
-    fn try_get(&self, id: &I::Id) -> Option<&I>;
+    fn try_get(&'d self, id: &I::Id) -> Option<O>;
 
     /// Get the unknown value from the Dex.
-    fn unknown(&self) -> &I;
+    fn unknown(&'d self) -> O;
 
     /// Get the identifiable value from the Dex, or return the unknown value.
-    fn get(&self, id: &I::Id) -> &I {
+    fn get(&'d self, id: &I::Id) -> O {
         self.try_get(id).unwrap_or_else(|| self.unknown())
     }
 
@@ -18,10 +19,8 @@ pub trait Dex<I: Identifiable> {
     fn len(&self) -> usize;
 }
 
-#[cfg(feature = "dex_types")]
 pub use defaults::BasicDex;
 
-#[cfg(feature = "dex_types")]
 mod defaults {
 
     use core::hash::Hash;
@@ -51,27 +50,28 @@ mod defaults {
         pub fn new(inner: hashbrown::HashMap<I::Id, I>) -> Self {
             Self(inner)
         }
-        
-        pub fn insert(&mut self, v: I) -> Option<I> {
+
+        pub fn insert(&mut self, v: I) -> Option<I>
+        where
+            I::Id: Clone,
+        {
             self.0.insert(v.id().clone(), v)
         }
 
         pub fn into_inner(self) -> hashbrown::HashMap<I::Id, I> {
             self.0
         }
-
     }
 
-    impl<I: Identifiable> Dex<I> for BasicDex<I>
+    impl<'d, I: Identifiable + Send + Sync> Dex<'d, I, &'d I> for BasicDex<I>
     where
-        I::Id: Hash + Eq,
+        I::Id: Hash + Eq + Send + Sync,
     {
-
-        fn try_get(&self, id: &I::Id) -> Option<&I> {
+        fn try_get(&'d self, id: &I::Id) -> Option<&'d I> {
             self.0.get(id)
         }
 
-        fn unknown<'a>(&'a self) -> &I {
+        fn unknown(&'d self) -> &'d I {
             self.try_get(&I::UNKNOWN).unwrap_or_else(|| {
                 panic!(
                     "Could not get unknown {} for \"{}\"",
@@ -88,7 +88,8 @@ mod defaults {
 
     impl<I: Identifiable> Default for BasicDex<I>
     where
-        I::Id: Hash + Eq {
+        I::Id: Hash + Eq,
+    {
         fn default() -> Self {
             Self(Default::default())
         }
@@ -97,7 +98,8 @@ mod defaults {
     /// Serialize Dex as a Vec
     impl<I: Identifiable + Serialize> Serialize for BasicDex<I>
     where
-        I::Id: Hash + Eq {
+        I::Id: Hash + Eq,
+    {
         fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
             serializer.collect_seq(self.0.values())
         }
@@ -106,7 +108,8 @@ mod defaults {
     /// Deserialize Dex from a Vec
     impl<'de, I: Identifiable + Deserialize<'de>> Deserialize<'de> for BasicDex<I>
     where
-        I::Id: Hash + Eq {
+        I::Id: Hash + Eq + Clone,
+    {
         fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
             Vec::<I>::deserialize(deserializer)
                 .map(|i| Self(i.into_iter().map(|i| (i.id().clone(), i)).collect()))

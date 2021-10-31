@@ -1,44 +1,42 @@
+use core::ops::Deref;
 use serde::{Deserialize, Serialize};
 
-use crate::{Dex, Initializable, Uninitializable, moves::{Move, MoveId, PP}};
+use crate::{
+    moves::{Move, MoveId, PP},
+    Dex, Identifiable, Initializable, Uninitializable,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SavedMove(pub MoveId, Option<PP>);
 
 #[derive(Debug, Clone, Copy)]
-pub struct OwnedMove<'d>(pub &'d Move, PP);
+pub struct OwnedMove<M: Deref<Target = Move>>(pub M, PP);
 
-impl<'d> Initializable<'d, Move> for SavedMove {
+impl<'d, O: Deref<Target = Move>> Initializable<'d, Move, O> for SavedMove {
+    type Output = OwnedMove<O>;
 
-    type Output = OwnedMove<'d>;
-
-    fn init(self, dex: &'d dyn Dex<Move>) -> Option<Self::Output> {
-        dex.try_get(&self.0).map(|m| OwnedMove(m, self.1.unwrap_or(m.pp)))
+    fn init(self, dex: &'d dyn Dex<'d, Move, O>) -> Option<Self::Output> {
+        dex.try_get(&self.0).map(OwnedMove::from)
     }
 }
 
-impl<'d> Uninitializable for OwnedMove<'d> {
-
+impl<M: Deref<Target = Move>> Uninitializable for OwnedMove<M> {
     type Output = SavedMove;
 
     fn uninit(self) -> Self::Output {
-        SavedMove(self.0.id, Some(self.1))
+        SavedMove(*self.0.deref().id(), Some(self.1))
     }
 }
 
-impl<'d> OwnedMove<'d> {
-    pub fn new(m: &'d Move) -> Self {
-        Self(m, m.pp)
-    }
-
-    pub fn try_use(&self) -> Option<&'d Move> {
-        match self.empty() {
+impl<M: Deref<Target = Move>> OwnedMove<M> {
+    pub fn try_use(&self) -> Option<&M> {
+        match self.is_empty() {
             false => Some(&self.0),
             true => None,
         }
     }
 
-    pub fn uses(&self) -> PP {
+    pub fn pp(&self) -> PP {
         self.1
     }
 
@@ -46,7 +44,7 @@ impl<'d> OwnedMove<'d> {
         self.1 = self.1.saturating_sub(1);
     }
 
-    pub fn empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.1 == 0
     }
 
@@ -59,5 +57,12 @@ impl<'d> OwnedMove<'d> {
 impl From<MoveId> for SavedMove {
     fn from(id: MoveId) -> Self {
         Self(id, None)
+    }
+}
+
+impl<M: Deref<Target = Move>> From<M> for OwnedMove<M> {
+    fn from(m: M) -> Self {
+        let pp = m.pp;
+        Self(m, pp)
     }
 }

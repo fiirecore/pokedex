@@ -1,16 +1,11 @@
 # To - do
 
-* 0.1.0 crates.io publish: full documentation
-* MoveTarget nesting and functions
+* Better Dex implementation (no need for &'d dyn borrowing) (done)
+* Better MoveSet implementation
 
-* Default values for Pokemon, Move and Items
+* 0.1.0 crates.io publish: full documentation
 
 ## Roadmap
 
 - [ ] Natures
 - [ ] Abilities
-
-### maybe:
-
-- [ ] Easier generics for Owned Types
-- [ ] Regeneratable trait for HP and PP
