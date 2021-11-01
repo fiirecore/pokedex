@@ -23,29 +23,31 @@ use crate::{
 
 /// A pokemon owned by a player.
 /// This can be (de)serialized and does not borrow values.
-pub type SavedPokemon = OwnablePokemon<PokemonId, SavedMoveSet, ItemId, Option<Health>>;
+pub type SavedPokemon =
+    OwnablePokemon<PokemonId, SavedMoveSet, ItemId, Option<Gender>, Option<Health>>;
 
 /// A pokemon owned by a player.
 /// This struct has borrowed values from multiple [Dex]es.
 pub type OwnedPokemon<'d> = OwnedPokemonNew<&'d Pokemon, &'d Move, &'d Item>;
 
 /// New [OwnedPokemon] Type, old one will be changed soon
-pub type OwnedPokemonNew<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Health>;
+pub type OwnedPokemonNew<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Gender, Health>;
 
 /// The base struct for a pokemon owned by a player.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OwnablePokemon<P, M, I, H> {
-
+pub struct OwnablePokemon<P, M, I, G, H> {
     /// Pokemon Identifier
     pub pokemon: P,
 
-    /// Level of the pokemon (1 - 100)
+    /// [Level] of the pokemon (1 - 100)
     pub level: Level,
 
+    /// The [Gender] of this pokemon.
     #[serde(default)]
-    pub gender: Option<Gender>,
+    pub gender: G,
 
     #[serde(default)]
+    /// The [Health] of this pokemon.
     pub hp: H,
 
     #[serde(default = "Stats::default_iv")]
@@ -73,7 +75,7 @@ pub struct OwnablePokemon<P, M, I, H> {
     pub experience: Experience,
 }
 
-impl<P, M, I, H> OwnablePokemon<P, M, I, H> {
+impl<P, M, I, G, H> OwnablePokemon<P, M, I, G, H> {
     /// Get the current HP of this pokemon.
     pub fn hp(&self) -> H
     where
@@ -83,15 +85,14 @@ impl<P, M, I, H> OwnablePokemon<P, M, I, H> {
     }
 }
 
-impl<P, M, I> OwnablePokemon<P, M, I, Health> {
+impl<P, M, I, G> OwnablePokemon<P, M, I, G, Health> {
     /// Has the pokemon fainted.
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
 }
 
-impl<P: Deref<Target = Pokemon>, M, I> OwnablePokemon<P, M, I, Health> {
-
+impl<P: Deref<Target = Pokemon>, M, I, G> OwnablePokemon<P, M, I, G, Health> {
     /// Get the maximum [Health] of this pokemon.
     pub fn max_hp(&self) -> Health {
         self.stat(StatType::Health)
@@ -112,7 +113,6 @@ impl<P: Deref<Target = Pokemon>, M, I> OwnablePokemon<P, M, I, Health> {
         let max = self.max_hp();
         self.hp = amount.unwrap_or(max).min(max);
     }
-
 }
 
 impl SavedPokemon {
@@ -126,14 +126,14 @@ impl SavedPokemon {
     ) -> Self {
         Self {
             // data: OwnablePokemonData {
-                pokemon,
-                level,
-                gender,
-                hp: Default::default(),
-                ivs: ivs.unwrap_or_else(|| Stats::random_iv(random)),
-                evs: Default::default(),
-                friendship: Pokemon::default_friendship(),
-                ailment: Default::default(),
+            pokemon,
+            level,
+            gender,
+            hp: Default::default(),
+            ivs: ivs.unwrap_or_else(|| Stats::random_iv(random)),
+            evs: Default::default(),
+            friendship: Pokemon::default_friendship(),
+            ailment: Default::default(),
             // },
             nickname: Default::default(),
             moves: Default::default(),
@@ -155,31 +155,33 @@ impl SavedPokemon {
         pokedex: &'d dyn Dex<'d, Pokemon, P>,
         movedex: &'d dyn Dex<'d, Move, M>,
         itemdex: &'d dyn Dex<'d, Item, I>,
-    ) -> Option<OwnablePokemon<P, OwnedMoveSet<M>, I, Health>> {
+    ) -> Option<OwnedPokemonNew<P, M, I>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
-        let hp = self.hp.unwrap_or_else(|| {
-            pokemon.stat(&self.ivs, &self.evs, self.level, StatType::Health)
-        });
+        let hp = self
+            .hp
+            .unwrap_or_else(|| pokemon.stat(&self.ivs, &self.evs, self.level, StatType::Health));
         let mut moves = self.moves.init(movedex)?;
         if moves.is_empty() {
-            for id in pokemon.moves_at(1..=self.level).take(4) {
+            for id in pokemon.moves_at(1..=self.level).rev().take(4) {
                 if let Some(m) = movedex.try_get(id) {
                     moves.add(None, m);
                 }
             }
         }
         let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
-        let gender = self.gender.or_else(|| pokemon.generate_gender(random));
-        Some(OwnablePokemon {
+        let gender = self
+            .gender
+            .unwrap_or_else(|| pokemon.generate_gender(random));
+        Some(OwnedPokemonNew {
             // data: OwnablePokemonData {
-                pokemon,
-                level: self.level,
-                gender,
-                hp,
-                ivs: self.ivs,
-                evs: self.evs,
-                friendship: self.friendship,
-                ailment: self.ailment,
+            pokemon,
+            level: self.level,
+            gender,
+            hp,
+            ivs: self.ivs,
+            evs: self.evs,
+            friendship: self.friendship,
+            ailment: self.ailment,
             // },
             nickname: self.nickname,
             moves,
@@ -189,8 +191,8 @@ impl SavedPokemon {
     }
 }
 
-impl<'d, P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = Item>>
-    OwnablePokemon<P, OwnedMoveSet<M>, I, Health>
+impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = Item>>
+    OwnedPokemonNew<P, M, I>
 {
     /// Get the name of this pokemon.
     /// Returns the nickname or the pokemon's name.
@@ -207,16 +209,16 @@ impl<'d, P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = 
     }
 
     /// Get this pokemon's moves at its current [Level].
-    pub fn moves_at_level(&self) -> impl Iterator<Item = &MoveId> + '_ {
+    pub fn moves_at_level(&self) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
     }
 
     /// Add [Experience] to this pokemon, and also handle level ups.
-    pub fn add_exp(
+    pub fn add_exp<'d>(
         &mut self,
         movedex: &'d dyn Dex<'d, Move, M>,
         experience: Experience,
-    ) -> impl Iterator<Item = &MoveId> + '_ {
+    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         // add exp to pokemon
 
         self.experience += experience * 5;
@@ -241,11 +243,11 @@ impl<'d, P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = 
     }
 
     /// Handle leveling up.
-    pub fn on_level_up(
+    pub fn on_level_up<'d>(
         &mut self,
         movedex: &'d dyn Dex<'d, Move, M>,
         previous: Level,
-    ) -> impl Iterator<Item = &MoveId> + '_ {
+    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         // Get the moves the pokemon learns at the level it just gained.
 
         let mut moves = self.pokemon.moves_at(previous..self.level);
@@ -315,22 +317,23 @@ impl<
         P: Deref<Target = Pokemon>,
         M: Deref<Target = Move>,
         I: Deref<Target = Item>,
+        G: Into<Option<Gender>>,
         H: Into<Option<Health>>,
-    > Uninitializable for OwnablePokemon<P, OwnedMoveSet<M>, I, H>
+    > Uninitializable for OwnablePokemon<P, OwnedMoveSet<M>, I, G, H>
 {
     type Output = SavedPokemon;
 
     fn uninit(self) -> Self::Output {
         Self::Output {
             // data: OwnablePokemonData {
-                pokemon: *self.pokemon.id(),
-                level: self.level,
-                gender: self.gender,
-                hp: self.hp.into(),
-                ivs: self.ivs,
-                evs: self.evs,
-                friendship: self.friendship,
-                ailment: self.ailment,
+            pokemon: *self.pokemon.id(),
+            level: self.level,
+            gender: self.gender.into(),
+            hp: self.hp.into(),
+            ivs: self.ivs,
+            evs: self.evs,
+            friendship: self.friendship,
+            ailment: self.ailment,
             // },
             nickname: self.nickname,
             moves: self.moves.uninit(),

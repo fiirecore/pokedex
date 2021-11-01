@@ -57,19 +57,17 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
-    // /// Generate a set of moves given this pokemon and a level.
-    // pub fn generate_moves(&self, level: Level) -> impl Iterator<Item = &MoveId> + {
-    //     self.moves.
-    // }
-
     /// Generate a pokemon's [Gender] based on its percent to be a certain gender and a random number generator.
-    pub fn generate_gender(&self, random: &mut impl Rng) -> Option<Gender> {
-        self.breeding.gender.map(
-            |percentage| match random.gen_range(Gender::RANGE) > percentage {
-                true => Gender::Male,
-                false => Gender::Female,
-            },
-        )
+    pub fn generate_gender(&self, random: &mut impl Rng) -> Gender {
+        self.breeding
+            .gender
+            .map(
+                |percentage| match random.gen_range(Gender::RANGE) > percentage {
+                    true => Gender::Male,
+                    false => Gender::Female,
+                },
+            )
+            .unwrap_or(Gender::None)
     }
 
     /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
@@ -88,7 +86,7 @@ impl Pokemon {
     }
 
     /// Get the moves of a pokemon at a certain [Level].
-    pub fn moves_at_level(&self, level: Level) -> impl Iterator<Item = &MoveId> + '_ {
+    pub fn moves_at_level(&self, level: Level) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         self.moves_at(level..=level)
     }
 
@@ -96,7 +94,7 @@ impl Pokemon {
     pub fn moves_at<'s, R: RangeBounds<Level> + 's>(
         &'s self,
         levels: R,
-    ) -> impl Iterator<Item = &MoveId> + 's {
+    ) -> impl DoubleEndedIterator<Item = &'s MoveId> + 's {
         self.moves
             .iter()
             .filter(move |m| levels.contains(&m.0))

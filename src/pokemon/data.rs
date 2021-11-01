@@ -9,9 +9,10 @@ use crate::{
 };
 
 
-/// The gender of a Pokemon. Usually used as Option<Gender> to included Pokemon with no gender.
+/// The gender of a Pokemon. 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Gender {
+    None,
     Male,
     Female,
 }
