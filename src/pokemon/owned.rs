@@ -28,10 +28,7 @@ pub type SavedPokemon =
 
 /// A pokemon owned by a player.
 /// This struct has borrowed values from multiple [Dex]es.
-pub type OwnedPokemon<'d> = OwnedPokemonNew<&'d Pokemon, &'d Move, &'d Item>;
-
-/// New [OwnedPokemon] Type, old one will be changed soon
-pub type OwnedPokemonNew<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Gender, Health>;
+pub type OwnedPokemon<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Gender, Health>;
 
 /// The base struct for a pokemon owned by a player.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -155,7 +152,7 @@ impl SavedPokemon {
         pokedex: &'d dyn Dex<'d, Pokemon, P>,
         movedex: &'d dyn Dex<'d, Move, M>,
         itemdex: &'d dyn Dex<'d, Item, I>,
-    ) -> Option<OwnedPokemonNew<P, M, I>> {
+    ) -> Option<OwnedPokemon<P, M, I>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let hp = self
             .hp
@@ -172,7 +169,7 @@ impl SavedPokemon {
         let gender = self
             .gender
             .unwrap_or_else(|| pokemon.generate_gender(random));
-        Some(OwnedPokemonNew {
+        Some(OwnablePokemon {
             // data: OwnablePokemonData {
             pokemon,
             level: self.level,
@@ -192,7 +189,7 @@ impl SavedPokemon {
 }
 
 impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = Item>>
-    OwnedPokemonNew<P, M, I>
+    OwnedPokemon<P, M, I>
 {
     /// Get the name of this pokemon.
     /// Returns the nickname or the pokemon's name.

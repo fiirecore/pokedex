@@ -77,3 +77,9 @@ impl<M: Deref<Target = Move>> Uninitializable for OwnedMoveSet<M> {
         self.0.into_iter().map(|o| o.uninit()).collect()
     }
 }
+
+impl<M: Deref<Target = Move>> Default for OwnedMoveSet<M> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}

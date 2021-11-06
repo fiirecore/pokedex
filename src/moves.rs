@@ -58,7 +58,6 @@ pub struct Move {
     /// Increments the chance of whether a move should critical hit or not.
     #[serde(default)]
     pub crit_rate: CriticalRate,
-
 }
 
 impl Identifiable for Move {
@@ -73,7 +72,6 @@ impl Identifiable for Move {
     fn name(&self) -> &str {
         &self.name
     }
-
 }
 
 // use MoveCategory::{Physical, Special, Status};
