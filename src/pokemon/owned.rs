@@ -1,4 +1,4 @@
-use core::ops::Deref;
+use core::ops::{Deref, DerefMut};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +9,7 @@ use crate::{
         Item, ItemId,
     },
     moves::{
+        owned::OwnedMove,
         set::{OwnedMoveSet, SavedMoveSet},
         Move, MoveId, PP,
     },
@@ -86,6 +87,21 @@ impl<P, M, I, G> OwnablePokemon<P, M, I, G, Health> {
     /// Has the pokemon fainted.
     pub fn fainted(&self) -> bool {
         self.hp == 0
+    }
+}
+
+impl<P: Deref<Target = Pokemon>, M, I, H, G> OwnablePokemon<P, M, I, G, H> {
+    /// Get the name of this pokemon.
+    /// Returns the nickname or the pokemon's name.
+    pub fn name(&self) -> &str {
+        self.nickname
+            .as_deref()
+            .unwrap_or_else(|| self.pokemon.name())
+    }
+
+    /// Get this pokemon's moves at its current [Level].
+    pub fn moves_at_level(&self) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
+        self.pokemon.moves_at_level(self.level)
     }
 }
 
@@ -188,28 +204,24 @@ impl SavedPokemon {
     }
 }
 
-impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = Item>>
-    OwnedPokemon<P, M, I>
+impl<
+        P: Deref<Target = Pokemon>,
+        M: Deref<Target = Move>,
+        I,
+        G,
+        MSET: Deref<Target = [OwnedMove<M>]> + DerefMut,
+    > OwnablePokemon<P, MSET, I, G, Health>
 {
-    /// Get the name of this pokemon.
-    /// Returns the nickname or the pokemon's name.
-    pub fn name(&self) -> &str {
-        self.nickname
-            .as_deref()
-            .unwrap_or_else(|| self.pokemon.name())
-    }
-
     /// Heal this pokemon with an optional amount of [Health] and restore all its move's [PP] by an optional amount.
     pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
         self.heal_hp(hp);
         self.moves.iter_mut().for_each(|o| o.restore(pp));
     }
+}
 
-    /// Get this pokemon's moves at its current [Level].
-    pub fn moves_at_level(&self) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
-        self.pokemon.moves_at_level(self.level)
-    }
-
+impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G>
+    OwnablePokemon<P, OwnedMoveSet<M>, I, G, Health>
+{
     /// Add [Experience] to this pokemon, and also handle level ups.
     pub fn add_exp<'d>(
         &mut self,
@@ -264,7 +276,9 @@ impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I: Deref<Target = Item
 
         moves
     }
+}
 
+impl<P: Deref<Target = Pokemon>, M, I: Deref<Target = Item>, G> OwnablePokemon<P, M, I, G, Health> {
     /// Try to use an [Item] and return true if it succeeds.
     /// This function is incomplete and may change.
     pub fn try_use_item(&mut self, item: &Item) -> bool {
