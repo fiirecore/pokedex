@@ -27,6 +27,8 @@ mod defaults {
 
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+    use std::collections::HashMap;
+
     use crate::Identifiable;
 
     use super::Dex;
@@ -39,7 +41,7 @@ mod defaults {
     /// Basic Dex implementation using hashbrown crate.
     #[repr(transparent)]
     #[derive(Debug, Clone)]
-    pub struct BasicDex<I: Identifiable>(pub hashbrown::HashMap<I::Id, I>)
+    pub struct BasicDex<I: Identifiable>(pub HashMap<I::Id, I>)
     where
         I::Id: Hash + Eq;
 
@@ -47,7 +49,7 @@ mod defaults {
     where
         I::Id: Hash + Eq,
     {
-        pub fn new(inner: hashbrown::HashMap<I::Id, I>) -> Self {
+        pub fn new(inner: HashMap<I::Id, I>) -> Self {
             Self(inner)
         }
 
@@ -58,7 +60,7 @@ mod defaults {
             self.0.insert(v.id().clone(), v)
         }
 
-        pub fn into_inner(self) -> hashbrown::HashMap<I::Id, I> {
+        pub fn into_inner(self) -> HashMap<I::Id, I> {
             self.0
         }
     }
