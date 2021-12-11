@@ -10,7 +10,7 @@ use crate::{
 pub struct SavedMove(pub MoveId, Option<PP>);
 
 #[derive(Debug, Clone, Copy)]
-pub struct OwnedMove<M: Deref<Target = Move>>(pub M, PP);
+pub struct OwnedMove<M: Deref<Target = Move>>(pub M, pub PP);
 
 impl<'d, O: Deref<Target = Move>> Initializable<'d, Move, O> for SavedMove {
     type Output = OwnedMove<O>;
@@ -29,19 +29,9 @@ impl<M: Deref<Target = Move>> Uninitializable for OwnedMove<M> {
 }
 
 impl<M: Deref<Target = Move>> OwnedMove<M> {
-    pub fn try_use(&self) -> Option<&M> {
-        match self.is_empty() {
-            false => Some(&self.0),
-            true => None,
-        }
-    }
 
     pub fn pp(&self) -> PP {
         self.1
-    }
-
-    pub fn decrement(&mut self) {
-        self.1 = self.1.saturating_sub(1);
     }
 
     pub fn is_empty(&self) -> bool {

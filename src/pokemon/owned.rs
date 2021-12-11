@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ailment::LiveAilment,
     item::{
-        usage::{ItemAction, ItemCondition, ItemUsageKind},
+        usage::{ItemAction, ItemCondition, ItemExecution},
         Item, ItemId,
     },
     moves::{
@@ -99,6 +99,21 @@ impl<P: Deref<Target = Pokemon>, M, I, H, G> OwnablePokemon<P, M, I, G, H> {
             .unwrap_or_else(|| self.pokemon.name())
     }
 
+    pub fn should_evolve(&self) -> Option<&PokemonId> {
+        match &self.pokemon.evolution {
+            Some(e) => match e.0 >= self.level {
+                true => Some(&e.1),
+                false => None,
+            },
+            None => None,
+        }
+    }
+    
+    /// Get the [Experience] from this pokemon at its current [Level].
+    pub fn exp_from(&self) -> Experience {
+        self.pokemon.exp_from(self.level)
+    }
+
     /// Get this pokemon's moves at its current [Level].
     pub fn moves_at_level(&self) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         self.pokemon.moves_at_level(self.level)
@@ -125,6 +140,122 @@ impl<P: Deref<Target = Pokemon>, M, I, G> OwnablePokemon<P, M, I, G, Health> {
     pub fn heal_hp(&mut self, amount: Option<Health>) {
         let max = self.max_hp();
         self.hp = amount.unwrap_or(max).min(max);
+    }
+}
+
+impl<
+        P: Deref<Target = Pokemon>,
+        M: Deref<Target = Move>,
+        I,
+        G,
+        MSET: Deref<Target = [OwnedMove<M>]> + DerefMut,
+    > OwnablePokemon<P, MSET, I, G, Health>
+{
+    /// Heal this pokemon with an optional amount of [Health] and restore all its move's [PP] by an optional amount.
+    pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
+        self.heal_hp(hp);
+        self.moves.iter_mut().for_each(|o| o.restore(pp));
+    }
+}
+
+impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G>
+    OwnablePokemon<P, OwnedMoveSet<M>, I, G, Health>
+{
+    /// Add [Experience] to this pokemon, and also handle level ups.
+    pub fn add_exp<'d>(
+        &mut self,
+        movedex: &'d dyn Dex<'d, Move, M>,
+        experience: Experience,
+    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
+        // add exp to pokemon
+
+        self.experience += experience * 5;
+
+        // level the pokemon up if they reach a certain amount of exp (and then subtract the exp by the maximum for the previous level)
+
+        let previous = self.level;
+
+        let gr = &self.pokemon.training.growth;
+
+        while self.experience > gr.max_exp(self.level) {
+            self.experience -= gr.max_exp(self.level);
+            self.level += 1;
+        }
+
+        self.on_level_up(movedex, previous)
+    }
+
+    /// Handle leveling up.
+    pub fn on_level_up<'d>(
+        &mut self,
+        movedex: &'d dyn Dex<'d, Move, M>,
+        previous: Level,
+    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
+        // Get the moves the pokemon learns at the level it just gained.
+
+        let mut moves = self.pokemon.moves_at(previous..self.level);
+
+        // Add moves if the player's pokemon does not have a full set of moves.
+
+        while !self.moves.is_full() {
+            match moves.next() {
+                Some(id) => {
+                    if let Some(m) = movedex.try_get(id) {
+                        self.moves.add(None, m);
+                    }
+                }
+                None => break,
+            }
+        }
+
+        moves
+    }
+}
+
+impl<P: Deref<Target = Pokemon>, M, I: Deref<Target = Item>, G> OwnablePokemon<P, M, I, G, Health> {
+    /// Try to use an [Item] and return true if it succeeds.
+    /// This is supposed to be used on pokemon outside of battle or non-active battle pokemon.
+    /// This function is incomplete and may change.
+    pub fn try_use_item(&mut self, item: &Item) -> bool {
+        if !item.usage.conditions.iter().any(|c| match c {
+            ItemCondition::Fainted => self.fainted(),
+        }) {
+            return false;
+        }
+        match &item.usage.execute {
+            ItemExecution::Actions(actions) => {
+                for action in actions {
+                    match action {
+                        ItemAction::CurePokemon(status) => {
+                            if let Some(effect) = &self.ailment {
+                                if let Some(status) = status {
+                                    if &effect.ailment == status {
+                                        self.ailment = None;
+                                    }
+                                } else {
+                                    self.ailment = None;
+                                }
+                            }
+                        }
+                        ItemAction::HealPokemon(hp) => {
+                            self.heal_hp(Some(*hp));
+                        }
+                    }
+                }
+            }
+            ItemExecution::None => return false,
+        }
+        true
+    }
+
+    /// Try to use the current [Item] the pokemon is holding.
+    /// This function is incomplete and due to change.
+    /// !!! Always uses the held item.
+    pub fn use_held_item(&mut self) -> bool {
+        match self.item.take() {
+            Some(item) => self.try_use_item(&item),
+            None => false,
+        }
     }
 }
 
@@ -201,126 +332,6 @@ impl SavedPokemon {
             item,
             experience: self.experience,
         })
-    }
-}
-
-impl<
-        P: Deref<Target = Pokemon>,
-        M: Deref<Target = Move>,
-        I,
-        G,
-        MSET: Deref<Target = [OwnedMove<M>]> + DerefMut,
-    > OwnablePokemon<P, MSET, I, G, Health>
-{
-    /// Heal this pokemon with an optional amount of [Health] and restore all its move's [PP] by an optional amount.
-    pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
-        self.heal_hp(hp);
-        self.moves.iter_mut().for_each(|o| o.restore(pp));
-    }
-}
-
-impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G>
-    OwnablePokemon<P, OwnedMoveSet<M>, I, G, Health>
-{
-    /// Add [Experience] to this pokemon, and also handle level ups.
-    pub fn add_exp<'d>(
-        &mut self,
-        movedex: &'d dyn Dex<'d, Move, M>,
-        experience: Experience,
-    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
-        // add exp to pokemon
-
-        self.experience += experience * 5;
-
-        // level the pokemon up if they reach a certain amount of exp (and then subtract the exp by the maximum for the previous level)
-
-        let gr = self.pokemon.training.growth_rate;
-
-        let previous = self.level;
-
-        while self.experience > gr.max_exp(self.level) {
-            self.experience -= gr.max_exp(self.level);
-            self.level += 1;
-        }
-
-        self.on_level_up(movedex, previous)
-    }
-
-    /// Get the [Experience] from this pokemon at its current [Level].
-    pub fn exp_from(&self) -> Experience {
-        self.pokemon.exp_from(self.level)
-    }
-
-    /// Handle leveling up.
-    pub fn on_level_up<'d>(
-        &mut self,
-        movedex: &'d dyn Dex<'d, Move, M>,
-        previous: Level,
-    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
-        // Get the moves the pokemon learns at the level it just gained.
-
-        let mut moves = self.pokemon.moves_at(previous..self.level);
-
-        // Add moves if the player's pokemon does not have a full set of moves.
-
-        while !self.moves.is_full() {
-            match moves.next() {
-                Some(id) => {
-                    if let Some(m) = movedex.try_get(id) {
-                        self.moves.add(None, m);
-                    }
-                }
-                None => break,
-            }
-        }
-
-        moves
-    }
-}
-
-impl<P: Deref<Target = Pokemon>, M, I: Deref<Target = Item>, G> OwnablePokemon<P, M, I, G, Health> {
-    /// Try to use an [Item] and return true if it succeeds.
-    /// This function is incomplete and may change.
-    pub fn try_use_item(&mut self, item: &Item) -> bool {
-        if !item.usage.conditions.iter().any(|c| match c {
-            ItemCondition::Fainted => self.fainted(),
-        }) {
-            return false;
-        }
-        match &item.usage.kind {
-            ItemUsageKind::Actions(actions) => {
-                for action in actions {
-                    match action {
-                        ItemAction::CurePokemon(status) => {
-                            if let Some(effect) = &self.ailment {
-                                if let Some(status) = status {
-                                    if &effect.ailment == status {
-                                        self.ailment = None;
-                                    }
-                                } else {
-                                    self.ailment = None;
-                                }
-                            }
-                        }
-                        ItemAction::HealPokemon(hp) => {
-                            self.heal_hp(Some(*hp));
-                        }
-                    }
-                }
-            }
-            ItemUsageKind::Script | ItemUsageKind::Pokeball | ItemUsageKind::None => return false,
-        }
-        true
-    }
-
-    /// Try to use the current [Item] the pokemon is holding.
-    /// This function is incomplete and due to change.
-    /// !!! Always uses the held item.
-    pub fn use_held_item(&mut self) -> bool {
-        match self.item.take() {
-            Some(item) => self.try_use_item(&item),
-            None => false,
-        }
     }
 }
 

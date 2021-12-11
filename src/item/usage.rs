@@ -6,22 +6,14 @@ use crate::{pokemon::Health, ailment::Ailment};
 pub struct ItemUsage {
     #[serde(default)]
     pub conditions: Vec<ItemCondition>,
-    #[serde(rename = "type")]
-    pub kind: ItemUsageKind,
-    #[serde(default = "t")]
-    pub consume: bool,
-}
-
-const fn t() -> bool {
-    true
+    pub execute: ItemExecution,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub enum ItemUsageKind {
+pub enum ItemExecution {
     Actions(Vec<ItemAction>),
-    Script,
-    Pokeball,
+    // Script,
     None,
 }
 
@@ -38,7 +30,7 @@ pub enum ItemAction {
     HealPokemon(Health),
 }
 
-impl Default for ItemUsageKind {
+impl Default for ItemExecution {
     fn default() -> Self {
         Self::None
     }

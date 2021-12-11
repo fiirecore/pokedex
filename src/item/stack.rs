@@ -2,7 +2,7 @@ use core::ops::Deref;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    item::{Item, ItemId, StackSize},
+    item::{Item, ItemId, Stackable},
     Dex, Initializable, Uninitializable,
 };
 
@@ -11,13 +11,7 @@ pub type SavedItemStack = ItemStack<ItemId>;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemStack<I> {
     pub item: I,
-    pub count: StackSize,
-}
-
-impl<I> ItemStack<I> {
-    pub fn new(i: I, count: StackSize) -> Self {
-        Self { item: i, count }
-    }
+    pub count: usize,
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
@@ -32,21 +26,22 @@ impl<I: Deref<Target = Item>> ItemStack<I> {
         }
     }
 
-    pub fn add(&mut self, stack: Self) -> Option<Self> {
-        self.count = self.count.saturating_add(stack.count);
-        let max = self.item.stack_size;
-        match self.count > max {
-            true => {
-                let count = self.count - max;
-                self.count = max;
-                Some(ItemStack {
-                    item: stack.item,
-                    count,
-                })
-            }
-            false => None,
+    pub fn add(&mut self, count: usize) -> bool {
+        if matches!(self.item.stackable, Stackable::Unique) && self.count != 0 {
+            return false;
         }
+        self.count = self.count.saturating_add(count);
+        true
     }
+
+    pub fn stacks(&self) -> usize {
+        match self.item.stackable {
+            Stackable::Unique | Stackable::Singular => self.count,
+            Stackable::Stackable(size) => self.count / size as usize,
+        }
+        
+    }
+
 }
 
 impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedItemStack {

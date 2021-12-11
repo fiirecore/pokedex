@@ -5,11 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::MoveId,
-    pokemon::{Level, Experience},
+    pokemon::{Experience, Level, PokemonId},
 };
 
-
-/// The gender of a Pokemon. 
+/// The gender of a Pokemon.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Gender {
     None,
@@ -23,6 +22,9 @@ impl Gender {
     pub const RANGE: Range<u8> = 0..8;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Evolution(pub Level, pub PokemonId);
+
 /// A Move a pokemon can learn at a certain level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LearnableMove(pub Level, pub MoveId);
@@ -30,9 +32,10 @@ pub struct LearnableMove(pub Level, pub MoveId);
 /// Data category
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Training {
+    /// Base Experience
     pub base_exp: u16,
     #[serde(default)]
-    pub growth_rate: GrowthRate,
+    pub growth: GrowthRate,
     //pub ev_yield: Option<(String, usize)>,
     //pub catch_rate: Option<u8>,
     //pub base_friendship: Option<u8>,

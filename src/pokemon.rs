@@ -39,19 +39,27 @@ pub type Health = stat::BaseStat;
 
 /// A Pokemon.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Pokemon {
-    pub id: PokemonId,
+    pub id: <Self as Identifiable>::Id,
     pub name: String,
 
     pub primary_type: PokemonType,
+    #[serde(default)]
     pub secondary_type: Option<PokemonType>,
 
+    #[serde(default)]
     pub moves: Vec<LearnableMove>,
     pub base: Stats,
 
     pub species: String,
+
+    #[serde(default)]
+    pub evolution: Option<Evolution>,
+
     pub height: u8,
     pub weight: u16,
+
     pub training: Training,
     pub breeding: Breeding,
 }
@@ -170,11 +178,12 @@ fn tests() {
         moves: vec![LearnableMove(1, test)],
         base: StatSet::uniform(60),
         species: "Test Species".to_owned(),
+        evolution: None,
         height: 6_5,
         weight: 100,
         training: Training {
             base_exp: 200,
-            growth_rate: Default::default(),
+            growth: Default::default(),
         },
         breeding: Breeding { gender: None },
     };

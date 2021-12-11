@@ -50,3 +50,15 @@ pub trait Uninitializable {
     /// The function to uninitialize this value.
     fn uninit(self) -> Self::Output;
 }
+
+// mod identifiable {
+//     use std::iter::FromIterator;
+
+//     use crate::Identifiable;
+
+//     impl<I: Identifiable, C: FromIterator<(I::Id, I)>> FromIterator<I> for C where I::Id: Clone {
+//         fn from_iter<T: IntoIterator<Item = I>>(iter: T) -> Self {
+//             iter.into_iter().map(|i| (i.id().clone(), i)).collect()
+//         }
+//     }
+// }

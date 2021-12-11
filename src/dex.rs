@@ -38,7 +38,7 @@ mod defaults {
         name.split("::").last().unwrap_or(name)
     }
 
-    /// Basic Dex implementation using hashbrown crate.
+    /// Basic Dex implementation using a HashMap.
     #[repr(transparent)]
     #[derive(Debug, Clone)]
     pub struct BasicDex<I: Identifiable>(pub HashMap<I::Id, I>)

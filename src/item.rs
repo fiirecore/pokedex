@@ -1,5 +1,5 @@
 //! Items
-//! 
+//!
 //! This module is incomplete and due to change.
 
 use serde::{Deserialize, Serialize};
@@ -16,14 +16,12 @@ pub use stack::*;
 
 /// An identifier for items.
 pub type ItemId = TinyStr16;
-/// The amount of items in a group of items (a stack).
-pub type StackSize = u16;
 
 /// An item.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Item {
-    pub id: ItemId,
+    pub id: <Self as Identifiable>::Id,
 
     pub name: String,
     pub description: String,
@@ -31,11 +29,16 @@ pub struct Item {
     #[serde(default)]
     pub category: ItemCategory,
 
-    #[serde(default = "Item::default_stack_size")]
-    pub stack_size: StackSize,
+    #[serde(default)]
+    pub stackable: Stackable,
 
+    #[serde(default = "Item::consumable_default")]
+    pub consume: bool,
+
+    /// Item usage (outside of battle)
     #[serde(default)]
     pub usage: ItemUsage,
+
 }
 
 impl Identifiable for Item {
@@ -50,20 +53,16 @@ impl Identifiable for Item {
     fn name(&self) -> &str {
         &self.name
     }
-
 }
 
 impl Item {
-
     pub const fn should_consume(&self) -> bool {
-        self.usage.consume
+        self.consume
     }
 
-
-    pub const fn default_stack_size() -> StackSize {
-        999
+    const fn consumable_default() -> bool {
+        true
     }
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -71,6 +70,19 @@ pub enum ItemCategory {
     Items,
     KeyItems,
     Pokeballs,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub enum Stackable {
+    Unique,
+    Singular,
+    Stackable(u16),
+}
+
+impl Default for Stackable {
+    fn default() -> Self {
+        Self::Stackable(999)
+    }
 }
 
 impl Default for ItemCategory {
