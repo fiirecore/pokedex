@@ -29,7 +29,6 @@ impl<M: Deref<Target = Move>> Uninitializable for OwnedMove<M> {
 }
 
 impl<M: Deref<Target = Move>> OwnedMove<M> {
-
     pub fn pp(&self) -> PP {
         self.1
     }

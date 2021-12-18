@@ -1,5 +1,5 @@
 //! Status effects implementation
-//! 
+//!
 //! This module is very incomplete and likely to change
 
 use rand::Rng;
@@ -10,7 +10,7 @@ pub enum Ailment {
     Paralysis,
     Sleep,
     Freeze,
-    Burn, 
+    Burn,
     Poison,
 }
 
@@ -31,7 +31,6 @@ pub enum AilmentLength {
     Temporary(u8, u8),
 }
 
-
 // impl AilmentEffect {
 //     pub fn init(&self, random: &mut impl Rng) -> LiveAilment {
 //         LiveAilment {
@@ -42,7 +41,6 @@ pub enum AilmentLength {
 // }
 
 impl AilmentLength {
-
     pub fn init(&self, ailment: Ailment, random: &mut impl Rng) -> LiveAilment {
         LiveAilment {
             ailment,

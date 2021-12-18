@@ -38,7 +38,6 @@ pub struct Item {
     /// Item usage (outside of battle)
     #[serde(default)]
     pub usage: ItemUsage,
-
 }
 
 impl Identifiable for Item {

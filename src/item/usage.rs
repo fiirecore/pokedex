@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{pokemon::Health, ailment::Ailment};
+use crate::{ailment::Ailment, pokemon::Health};
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ItemUsage {

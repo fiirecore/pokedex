@@ -63,6 +63,12 @@ mod defaults {
         pub fn into_inner(self) -> HashMap<I::Id, I> {
             self.0
         }
+
+        pub fn try_get_named(&self, name: &str) -> Option<&I> {
+            self.0
+                .values()
+                .find(|i| i.name().eq_ignore_ascii_case(name))
+        }
     }
 
     impl<'d, I: Identifiable + Send + Sync> Dex<'d, I, &'d I> for BasicDex<I>

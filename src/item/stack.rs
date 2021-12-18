@@ -39,9 +39,7 @@ impl<I: Deref<Target = Item>> ItemStack<I> {
             Stackable::Unique | Stackable::Singular => self.count,
             Stackable::Stackable(size) => self.count / size as usize,
         }
-        
     }
-
 }
 
 impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedItemStack {
