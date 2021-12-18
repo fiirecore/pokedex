@@ -14,6 +14,43 @@ pub struct ItemStack<I> {
     pub count: usize,
 }
 
+impl<I> From<I> for ItemStack<I> {
+    fn from(item: I) -> Self {
+        Self { item, count: 0 }
+    }
+}
+
+impl<I: Clone> ItemStack<I> {
+    fn take_gt(&mut self, count: usize) -> Self {
+        self.count -= count;
+        Self {
+            item: self.item.clone(),
+            count,
+        }
+    }
+
+    pub fn try_take(&mut self, count: usize) -> Option<Self> {
+        if count > self.count {
+            return None;
+        } else {
+            Some(self.take_gt(count))
+        }
+    }
+
+    pub fn take(&mut self, count: usize) -> Self {
+        if count > self.count {
+            let stack = Self {
+                item: self.item.clone(),
+                count: self.count,
+            };
+            self.count = 0;
+            stack
+        } else {
+            self.take_gt(count)
+        }
+    }
+}
+
 impl<I: Deref<Target = Item>> ItemStack<I> {
     pub fn try_use(&mut self) -> bool {
         if self.count > 0 {
