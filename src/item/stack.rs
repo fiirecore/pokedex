@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{Item, ItemId, Stackable},
-    Dex, Initializable, Uninitializable,
+    Dex, Initializable, Uninitializable, Identifiable,
 };
 
 pub type SavedItemStack = ItemStack<ItemId>;
@@ -87,6 +87,20 @@ impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedItemStack 
             item: dex.try_get(&self.item)?,
             count: self.count,
         })
+    }
+}
+
+impl<I: Deref<Target = Item>> Identifiable for ItemStack<I> {
+    type Id = <I::Target as Identifiable>::Id;
+
+    const UNKNOWN: Self::Id = Item::UNKNOWN;
+
+    fn id(&self) -> &Self::Id {
+        self.item.id()
+    }
+
+    fn name(&self) -> &str {
+        self.item.name()
     }
 }
 

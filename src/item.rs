@@ -29,6 +29,8 @@ pub struct Item {
     #[serde(default)]
     pub category: ItemCategory,
 
+    pub price: u32,
+
     #[serde(default)]
     pub stackable: Stackable,
 

@@ -6,11 +6,11 @@ use crate::{
     Dex, Identifiable, Initializable, Uninitializable,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SavedMove(pub MoveId, Option<PP>);
+pub type SavedMove = OwnableMove<MoveId, Option<PP>>;
+pub type OwnedMove<M> = OwnableMove<M, PP>;
 
-#[derive(Debug, Clone, Copy)]
-pub struct OwnedMove<M: Deref<Target = Move>>(pub M, pub PP);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OwnableMove<M, P>(pub M, pub P);
 
 impl<'d, O: Deref<Target = Move>> Initializable<'d, Move, O> for SavedMove {
     type Output = OwnedMove<O>;
@@ -24,15 +24,37 @@ impl<M: Deref<Target = Move>> Uninitializable for OwnedMove<M> {
     type Output = SavedMove;
 
     fn uninit(self) -> Self::Output {
-        SavedMove(*self.0.deref().id(), Some(self.1))
+        OwnableMove(*self.0.deref().id(), Some(self.1))
     }
 }
 
-impl<M: Deref<Target = Move>> OwnedMove<M> {
-    pub fn pp(&self) -> PP {
-        self.1
+impl<M, P> OwnableMove<M, P> {
+    pub fn pp(&self) -> P
+    where
+        P: Clone,
+    {
+        self.1.clone()
+    }
+}
+
+impl SavedMove {
+
+    pub fn is_empty(&self) -> bool {
+        self.1 == Some(0)
     }
 
+    pub fn restore(&mut self, amount: Option<PP>) {
+        match amount {
+            Some(by) => if let Some(pp) = self.1.as_mut() {
+                *pp = pp.saturating_add(by);
+            },
+            None => self.1 = None,
+        }
+    }
+
+}
+
+impl<M: Deref<Target = Move>> OwnedMove<M> {
     pub fn is_empty(&self) -> bool {
         self.1 == 0
     }

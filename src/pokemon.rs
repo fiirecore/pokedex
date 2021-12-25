@@ -14,6 +14,8 @@ use crate::{
     Identifiable,
 };
 
+pub mod species;
+
 pub mod owned;
 
 pub mod party;

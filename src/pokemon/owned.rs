@@ -210,6 +210,30 @@ impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G>
 }
 
 impl SavedPokemon {
+    pub fn fainted(&self) -> bool {
+        self.hp == Some(0)
+    }
+
+    pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
+        self.heal_hp(hp);
+        self.heal_pp(pp);
+    }
+
+    pub fn heal_hp(&mut self, hp: Option<Health>) {
+        match hp {
+            Some(by) => {
+                if let Some(hp) = self.hp.as_mut() {
+                    *hp = hp.saturating_add(by);
+                }
+            }
+            None => self.hp = None,
+        }
+    }
+
+    pub fn heal_pp(&mut self, pp: Option<PP>) {
+        self.moves.iter_mut().for_each(|m| m.restore(pp))
+    }
+
     /// Generate an owned pokemon.
     pub fn generate(
         random: &mut impl Rng,
@@ -234,6 +258,42 @@ impl SavedPokemon {
             item: Default::default(),
             experience: Default::default(),
         }
+    }
+
+    /// Initialize a [SavedPokemon] that already has values given to its uninitialized fields
+    pub fn try_init<
+        'd,
+        R: Rng,
+        P: Deref<Target = Pokemon>,
+        M: Deref<Target = Move>,
+        I: Deref<Target = Item>,
+    >(
+        self,
+        pokedex: &'d dyn Dex<'d, Pokemon, P>,
+        movedex: &'d dyn Dex<'d, Move, M>,
+        itemdex: &'d dyn Dex<'d, Item, I>,
+    ) -> Option<OwnedPokemon<P, M, I>> {
+        let pokemon = pokedex.try_get(&self.pokemon)?;
+        let hp = self.hp?;
+        let moves = self.moves.init(movedex)?;
+        let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
+        let gender = self.gender?;
+        Some(OwnablePokemon {
+            // data: OwnablePokemonData {
+            pokemon,
+            level: self.level,
+            gender,
+            hp,
+            ivs: self.ivs,
+            evs: self.evs,
+            friendship: self.friendship,
+            ailment: self.ailment,
+            // },
+            nickname: self.nickname,
+            moves,
+            item,
+            experience: self.experience,
+        })
     }
 
     /// Initialize this owned pokemon struct into an [OwnedPokemon] so it can perform more functions.

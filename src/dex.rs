@@ -27,7 +27,7 @@ mod defaults {
 
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
 
     use crate::Identifiable;
 
@@ -69,11 +69,16 @@ mod defaults {
                 .values()
                 .find(|i| i.name().eq_ignore_ascii_case(name))
         }
+
+        pub fn get_mut(&mut self, id: &I::Id) -> Option<&mut I> {
+            self.0.get_mut(id)
+        }
+
     }
 
-    impl<'d, I: Identifiable + Send + Sync> Dex<'d, I, &'d I> for BasicDex<I>
+    impl<'d, I: Identifiable> Dex<'d, I, &'d I> for BasicDex<I>
     where
-        I::Id: Hash + Eq + Send + Sync,
+        I::Id: Hash + Eq,
     {
         fn try_get(&'d self, id: &I::Id) -> Option<&'d I> {
             self.0.get(id)
