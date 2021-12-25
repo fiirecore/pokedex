@@ -16,3 +16,6 @@ rand = { version = "0.8", default-features = false }
 tinystr = { version = "0.4", features = ["serde"], default-features = false }
 arrayvec = { version = "0.5", features = ["serde"] }
 hashbrown = "0.9"
+
+[workspace]
+packages = ["builder"]

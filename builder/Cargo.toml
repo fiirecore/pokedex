@@ -1,0 +1,9 @@
+[package]
+name = "firecore-pokedex-builder"
+version = "0.0.6"
+authors = ["Rhys H <donotdoughnut99@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+firecore-pokedex = { path = ".." }
+ron = "0.7"
