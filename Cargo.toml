@@ -2,11 +2,11 @@
 name = "firecore-pokedex"
 version = "0.0.8"
 authors = ["Rhys H <donotdoughnut99@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A pokedex library"
 repository = "https://github.com/fiirecore/pokedex/"
 readme = "README.md"
-license = "MIT"
+license = "CC0"
 keywords = ["pokemon", "pokedex"]
 categories = ["game-development"]
 

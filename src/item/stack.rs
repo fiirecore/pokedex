@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{Item, ItemId, Stackable},
-    Dex, Initializable, Uninitializable, Identifiable,
+    Dex, Identifiable, Initializable, Uninitializable,
 };
 
 pub type SavedItemStack = ItemStack<ItemId>;
@@ -31,7 +31,7 @@ impl<I: Clone> ItemStack<I> {
 
     pub fn try_take(&mut self, count: usize) -> Option<Self> {
         if count > self.count {
-            return None;
+            None
         } else {
             Some(self.take_gt(count))
         }

@@ -17,6 +17,11 @@ pub trait Dex<'d, I: Identifiable, O: Deref<Target = I>> {
 
     /// Get the length of the Dex.
     fn len(&self) -> usize;
+
+    /// Check if the Dex is empty
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 pub use defaults::BasicDex;
@@ -73,7 +78,6 @@ mod defaults {
         pub fn get_mut(&mut self, id: &I::Id) -> Option<&mut I> {
             self.0.get_mut(id)
         }
-
     }
 
     impl<'d, I: Identifiable> Dex<'d, I, &'d I> for BasicDex<I>

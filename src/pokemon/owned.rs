@@ -12,7 +12,7 @@ use crate::{
     },
     pokemon::{
         stat::{BaseStat, StatType, Stats},
-        Experience, Friendship, Gender, Health, Level, Pokemon, PokemonId,
+        Experience, Friendship, Gender, Health, Level, Nature, Pokemon, PokemonId,
     },
     Dex, Identifiable, Initializable, Uninitializable,
 };
@@ -22,15 +22,15 @@ use crate::{
 /// A pokemon owned by a player.
 /// This can be (de)serialized and does not borrow values.
 pub type SavedPokemon =
-    OwnablePokemon<PokemonId, SavedMoveSet, ItemId, Option<Gender>, Option<Health>>;
+    OwnablePokemon<PokemonId, SavedMoveSet, ItemId, Option<Gender>, Option<Nature>, Option<Health>>;
 
 /// A pokemon owned by a player.
 /// This struct has borrowed values from multiple [Dex]es.
-pub type OwnedPokemon<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Gender, Health>;
+pub type OwnedPokemon<P, M, I> = OwnablePokemon<P, OwnedMoveSet<M>, I, Gender, Nature, Health>;
 
 /// The base struct for a pokemon owned by a player.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OwnablePokemon<P, M, I, G, H> {
+pub struct OwnablePokemon<P, M, I, G, N, H> {
     /// Pokemon Identifier
     pub pokemon: P,
 
@@ -40,6 +40,8 @@ pub struct OwnablePokemon<P, M, I, G, H> {
     /// The [Gender] of this pokemon.
     #[serde(default)]
     pub gender: G,
+
+    pub nature: N,
 
     #[serde(default)]
     /// The [Health] of this pokemon.
@@ -70,7 +72,7 @@ pub struct OwnablePokemon<P, M, I, G, H> {
     pub experience: Experience,
 }
 
-impl<P, M, I, G, H> OwnablePokemon<P, M, I, G, H> {
+impl<P, M, I, G, N, H> OwnablePokemon<P, M, I, G, N, H> {
     /// Get the current HP of this pokemon.
     pub fn hp(&self) -> H
     where
@@ -80,14 +82,14 @@ impl<P, M, I, G, H> OwnablePokemon<P, M, I, G, H> {
     }
 }
 
-impl<P, M, I, G> OwnablePokemon<P, M, I, G, Health> {
+impl<P, M, I, G, N> OwnablePokemon<P, M, I, G, N, Health> {
     /// Has the pokemon fainted.
     pub fn fainted(&self) -> bool {
         self.hp == 0
     }
 }
 
-impl<P: Deref<Target = Pokemon>, M, I, H, G> OwnablePokemon<P, M, I, G, H> {
+impl<P: Deref<Target = Pokemon>, M, I, G, N, H> OwnablePokemon<P, M, I, G, N, H> {
     /// Get the name of this pokemon.
     /// Returns the nickname or the pokemon's name.
     pub fn name(&self) -> &str {
@@ -117,7 +119,7 @@ impl<P: Deref<Target = Pokemon>, M, I, H, G> OwnablePokemon<P, M, I, G, H> {
     }
 }
 
-impl<P: Deref<Target = Pokemon>, M, I, G> OwnablePokemon<P, M, I, G, Health> {
+impl<P: Deref<Target = Pokemon>, M, I, G> OwnablePokemon<P, M, I, G, Nature, Health> {
     /// Get the maximum [Health] of this pokemon.
     pub fn max_hp(&self) -> Health {
         self.stat(StatType::Health)
@@ -130,7 +132,8 @@ impl<P: Deref<Target = Pokemon>, M, I, G> OwnablePokemon<P, M, I, G, Health> {
 
     /// Get a [BaseStat] for this pokemon.
     pub fn stat(&self, stat: StatType) -> BaseStat {
-        self.pokemon.stat(&self.ivs, &self.evs, self.level, stat)
+        self.pokemon
+            .stat(&self.ivs, &self.evs, self.level, self.nature, stat)
     }
 
     /// Heal this pokemon with an optional amount of [Health].
@@ -146,7 +149,7 @@ impl<
         I,
         G,
         MSET: Deref<Target = [OwnedMove<M>]> + DerefMut,
-    > OwnablePokemon<P, MSET, I, G, Health>
+    > OwnablePokemon<P, MSET, I, G, Nature, Health>
 {
     /// Heal this pokemon with an optional amount of [Health] and restore all its move's [PP] by an optional amount.
     pub fn heal(&mut self, hp: Option<Health>, pp: Option<PP>) {
@@ -155,8 +158,8 @@ impl<
     }
 }
 
-impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G>
-    OwnablePokemon<P, OwnedMoveSet<M>, I, G, Health>
+impl<P: Deref<Target = Pokemon>, M: Deref<Target = Move>, I, G, N>
+    OwnablePokemon<P, OwnedMoveSet<M>, I, G, N, Health>
 {
     /// Add [Experience] to this pokemon, and also handle level ups.
     pub fn add_exp<'d>(
@@ -247,6 +250,7 @@ impl SavedPokemon {
             pokemon,
             level,
             gender,
+            nature: Default::default(),
             hp: Default::default(),
             ivs: ivs.unwrap_or_else(|| Stats::random_iv(random)),
             evs: Default::default(),
@@ -274,15 +278,17 @@ impl SavedPokemon {
         itemdex: &'d dyn Dex<'d, Item, I>,
     ) -> Option<OwnedPokemon<P, M, I>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
+        let gender = self.gender?;
+        let nature = self.nature?;
         let hp = self.hp?;
         let moves = self.moves.init(movedex)?;
         let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
-        let gender = self.gender?;
         Some(OwnablePokemon {
             // data: OwnablePokemonData {
             pokemon,
             level: self.level,
             gender,
+            nature,
             hp,
             ivs: self.ivs,
             evs: self.evs,
@@ -311,9 +317,15 @@ impl SavedPokemon {
         itemdex: &'d dyn Dex<'d, Item, I>,
     ) -> Option<OwnedPokemon<P, M, I>> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
-        let hp = self
-            .hp
-            .unwrap_or_else(|| pokemon.stat(&self.ivs, &self.evs, self.level, StatType::Health));
+        let gender = self
+            .gender
+            .unwrap_or_else(|| pokemon.generate_gender(random));
+        let nature = self
+            .nature
+            .unwrap_or_else(|| Pokemon::generate_nature(random));
+        let hp = self.hp.unwrap_or_else(|| {
+            pokemon.stat(&self.ivs, &self.evs, self.level, nature, StatType::Health)
+        });
         let mut moves = self.moves.init(movedex)?;
         if moves.is_empty() {
             for id in pokemon.moves_at(1..=self.level).rev().take(4) {
@@ -323,14 +335,12 @@ impl SavedPokemon {
             }
         }
         let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
-        let gender = self
-            .gender
-            .unwrap_or_else(|| pokemon.generate_gender(random));
         Some(OwnablePokemon {
             // data: OwnablePokemonData {
             pokemon,
             level: self.level,
             gender,
+            nature,
             hp,
             ivs: self.ivs,
             evs: self.evs,
@@ -350,8 +360,9 @@ impl<
         M: Deref<Target = Move>,
         I: Deref<Target = Item>,
         G: Into<Option<Gender>>,
+        N: Into<Option<Nature>>,
         H: Into<Option<Health>>,
-    > Uninitializable for OwnablePokemon<P, OwnedMoveSet<M>, I, G, H>
+    > Uninitializable for OwnablePokemon<P, OwnedMoveSet<M>, I, G, N, H>
 {
     type Output = SavedPokemon;
 
@@ -361,6 +372,7 @@ impl<
             pokemon: *self.pokemon.id(),
             level: self.level,
             gender: self.gender.into(),
+            nature: self.nature.into(),
             hp: self.hp.into(),
             ivs: self.ivs,
             evs: self.evs,

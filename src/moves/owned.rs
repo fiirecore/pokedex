@@ -38,20 +38,20 @@ impl<M, P> OwnableMove<M, P> {
 }
 
 impl SavedMove {
-
     pub fn is_empty(&self) -> bool {
         self.1 == Some(0)
     }
 
     pub fn restore(&mut self, amount: Option<PP>) {
         match amount {
-            Some(by) => if let Some(pp) = self.1.as_mut() {
-                *pp = pp.saturating_add(by);
-            },
+            Some(by) => {
+                if let Some(pp) = self.1.as_mut() {
+                    *pp = pp.saturating_add(by);
+                }
+            }
             None => self.1 = None,
         }
     }
-
 }
 
 impl<M: Deref<Target = Move>> OwnedMove<M> {

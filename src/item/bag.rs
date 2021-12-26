@@ -44,8 +44,8 @@ impl<I: Deref<Target = Item>> OwnedBag<I> {
         self.len() == 0
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a ItemStack<I>> + 'a {
-        self.0.0.values()
+    pub fn iter(&self) -> impl Iterator<Item = &ItemStack<I>> + '_ {
+        self.0 .0.values()
     }
 
     pub fn get(&self, id: &ItemId) -> Option<&ItemStack<I>> {
@@ -57,11 +57,15 @@ impl<I: Deref<Target = Item>> OwnedBag<I> {
     }
 
     pub fn contains(&self, id: &ItemId) -> bool {
-        self.0.0.contains_key(id)
+        self.0 .0.contains_key(id)
     }
 
     pub fn contains_count(&self, id: &ItemId, count: usize) -> bool {
-        self.0.0.get(id).map(|i| i.count >= count).unwrap_or_default()
+        self.0
+             .0
+            .get(id)
+            .map(|i| i.count >= count)
+            .unwrap_or_default()
     }
 
     /// If the bag has a certain amount of items or more, it will take them.
@@ -93,7 +97,8 @@ impl<I: Deref<Target = Item>> Uninitializable for OwnedBag<I> {
     type Output = Vec<SavedItemStack>;
 
     fn uninit(self) -> Self::Output {
-        self.0.0
+        self.0
+             .0
             .into_iter()
             .map(|(.., v)| v)
             .map(ItemStack::uninit)

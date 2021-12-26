@@ -26,6 +26,9 @@ use self::data::*;
 pub mod stat;
 use self::stat::{BaseStat, Stat, StatType, Stats};
 
+pub mod nature;
+use self::nature::Nature;
+
 /// The identifier of a Pokemon.
 pub type PokemonId = u16;
 /// The level of a pokemon. Usually 1 - 100.
@@ -80,6 +83,37 @@ impl Pokemon {
             .unwrap_or(Gender::None)
     }
 
+    pub fn generate_nature(random: &mut impl Rng) -> Nature {
+        match random.gen_range(0..Nature::COUNT) {
+            0 => Nature::Adamant,
+            1 => Nature::Bashful,
+            2 => Nature::Bold,
+            3 => Nature::Brave,
+            4 => Nature::Calm,
+            5 => Nature::Careful,
+            6 => Nature::Docile,
+            7 => Nature::Gentle,
+            8 => Nature::Hardy,
+            9 => Nature::Hasty,
+            10 => Nature::Impish,
+            11 => Nature::Jolly,
+            12 => Nature::Lax,
+            13 => Nature::Lonely,
+            14 => Nature::Mild,
+            15 => Nature::Modest,
+            16 => Nature::Naive,
+            17 => Nature::Naughty,
+            18 => Nature::Quiet,
+            19 => Nature::Quirky,
+            20 => Nature::Rash,
+            21 => Nature::Relaxed,
+            22 => Nature::Sassy,
+            23 => Nature::Serious,
+            24 => Nature::Timid,
+            _ => unreachable!(),
+        }
+    }
+
     /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
         let primary = user.effective(self.primary_type, category);
@@ -112,26 +146,50 @@ impl Pokemon {
     }
 
     /// Get the value of a [BaseStat] from basic stats.
-    pub fn stat(&self, ivs: &Stats, evs: &Stats, level: Level, stat: StatType) -> BaseStat {
+    pub fn stat(
+        &self,
+        ivs: &Stats,
+        evs: &Stats,
+        level: Level,
+        nature: Nature,
+        stat: StatType,
+    ) -> BaseStat {
         match stat {
             StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
-            stat => Self::base_stat(self.base.get(stat), ivs.get(stat), evs.get(stat), level),
+            stat => Self::base_stat(
+                self.base.get(stat),
+                ivs.get(stat),
+                evs.get(stat),
+                level,
+                nature.multiplier(&stat) as _,
+            ),
         }
     }
 
     /// Get the value of a [BaseStat] from basic stats, excluding health.
-    pub fn base_stat(base: Stat, iv: Stat, ev: Stat, level: Level) -> BaseStat {
-        //add item check
-        let nature = 1.0;
-        (((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + 5.0).floor()
-            * nature)
-            .floor() as BaseStat
+    pub fn base_stat(base: Stat, iv: Stat, ev: Stat, level: Level, multiplier: f64) -> BaseStat {
+        let (.., mut base) = Self::base(base, iv, ev, level);
+        base += 5.0;
+        base *= multiplier;
+        base as _
     }
 
     /// Get the base [Health] of a pokemon from basic stats.
     pub fn base_hp(base: Stat, iv: Stat, ev: Stat, level: Level) -> Health {
-        ((2.0 * base as f32 + iv as f32 + ev as f32) * level as f32 / 100.0 + level as f32 + 10.0)
-            .floor() as Health
+        let (level, mut base) = Self::base(base, iv, ev, level);
+        base += level;
+        base += 10.0;
+        base as _
+    }
+
+    /// returns level and partially completed base stat
+    fn base(base: Stat, iv: Stat, ev: Stat, level: Level) -> (f64, f64) {
+        let level = level as f64;
+        let mut base = 2.0 * base as f64 + iv as f64;
+        base += ev as f64 / 4.0;
+        base *= level;
+        base /= 100.0;
+        (level, base)
     }
 
     /// The default [Friendship] of a pokemon.
@@ -160,65 +218,88 @@ impl Display for Pokemon {
     }
 }
 
-#[test]
-fn tests() {
+#[cfg(test)]
+mod tests {
+
     use crate::{
         moves::{Move, MoveCategory, MoveTarget, Power, PP},
-        pokemon::{owned::SavedPokemon, stat::StatSet},
+        pokemon::{
+            data::{Breeding, LearnableMove, Training},
+            owned::SavedPokemon,
+            stat::{StatSet, StatType},
+            Nature, Pokemon,
+        },
+        types::PokemonType,
         BasicDex,
     };
 
-    let mut pokedex = BasicDex::default();
+    #[test]
+    fn stat() {
+        let attack = Pokemon::base_stat(
+            105,
+            15,
+            50,
+            50,
+            Nature::Adamant.multiplier(&StatType::Attack) as _,
+        );
+        println!("{}", attack);
+        assert!(attack == 136);
+    }
 
-    let test = "test".parse().unwrap();
+    #[test]
+    fn dex() {
+        let mut pokedex = BasicDex::default();
 
-    let v = Pokemon {
-        id: 0,
-        name: "Test".to_owned(),
-        primary_type: PokemonType::Bug,
-        secondary_type: Some(PokemonType::Dragon),
-        moves: vec![LearnableMove(1, test)],
-        base: StatSet::uniform(60),
-        species: "Test Species".to_owned(),
-        evolution: None,
-        height: 6_5,
-        weight: 100,
-        training: Training {
-            base_exp: 200,
-            growth: Default::default(),
-        },
-        breeding: Breeding { gender: None },
-    };
+        let test = "test".parse().unwrap();
 
-    pokedex.insert(v);
+        let v = Pokemon {
+            id: 0,
+            name: "Test".to_owned(),
+            primary_type: PokemonType::Bug,
+            secondary_type: Some(PokemonType::Dragon),
+            moves: vec![LearnableMove(1, test)],
+            base: StatSet::uniform(60),
+            species: "Test Species".to_owned(),
+            evolution: None,
+            height: 6_5,
+            weight: 100,
+            training: Training {
+                base_exp: 200,
+                growth: Default::default(),
+            },
+            breeding: Breeding { gender: None },
+        };
 
-    let mut movedex = BasicDex::default();
+        pokedex.insert(v);
 
-    let v = Move {
-        id: test,
-        name: "Test Move".to_owned(),
-        category: MoveCategory::Physical,
-        pokemon_type: PokemonType::Bug,
-        accuracy: None,
-        power: Some(Power::MAX),
-        pp: PP::MAX,
-        priority: 0,
-        target: MoveTarget::Opponent,
-        contact: false,
-        crit_rate: 1,
-    };
+        let mut movedex = BasicDex::default();
 
-    movedex.insert(v);
+        let v = Move {
+            id: test,
+            name: "Test Move".to_owned(),
+            category: MoveCategory::Physical,
+            pokemon_type: PokemonType::Bug,
+            accuracy: None,
+            power: Some(Power::MAX),
+            pp: PP::MAX,
+            priority: 0,
+            target: MoveTarget::Opponent,
+            contact: false,
+            crit_rate: 1,
+        };
 
-    let itemdex = BasicDex::default();
+        movedex.insert(v);
 
-    let mut rng = rand::rngs::mock::StepRng::new(12, 24);
+        let itemdex = BasicDex::default();
 
-    let pokemon = SavedPokemon::generate(&mut rng, 0, 30, None, None);
+        let mut rng = rand::rngs::mock::StepRng::new(12, 24);
 
-    let pokemon = pokemon
-        .init(&mut rng, &pokedex, &movedex, &itemdex)
-        .unwrap();
+        let pokemon = SavedPokemon::generate(&mut rng, 0, 30, None, None);
 
-    assert!(pokemon.moves.len() != 0)
+        let pokemon = pokemon
+            .init(&mut rng, &pokedex, &movedex, &itemdex)
+            .unwrap();
+
+        assert!(pokemon.moves.len() != 0)
+    }
 }
