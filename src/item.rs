@@ -17,6 +17,8 @@ pub use stack::*;
 /// An identifier for items.
 pub type ItemId = TinyStr16;
 
+pub type Price = u32;
+
 /// An item.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -29,7 +31,7 @@ pub struct Item {
     #[serde(default)]
     pub category: ItemCategory,
 
-    pub price: u32,
+    pub price: Price,
 
     #[serde(default)]
     pub stackable: Stackable,
