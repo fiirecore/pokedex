@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{MoveCategory, MoveId},
-    types::{Effective, PokemonType},
+    types::{Effective, PokemonType, Types},
     Identifiable,
 };
 
@@ -30,7 +30,7 @@ pub use self::nature::*;
 /// The identifier of a Pokemon.
 pub type PokemonId = u16;
 /// The form of a Pokemon.
-pub type PokemonForm = tinystr::TinyStr8;
+pub type PokemonFormId = tinystr::TinyStr8;
 /// The level of a pokemon. Usually 1 - 100.
 /// Levels determine a Pokemon's power, and higher is better.
 pub type Level = u8;
@@ -42,24 +42,19 @@ pub type Friendship = u8;
 /// The amount of health a pokemon has.
 pub type Health = stat::BaseStat;
 
-/// A Pokemon.
+/// A form of a Pokemon.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pokemon {
     pub id: <Self as Identifiable>::Id,
     pub name: String,
 
-    pub primary: PokemonType,
-    #[serde(default)]
-    pub secondary: Option<PokemonType>,
+    pub types: Types,
 
-    #[serde(default)]
     pub moves: Vec<LearnableMove>,
     pub base: Stats,
 
     pub species: String,
-
-    pub forms: Option<Vec<PokemonForm>>,
 
     #[serde(default)]
     pub evolution: Option<Evolution>,
@@ -118,8 +113,8 @@ impl Pokemon {
 
     /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
-        let primary = user.effective(self.primary, category);
-        if let Some(secondary) = self.secondary {
+        let primary = user.effective(self.types.primary, category);
+        if let Some(secondary) = self.types.secondary {
             primary * user.effective(secondary, category)
         } else {
             primary
@@ -231,7 +226,7 @@ mod tests {
             stat::{StatSet, StatType},
             Nature, Pokemon,
         },
-        types::PokemonType,
+        types::{PokemonType, Types},
         BasicDex,
     };
 
@@ -257,12 +252,13 @@ mod tests {
         let v = Pokemon {
             id: 0,
             name: "Test".to_owned(),
-            primary: PokemonType::Bug,
-            secondary: Some(PokemonType::Dragon),
+            types: Types {
+                primary: PokemonType::Bug,
+                secondary: Some(PokemonType::Dragon),
+            },
             moves: vec![LearnableMove(1, test)],
             base: StatSet::uniform(60),
             species: "Test Species".to_owned(),
-            forms: None,
             evolution: None,
             height: 6_5,
             weight: 100,

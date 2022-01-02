@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::moves::MoveCategory;
 
 /// Pokemon types
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 pub enum PokemonType {
     Unknown,
 
@@ -32,12 +32,19 @@ pub enum PokemonType {
 }
 
 /// Pokemon Type effectiveness
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 pub enum Effective {
     Effective,
     Ineffective,
     NotEffective,
     SuperEffective,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+pub struct Types {
+    pub primary: PokemonType,
+    #[serde(default)]
+    pub secondary: Option<PokemonType>,
 }
 
 impl Effective {
