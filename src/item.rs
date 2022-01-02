@@ -20,7 +20,7 @@ pub type ItemId = TinyStr16;
 pub type Price = u32;
 
 /// An item.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Item {
     pub id: <Self as Identifiable>::Id,
@@ -77,7 +77,6 @@ pub enum ItemCategory {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Stackable {
-    Unique,
     Singular,
     Stackable(u16),
 }

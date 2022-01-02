@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::MoveId,
-    pokemon::{Experience, Level, PokemonId},
+    pokemon::{Experience, Level, PokemonId, Friendship}, item::ItemId,
 };
 
 /// The gender of a Pokemon.
@@ -23,7 +23,16 @@ impl Gender {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Evolution(pub Level, pub PokemonId);
+pub struct Evolution(pub EvolutionType, pub PokemonId);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub enum EvolutionType {
+    Level(Level),
+    Friendship(Friendship),
+    Trade,
+    Item(ItemId),
+}
 
 /// A Move a pokemon can learn at a certain level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

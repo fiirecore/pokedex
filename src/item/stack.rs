@@ -1,4 +1,4 @@
-use core::ops::Deref;
+use core::ops::{Add, AddAssign, Deref};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -6,12 +6,14 @@ use crate::{
     Dex, Initializable, Uninitializable,
 };
 
+pub type StackSize = usize;
+
 pub type SavedItemStack = ItemStack<ItemId>;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct ItemStack<I> {
     pub item: I,
-    pub count: usize,
+    pub count: StackSize,
 }
 
 impl<I> From<I> for ItemStack<I> {
@@ -21,7 +23,7 @@ impl<I> From<I> for ItemStack<I> {
 }
 
 impl<I: Clone> ItemStack<I> {
-    fn take_gt(&mut self, count: usize) -> Self {
+    fn take_gt(&mut self, count: StackSize) -> Self {
         self.count -= count;
         Self {
             item: self.item.clone(),
@@ -29,7 +31,7 @@ impl<I: Clone> ItemStack<I> {
         }
     }
 
-    pub fn try_take(&mut self, count: usize) -> Option<Self> {
+    pub fn try_take(&mut self, count: StackSize) -> Option<Self> {
         if count > self.count {
             None
         } else {
@@ -37,7 +39,7 @@ impl<I: Clone> ItemStack<I> {
         }
     }
 
-    pub fn take(&mut self, count: usize) -> Self {
+    pub fn take(&mut self, count: StackSize) -> Self {
         if count > self.count {
             let stack = Self {
                 item: self.item.clone(),
@@ -63,19 +65,29 @@ impl<I: Deref<Target = Item>> ItemStack<I> {
         }
     }
 
-    pub fn add(&mut self, count: usize) -> bool {
-        if matches!(self.item.stackable, Stackable::Unique) && self.count != 0 {
-            return false;
-        }
-        self.count = self.count.saturating_add(count);
-        true
-    }
-
     pub fn stacks(&self) -> usize {
         match self.item.stackable {
-            Stackable::Unique | Stackable::Singular => self.count,
+            Stackable::Singular => self.count,
             Stackable::Stackable(size) => self.count / size as usize,
         }
+    }
+}
+
+impl<I> Add<StackSize> for ItemStack<I> {
+    type Output = Self;
+
+    fn add(self, rhs: StackSize) -> Self::Output {
+        let count = self.count.saturating_add(rhs);
+        Self {
+            item: self.item,
+            count,
+        }
+    }
+}
+
+impl<I> AddAssign<StackSize> for ItemStack<I> {
+    fn add_assign(&mut self, rhs: StackSize) {
+        self.count = self.count.saturating_add(rhs);
     }
 }
 

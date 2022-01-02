@@ -14,8 +14,6 @@ use crate::{
     Identifiable,
 };
 
-pub mod species;
-
 pub mod owned;
 
 pub mod party;
@@ -26,11 +24,13 @@ use self::data::*;
 pub mod stat;
 use self::stat::{BaseStat, Stat, StatType, Stats};
 
-pub mod nature;
-use self::nature::Nature;
+mod nature;
+pub use self::nature::*;
 
 /// The identifier of a Pokemon.
 pub type PokemonId = u16;
+/// The form of a Pokemon.
+pub type PokemonForm = tinystr::TinyStr8;
 /// The level of a pokemon. Usually 1 - 100.
 /// Levels determine a Pokemon's power, and higher is better.
 pub type Level = u8;
@@ -49,15 +49,17 @@ pub struct Pokemon {
     pub id: <Self as Identifiable>::Id,
     pub name: String,
 
-    pub primary_type: PokemonType,
+    pub primary: PokemonType,
     #[serde(default)]
-    pub secondary_type: Option<PokemonType>,
+    pub secondary: Option<PokemonType>,
 
     #[serde(default)]
     pub moves: Vec<LearnableMove>,
     pub base: Stats,
 
     pub species: String,
+
+    pub forms: Option<Vec<PokemonForm>>,
 
     #[serde(default)]
     pub evolution: Option<Evolution>,
@@ -116,8 +118,8 @@ impl Pokemon {
 
     /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
     pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
-        let primary = user.effective(self.primary_type, category);
-        if let Some(secondary) = self.secondary_type {
+        let primary = user.effective(self.primary, category);
+        if let Some(secondary) = self.secondary {
             primary * user.effective(secondary, category)
         } else {
             primary
@@ -255,11 +257,12 @@ mod tests {
         let v = Pokemon {
             id: 0,
             name: "Test".to_owned(),
-            primary_type: PokemonType::Bug,
-            secondary_type: Some(PokemonType::Dragon),
+            primary: PokemonType::Bug,
+            secondary: Some(PokemonType::Dragon),
             moves: vec![LearnableMove(1, test)],
             base: StatSet::uniform(60),
             species: "Test Species".to_owned(),
+            forms: None,
             evolution: None,
             height: 6_5,
             weight: 100,
@@ -292,9 +295,9 @@ mod tests {
 
         let itemdex = BasicDex::default();
 
-        let mut rng = rand::rngs::mock::StepRng::new(12, 24);
+        let pokemon = SavedPokemon::generate(0, 30, None, None);
 
-        let pokemon = SavedPokemon::generate(&mut rng, 0, 30, None, None);
+        let mut rng = rand::rngs::mock::StepRng::new(12, 24);
 
         let pokemon = pokemon
             .init(&mut rng, &pokedex, &movedex, &itemdex)

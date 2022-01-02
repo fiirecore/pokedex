@@ -60,14 +60,24 @@ impl<I> Bag<I> {
     }
 }
 
+impl SavedBag {
+    pub fn insert_saved(&mut self, stack: ItemStack<ItemId>) {
+        match self.0.get_mut(&stack.item) {
+            Some(bag_stack) => *bag_stack += stack.count,
+            None => {
+                self.0.insert(stack.item, stack);
+            }
+        }
+    }
+}
+
 impl<I: Deref<Target = Item>> Bag<I> {
     /// Adds an item stack to the bag. Returns extra items if bag is filled.
-    pub fn insert(&mut self, stack: ItemStack<I>) -> bool {
+    pub fn insert_init(&mut self, stack: ItemStack<I>) {
         match self.0.get_mut(&stack.item.id) {
-            Some(bag_stack) => bag_stack.add(stack.count),
+            Some(bag_stack) => *bag_stack += stack.count,
             None => {
                 self.0.insert(stack.item.id, stack);
-                true
             }
         }
     }

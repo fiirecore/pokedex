@@ -12,7 +12,7 @@ use crate::{
     },
     pokemon::{
         stat::{BaseStat, StatType, Stats},
-        Experience, Friendship, Gender, Health, Level, Nature, Pokemon, PokemonId,
+        Experience, Friendship, Gender, Health, Level, Nature, Pokemon, PokemonId, EvolutionType,
     },
     Dex, Identifiable, Initializable, Uninitializable,
 };
@@ -100,9 +100,13 @@ impl<P: Deref<Target = Pokemon>, M, I, G, N, H> OwnablePokemon<P, M, I, G, N, H>
 
     pub fn should_evolve(&self) -> Option<&PokemonId> {
         match &self.pokemon.evolution {
-            Some(e) => match e.0 >= self.level {
-                true => Some(&e.1),
-                false => None,
+            Some(e) => match &e.0 {
+                EvolutionType::Level(level) => match level >= &self.level {
+                    true => Some(&e.1),
+                    false => None,
+                },
+                // To - do
+                _ => None,
             },
             None => None,
         }
@@ -239,7 +243,6 @@ impl SavedPokemon {
 
     /// Generate an owned pokemon.
     pub fn generate(
-        random: &mut impl Rng,
         pokemon: PokemonId,
         level: Level,
         gender: Option<Gender>,
@@ -252,7 +255,7 @@ impl SavedPokemon {
             gender,
             nature: Default::default(),
             hp: Default::default(),
-            ivs: ivs.unwrap_or_else(|| Stats::random_iv(random)),
+            ivs: ivs.unwrap_or_default(),
             evs: Default::default(),
             friendship: Pokemon::default_friendship(),
             ailment: Default::default(),
@@ -328,10 +331,13 @@ impl SavedPokemon {
         });
         let mut moves = self.moves.init(movedex)?;
         if moves.is_empty() {
-            for id in pokemon.moves_at(1..=self.level).rev().take(4) {
-                if let Some(m) = movedex.try_get(id) {
-                    moves.add(None, m);
-                }
+            for m in pokemon
+                .moves_at(1..=self.level)
+                .rev()
+                .take(4)
+                .flat_map(|id| movedex.try_get(id))
+            {
+                moves.add(None, m);
             }
         }
         let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
