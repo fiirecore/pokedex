@@ -17,5 +17,5 @@ mod defaults {
 
     /// A type that represents a Pokemon party.
     /// A Party is a collection of owned pokemon a trainer can use.
-    pub type Party<P> = arrayvec::ArrayVec<[P; PARTY_SIZE]>;
+    pub type Party<P> = alloc::vec::Vec<P>;
 }

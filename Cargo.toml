@@ -13,9 +13,10 @@ categories = ["game-development"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 rand = { version = "0.8", default-features = false }
-tinystr = { version = "0.4", features = ["serde"], default-features = false }
-arrayvec = { version = "0.5", features = ["serde"] }
-hashbrown = { version = "0.9" }
+tinystr = { version = "0.5", features = ["serde"], default-features = false }
+hashbrown = { version = "0.12", features = ["serde"] }
+enum-map = { version = "2", features = ["serde"] }
+num-traits = "0.2"
 
 [workspace]
 packages = ["builder"]

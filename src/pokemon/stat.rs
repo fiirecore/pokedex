@@ -1,7 +1,23 @@
-use core::ops::Range;
+use core::{
+    iter::Sum,
+    ops::{Index, IndexMut, Range},
+};
 
-use rand::Rng;
+use enum_map::{EnumArray, EnumMap};
+use rand::{
+    distributions::uniform::{SampleRange, SampleUniform},
+    Rng,
+};
 use serde::{Deserialize, Serialize};
+
+#[macro_export]
+macro_rules! stat_set {
+    {$($t:tt)*} => {
+        StatSet($crate::pokemon::stat::enum_map! { $($t)* })
+    };
+}
+
+pub use enum_map::{enum_map, Enum};
 
 /// A stat amount for a Pokemon.
 /// Used in a Pokemon's IVs and EVs.
@@ -10,10 +26,12 @@ pub type Stat = u8;
 pub type BaseStat = u16;
 
 /// A [StatSet] of [Stat]s.
-pub type Stats = StatSet<Stat>;
+pub type Stats = StatSet<StatType, Stat>;
 
 /// The type of [Stat].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Enum, Serialize, Deserialize,
+)]
 pub enum StatType {
     Health,
     Attack,
@@ -27,30 +45,41 @@ pub enum StatType {
 }
 
 /// A set of all [StatType]s, with a provided stat generic.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct StatSet<S> {
-    pub hp: S,
-    pub atk: S,
-    pub def: S,
-    pub sp_atk: S,
-    pub sp_def: S,
-    pub speed: S,
-}
+#[derive(Debug, PartialEq, Eq)]
+pub struct StatSet<K: EnumArray<S>, S>(pub EnumMap<K, S>);
 
-impl<S> StatSet<S> {
+impl<K: EnumArray<S>, S> StatSet<K, S> {
     /// Create a [StatSet] with one type of provided stat.
     pub fn uniform(stat: S) -> Self
     where
-        S: Copy,
+        S: Default + Clone,
     {
-        Self {
-            hp: stat,
-            atk: stat,
-            def: stat,
-            sp_atk: stat,
-            sp_def: stat,
-            speed: stat,
+        // epic fail
+        let mut map = EnumMap::<K, S>::default();
+        for s in map.values_mut() {
+            *s = stat.clone();
         }
+        Self(map)
+    }
+
+    /// Get a random [StatSet]
+    pub fn random<R: SampleRange<S> + Clone>(random: &mut impl Rng, range: R) -> Self
+    where
+        S: Default + SampleUniform,
+    {
+        let mut map = EnumMap::<K, S>::default();
+        for s in map.values_mut() {
+            *s = random.gen_range(range.clone());
+        }
+        Self(map)
+    }
+
+    /// The total count of stat values in a [StatSet].
+    pub fn total(&self) -> S
+    where
+        S: Sum + Clone,
+    {
+        self.0.values().cloned().sum()
     }
 }
 
@@ -70,57 +99,66 @@ impl Stats {
 
     /// Generate a random [Stat] in the IV_RANGE
     pub fn random_iv(random: &mut impl Rng) -> Self {
-        Self {
-            hp: random.gen_range(Self::IV_RANGE),
-            atk: random.gen_range(Self::IV_RANGE),
-            def: random.gen_range(Self::IV_RANGE),
-            sp_atk: random.gen_range(Self::IV_RANGE),
-            sp_def: random.gen_range(Self::IV_RANGE),
-            speed: random.gen_range(Self::IV_RANGE),
-        }
-    }
-
-    /// Get a [Stat] from a [StatType].
-    pub fn get(&self, stat: StatType) -> Stat {
-        match stat {
-            StatType::Health => self.hp,
-            StatType::Attack => self.atk,
-            StatType::Defense => self.def,
-            StatType::SpAttack => self.sp_atk,
-            StatType::SpDefense => self.sp_def,
-            StatType::Speed => self.speed,
-        }
+        Self::random(random, Self::IV_RANGE)
     }
 
     /// Increment a [StatType] by an amount.
     /// This function is for a pokemon's EV stats.
     pub fn increment_ev(&mut self, stat: StatType, by: Stat) {
         if self.total() + by < Self::MAX_EV {
-            let stat = match stat {
-                StatType::Health => &mut self.hp,
-                StatType::Attack => &mut self.atk,
-                StatType::Defense => &mut self.def,
-                StatType::SpAttack => &mut self.sp_atk,
-                StatType::SpDefense => &mut self.sp_def,
-                StatType::Speed => &mut self.speed,
-            };
+            let stat = &mut self.0[stat];
 
             *stat = stat.saturating_add(by);
         }
     }
 
-    /// The total count of stat values in a [StatSet].
-    pub fn total(&self) -> Stat {
-        self.hp
-            .saturating_add(self.atk)
-            .saturating_add(self.def)
-            .saturating_add(self.sp_atk)
-            .saturating_add(self.sp_def)
-            .saturating_add(self.speed)
-    }
-
     /// Get the default IV [StatSet].
     pub fn default_iv() -> Self {
         Self::uniform(15)
+    }
+}
+
+impl<K: EnumArray<S>, S> Index<K> for StatSet<K, S> {
+    type Output = S;
+
+    fn index(&self, key: K) -> &S {
+        &self.0[key]
+    }
+}
+
+impl<K: EnumArray<S>, S> IndexMut<K> for StatSet<K, S> {
+    fn index_mut(&mut self, key: K) -> &mut S {
+        &mut self.0[key]
+    }
+}
+
+impl<K: EnumArray<S>, S: Default> Default for StatSet<K, S> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<K: EnumArray<S> + Copy, S: Copy> Copy for StatSet<K, S> where K::Array: Copy {}
+
+impl<K: EnumArray<S> + Clone, S: Clone> Clone for StatSet<K, S>
+where
+    K::Array: Clone,
+{
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl<K: EnumArray<S> + Serialize, S: Serialize> Serialize for StatSet<K, S> {
+    fn serialize<SER: serde::Serializer>(&self, serializer: SER) -> Result<SER::Ok, SER::Error> {
+        EnumMap::serialize(&self.0, serializer)
+    }
+}
+
+impl<'de, K: EnumArray<S> + EnumArray<Option<S>> + Deserialize<'de>, S: Deserialize<'de>>
+    Deserialize<'de> for StatSet<K, S>
+{
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        EnumMap::deserialize(deserializer).map(Self)
     }
 }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{Item, ItemId, Stackable},
-    Dex, Initializable, Uninitializable,
+    Dex,
 };
 
 pub type StackSize = usize;
@@ -91,22 +91,20 @@ impl<I> AddAssign<StackSize> for ItemStack<I> {
     }
 }
 
-impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedItemStack {
-    type Output = ItemStack<O>;
+impl SavedItemStack {
 
-    fn init(self, dex: &'d dyn Dex<'d, Item, O>) -> Option<Self::Output> {
-        Some(Self::Output {
-            item: dex.try_get(&self.item)?,
+    pub fn init<I: Deref<Target = Item> + Clone>(self, dex: &impl Dex<Item, Output = I>) -> Option<ItemStack<I>> {
+        Some(ItemStack {
+            item: dex.try_get(&self.item)?.clone(),
             count: self.count,
         })
     }
 }
 
-impl<I: Deref<Target = Item>> Uninitializable for ItemStack<I> {
-    type Output = SavedItemStack;
+impl<I: Deref<Target = Item>> ItemStack<I> {
 
-    fn uninit(self) -> Self::Output {
-        Self::Output {
+    pub fn uninit(self) -> SavedItemStack {
+        ItemStack {
             item: self.item.id,
             count: self.count,
         }

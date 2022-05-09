@@ -3,10 +3,11 @@
 //! This module does not contain ways to execute moves, as the [battle](https://crates.io/crates/firecore-battle) crate does this.
 //!
 
+use alloc::string::String;
 use serde::{Deserialize, Serialize};
 use tinystr::TinyStr16;
 
-use crate::{pokemon::stat::StatType, types::PokemonType, Identifiable, UNKNOWN_ID};
+use crate::{pokemon::stat::StatType, types::PokemonType, Identifiable, Nameable, UNKNOWN_ID};
 
 pub mod owned;
 pub mod set;
@@ -68,7 +69,9 @@ impl Identifiable for Move {
     fn id(&self) -> &Self::Id {
         &self.id
     }
+}
 
+impl Nameable for Move {
     fn name(&self) -> &str {
         &self.name
     }

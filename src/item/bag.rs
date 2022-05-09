@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{Item, ItemId, ItemStack},
-    Dex, Initializable, Uninitializable,
+    Dex,
 };
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -90,10 +90,9 @@ impl<I: Deref<Target = Item>> Bag<I> {
     }
 }
 
-impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedBag {
-    type Output = Bag<O>;
+impl SavedBag {
 
-    fn init(self, dex: &'d dyn Dex<'d, Item, O>) -> Option<Self::Output> {
+    pub fn init<I: Deref<Target = Item> + Clone>(self, dex: &impl Dex<Item, Output = I>) -> Option<Bag<I>> {
         Some(Bag(self
             .0
             .into_iter()
@@ -102,10 +101,8 @@ impl<'d, O: Deref<Target = Item>> Initializable<'d, Item, O> for SavedBag {
     }
 }
 
-impl<I: Deref<Target = Item>> Uninitializable for Bag<I> {
-    type Output = SavedBag;
-
-    fn uninit(self) -> Self::Output {
+impl<I: Deref<Target = Item>> Bag<I> {
+    pub fn uninit(self) -> SavedBag {
         Bag(self.0.into_iter().map(|(id, v)| (id, v.uninit())).collect())
     }
 }
@@ -119,7 +116,7 @@ impl Serialize for SavedBag {
 impl<'de> Deserialize<'de> for SavedBag {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         Ok(Self(
-            Vec::<ItemStack<ItemId>>::deserialize(deserializer)?
+            alloc::vec::Vec::<ItemStack<ItemId>>::deserialize(deserializer)?
                 .into_iter()
                 .map(|stack| (stack.item, stack))
                 .collect(),

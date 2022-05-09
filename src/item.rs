@@ -2,11 +2,13 @@
 //!
 //! This module is incomplete and due to change.
 
+use alloc::string::String;
+
 use serde::{Deserialize, Serialize};
 
 use tinystr::TinyStr16;
 
-use crate::{item::usage::ItemUsage, Identifiable};
+use crate::{item::usage::ItemUsage, Identifiable, Nameable};
 
 pub mod bag;
 pub mod usage;
@@ -52,7 +54,9 @@ impl Identifiable for Item {
     fn id(&self) -> &Self::Id {
         &self.id
     }
+}
 
+impl Nameable for Item {
     fn name(&self) -> &str {
         &self.name
     }

@@ -1,17 +1,19 @@
 //! Types and structs related to Pokemon
 //!
 
+use alloc::{string::String, vec::Vec};
 use core::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::RangeBounds,
 };
+
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{MoveCategory, MoveId},
     types::{Effective, PokemonType, Types},
-    Identifiable,
+    Identifiable, Nameable,
 };
 
 pub mod owned;
@@ -152,11 +154,16 @@ impl Pokemon {
         stat: StatType,
     ) -> BaseStat {
         match stat {
-            StatType::Health => Self::base_hp(self.base.hp, ivs.hp, evs.hp, level),
+            StatType::Health => Self::base_hp(
+                self.base[StatType::Health],
+                ivs[StatType::Health],
+                evs[StatType::Health],
+                level,
+            ),
             stat => Self::base_stat(
-                self.base.get(stat),
-                ivs.get(stat),
-                evs.get(stat),
+                self.base[stat],
+                ivs[stat],
+                evs[stat],
                 level,
                 nature.multiplier(&stat) as _,
             ),
@@ -203,7 +210,9 @@ impl Identifiable for Pokemon {
     fn id(&self) -> &Self::Id {
         &self.id
     }
+}
 
+impl Nameable for Pokemon {
     fn name(&self) -> &str {
         &self.name
     }
@@ -218,7 +227,10 @@ impl Display for Pokemon {
 #[cfg(test)]
 mod tests {
 
+    use std::rc::Rc;
+
     use crate::{
+        item::Item,
         moves::{Move, MoveCategory, MoveTarget, Power, PP},
         pokemon::{
             data::{Breeding, LearnableMove, Training},
@@ -245,7 +257,7 @@ mod tests {
 
     #[test]
     fn dex() {
-        let mut pokedex = BasicDex::default();
+        let mut pokedex = BasicDex::<Pokemon, Rc<_>>::default();
 
         let test = "test".parse().unwrap();
 
@@ -271,7 +283,7 @@ mod tests {
 
         pokedex.insert(v);
 
-        let mut movedex = BasicDex::default();
+        let mut movedex = BasicDex::<Move, Rc<_>>::default();
 
         let v = Move {
             id: test,
@@ -289,7 +301,7 @@ mod tests {
 
         movedex.insert(v);
 
-        let itemdex = BasicDex::default();
+        let itemdex = BasicDex::<Item, Rc<_>>::default();
 
         let pokemon = SavedPokemon::generate(0, 30, None, None);
 

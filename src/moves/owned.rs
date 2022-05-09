@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{Move, MoveId, PP},
-    Dex, Identifiable, Initializable, Uninitializable,
+    Dex, Identifiable,
 };
 
 pub type SavedMove = OwnableMove<MoveId, Option<PP>>;
@@ -12,18 +12,16 @@ pub type OwnedMove<M> = OwnableMove<M, PP>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OwnableMove<M, P>(pub M, pub P);
 
-impl<'d, O: Deref<Target = Move>> Initializable<'d, Move, O> for SavedMove {
-    type Output = OwnedMove<O>;
+impl SavedMove {
 
-    fn init(self, dex: &'d dyn Dex<'d, Move, O>) -> Option<Self::Output> {
-        dex.try_get(&self.0).map(OwnedMove::from)
+    pub fn init<M: Deref<Target = Move> + Clone>(self, dex: &impl Dex<Move, Output = M>) -> Option<OwnedMove<M>> {
+        dex.try_get(&self.0).cloned().map(OwnedMove::from)
     }
 }
 
-impl<M: Deref<Target = Move>> Uninitializable for OwnedMove<M> {
-    type Output = SavedMove;
+impl<M: Deref<Target = Move>> OwnedMove<M> {
 
-    fn uninit(self) -> Self::Output {
+    pub fn uninit(self) -> SavedMove {
         OwnableMove(*self.0.deref().id(), Some(self.1))
     }
 }

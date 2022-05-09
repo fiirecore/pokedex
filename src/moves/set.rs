@@ -1,74 +1,98 @@
-use core::ops::{Deref, DerefMut};
+use alloc::vec::Vec;
+use serde::{Serialize, Deserialize};
+use core::ops::Deref;
 
 use crate::{
     moves::{
         owned::{OwnedMove, SavedMove},
         Move,
     },
-    Dex, Initializable, Uninitializable,
+    Dex,
 };
 
-pub const MOVE_SET_SIZE: usize = 4;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MoveSet<M>(Vec<M>, usize);
 
-type Set<T> = arrayvec::ArrayVec<[T; MOVE_SET_SIZE]>;
+pub type SavedMoveSet = MoveSet<SavedMove>;
+pub type OwnedMoveSet<M> = MoveSet<OwnedMove<M>>;
 
-pub type SavedMoveSet = Set<SavedMove>;
+impl<M> MoveSet<M> {
+    pub const DEFAULT_SIZE: usize = 4;
 
-impl<'d, O: Deref<Target = Move>> Initializable<'d, Move, O> for SavedMoveSet {
-    type Output = OwnedMoveSet<O>;
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 
-    fn init(self, dex: &'d dyn Dex<'d, Move, O>) -> Option<Self::Output> {
-        Some(OwnedMoveSet(
-            self.into_iter().flat_map(|s| s.init(dex)).collect(),
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn get(&self, index: usize) -> Option<&M> {
+        self.0.get(index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut M> {
+        self.0.get_mut(index)
+    }
+
+    pub fn iter(&self) -> core::slice::Iter<M> {
+        self.0.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<M> {
+        self.0.iter_mut()
+    }
+
+    pub fn push(&mut self, m: M) {
+        self.0.push(m);
+    }
+
+}
+
+impl<M> Default for MoveSet<M> {
+    fn default() -> Self {
+        Self(Default::default(), Self::DEFAULT_SIZE)
+    }
+}
+
+impl SavedMoveSet {
+    pub fn init<M: Deref<Target = Move> + Clone>(
+        self,
+        dex: &impl Dex<Move, Output = M>,
+    ) -> Option<OwnedMoveSet<M>> {
+        Some(MoveSet(
+            self.0.into_iter().flat_map(|s| s.init(dex)).collect(),
+            self.1,
         ))
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct OwnedMoveSet<M: Deref<Target = Move>>(Set<OwnedMove<M>>);
+impl<M: Deref<Target = Move>> OwnedMoveSet<M> {
+    pub fn uninit(self) -> SavedMoveSet {
+        MoveSet(self.0.into_iter().map(OwnedMove::uninit).collect(), self.1)
+    }
+}
 
 impl<M: Deref<Target = Move>> OwnedMoveSet<M> {
     pub fn is_full(&self) -> bool {
-        self.0.is_full()
+        self.0.len() < self.1
     }
 
-    pub fn add(&mut self, index: Option<usize>, m: M) {
+    pub fn add(&mut self, index: Option<usize>, m: M) -> bool {
         let m = OwnedMove::from(m);
-        match self.0.is_full() {
+        match self.is_full() {
             true => {
                 if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
-                    *i = m
+                    *i = m;
+                    true
+                } else {
+                    false
                 }
             }
-            false => self.0.push(m),
+            false => {
+                self.0.push(m);
+                true
+            }
         }
-    }
-}
-
-impl<M: Deref<Target = Move>> Uninitializable for OwnedMoveSet<M> {
-    type Output = SavedMoveSet;
-
-    fn uninit(self) -> Self::Output {
-        self.0.into_iter().map(|o| o.uninit()).collect()
-    }
-}
-
-impl<M: Deref<Target = Move>> Default for OwnedMoveSet<M> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
-
-impl<M: Deref<Target = Move>> Deref for OwnedMoveSet<M> {
-    type Target = [OwnedMove<M>];
-
-    fn deref(&self) -> &Self::Target {
-        self.0.deref()
-    }
-}
-
-impl<M: Deref<Target = Move>> DerefMut for OwnedMoveSet<M> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.0.deref_mut()
     }
 }
