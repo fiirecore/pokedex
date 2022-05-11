@@ -6,14 +6,14 @@ edition = "2021"
 description = "A pokedex library"
 repository = "https://github.com/fiirecore/pokedex/"
 readme = "README.md"
-license = "CC0"
+license = "CC0-1.0"
 keywords = ["pokemon", "pokedex"]
 categories = ["game-development"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 rand = { version = "0.8", default-features = false }
-tinystr = { version = "0.5", features = ["serde"], default-features = false }
+tinystr = { version = "0.6", features = ["serde"], default-features = false }
 hashbrown = { version = "0.12", features = ["serde"] }
 enum-map = { version = "2", features = ["serde"] }
 num-traits = "0.2"
