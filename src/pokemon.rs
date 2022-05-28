@@ -303,7 +303,11 @@ mod tests {
 
         let itemdex = BasicDex::<Item, Rc<_>>::default();
 
-        let pokemon = SavedPokemon::generate(0, 30, None, None);
+        let pokemon = SavedPokemon {
+            pokemon: 0,
+            level: 30,
+            ..Default::default()
+        };
 
         let mut rng = rand::rngs::mock::StepRng::new(12, 24);
 

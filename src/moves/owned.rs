@@ -12,15 +12,25 @@ pub type OwnedMove<M> = OwnableMove<M, PP>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OwnableMove<M, P>(pub M, pub P);
 
-impl SavedMove {
+// #[deprecated]
+// pub trait MoveView {
+//     fn id(&self) -> MoveId;
 
-    pub fn init<M: Deref<Target = Move> + Clone>(self, dex: &impl Dex<Move, Output = M>) -> Option<OwnedMove<M>> {
+//     fn is_empty(&self) -> bool;
+
+//     // fn restore(&mut self, amount: Option<PP>);
+// }
+
+impl SavedMove {
+    pub fn init<M: Deref<Target = Move> + Clone>(
+        self,
+        dex: &impl Dex<Move, Output = M>,
+    ) -> Option<OwnedMove<M>> {
         dex.try_get(&self.0).cloned().map(OwnedMove::from)
     }
 }
 
 impl<M: Deref<Target = Move>> OwnedMove<M> {
-
     pub fn uninit(self) -> SavedMove {
         OwnableMove(*self.0.deref().id(), Some(self.1))
     }
@@ -36,10 +46,6 @@ impl<M, P> OwnableMove<M, P> {
 }
 
 impl SavedMove {
-    pub fn is_empty(&self) -> bool {
-        self.1 == Some(0)
-    }
-
     pub fn restore(&mut self, amount: Option<PP>) {
         match amount {
             Some(by) => {
@@ -53,13 +59,29 @@ impl SavedMove {
 }
 
 impl<M: Deref<Target = Move>> OwnedMove<M> {
-    pub fn is_empty(&self) -> bool {
-        self.1 == 0
-    }
-
     pub fn restore(&mut self, amount: Option<PP>) {
         let max = self.0.pp;
         self.1 = amount.unwrap_or(max).min(max)
+    }
+}
+
+// impl MoveView for SavedMove {
+//     fn id(&self) -> MoveId {
+//         self.0
+//     }
+
+//     fn is_empty(&self) -> bool {
+//         self.1 == Some(0)
+//     }
+// }
+
+impl<M: Deref<Target = Move>> OwnedMove<M> {
+    pub fn id(&self) -> &MoveId {
+        &self.0.id
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.1 == 0
     }
 }
 

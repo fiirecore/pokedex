@@ -18,3 +18,5 @@ pub use dex::*;
 
 mod id;
 pub use id::*;
+
+pub type Money = u32;

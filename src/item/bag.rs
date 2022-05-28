@@ -73,7 +73,7 @@ impl SavedBag {
 
 impl<I: Deref<Target = Item>> Bag<I> {
     /// Adds an item stack to the bag. Returns extra items if bag is filled.
-    pub fn insert_init(&mut self, stack: ItemStack<I>) {
+    pub fn insert(&mut self, stack: ItemStack<I>) {
         match self.0.get_mut(&stack.item.id) {
             Some(bag_stack) => *bag_stack += stack.count,
             None => {
@@ -127,5 +127,11 @@ impl<'de> Deserialize<'de> for SavedBag {
 impl<I> Default for Bag<I> {
     fn default() -> Self {
         Self(Default::default())
+    }
+}
+
+impl From<alloc::vec::Vec<ItemStack<ItemId>>> for SavedBag {
+    fn from(v: alloc::vec::Vec<ItemStack<ItemId>>) -> Self {
+        Self(v.into_iter().map(|i| (i.item, i)).collect())
     }
 }

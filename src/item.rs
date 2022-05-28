@@ -19,7 +19,7 @@ pub use stack::*;
 /// An identifier for items.
 pub type ItemId = TinyStr16;
 
-pub type Price = u32;
+pub type Price = crate::Money;
 
 /// An item.
 #[derive(Debug, Clone, Deserialize, Serialize)]

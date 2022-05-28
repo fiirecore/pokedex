@@ -138,3 +138,14 @@ impl Default for MoveTarget {
         Self::None
     }
 }
+
+impl MoveTarget {
+    pub fn needs_input(&self) -> bool {
+        match self {
+            MoveTarget::Ally | MoveTarget::Any | MoveTarget::Opponent | MoveTarget::UserOrAlly => {
+                true
+            }
+            _ => false,
+        }
+    }
+}
