@@ -12,20 +12,16 @@ pub trait Identifiable {
 
     /// Get the identifier of this value.
     fn id(&self) -> &Self::Id;
-}
-
-pub trait Nameable: Identifiable {
 
     fn name(&self) -> &str;
-
 }
 
-//     use std::iter::FromIterator;
+// pub trait Identifier<I: Identifiable> {
+//     fn as_id(&self) -> &I::Id;
+// }
 
-//     use crate::Identifiable;
-
-//     impl<I: Identifiable, C: FromIterator<(I::Id, I)>> FromIterator<I> for C where I::Id: Clone {
-//         fn from_iter<T: IntoIterator<Item = I>>(iter: T) -> Self {
-//             iter.into_iter().map(|i| (i.id().clone(), i)).collect()
-//         }
+// impl<I: Identifiable> Identifier<I> for I {
+//     fn as_id(&self) -> &I::Id {
+//         Identifiable::id(self)
 //     }
+// }

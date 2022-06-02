@@ -5,15 +5,13 @@
 
 use alloc::string::String;
 use serde::{Deserialize, Serialize};
-use tinystr::TinyStr16;
+use tinystr::TinyAsciiStr;
 
-use crate::{pokemon::stat::StatType, types::PokemonType, Identifiable, Nameable, UNKNOWN_ID};
+use crate::{pokemon::stat::StatType, types::PokemonType, Identifiable, UNKNOWN_ID};
 
 pub mod owned;
 pub mod set;
 
-/// An identifier for a [Move].
-pub type MoveId = TinyStr16;
 /// How powerful a [Move] is, in points. Some moves do not use power levels.
 pub type Power = u8;
 /// How accurate a [Move] is, in values 0 - 100.
@@ -27,6 +25,11 @@ pub type Priority = i8;
 /// The higher the value, the higher the chance of a critical hit.
 /// This maxes out at 4.
 pub type CriticalRate = u8;
+
+/// An identifier for a [Move].
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(transparent)]
+pub struct MoveId(pub TinyAsciiStr<16>);
 
 /// Moves that Pokemon use in battle.
 /// These can also have other uses too, such as triggering events in a world.
@@ -61,17 +64,21 @@ pub struct Move {
     pub crit_rate: CriticalRate,
 }
 
+// impl Identifier<Move> for MoveId {
+//     fn as_id(&self) -> &<Move as Identifiable>::Id {
+//         self
+//     }
+// }
+
 impl Identifiable for Move {
     type Id = MoveId;
 
-    const UNKNOWN: Self::Id = UNKNOWN_ID;
+    const UNKNOWN: Self::Id = MoveId(UNKNOWN_ID);
 
     fn id(&self) -> &Self::Id {
         &self.id
     }
-}
 
-impl Nameable for Move {
     fn name(&self) -> &str {
         &self.name
     }
@@ -147,5 +154,25 @@ impl MoveTarget {
             }
             _ => false,
         }
+    }
+}
+
+impl Default for MoveId {
+    fn default() -> Self {
+        Self(UNKNOWN_ID)
+    }
+}
+
+impl From<TinyAsciiStr<16>> for MoveId {
+    fn from(str: TinyAsciiStr<16>) -> Self {
+        Self(str)
+    }
+}
+
+impl core::str::FromStr for MoveId {
+    type Err = tinystr::TinyStrError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(Self)
     }
 }

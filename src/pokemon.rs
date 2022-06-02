@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     moves::{MoveCategory, MoveId},
     types::{Effective, PokemonType, Types},
-    Identifiable, Nameable,
+    Identifiable,
 };
 
 pub mod owned;
@@ -202,6 +202,12 @@ impl Pokemon {
     }
 }
 
+// impl Identifier<Pokemon> for PokemonId {
+//     fn as_id(&self) -> &<Pokemon as Identifiable>::Id {
+//         self
+//     }
+// }
+
 impl Identifiable for Pokemon {
     type Id = PokemonId;
 
@@ -210,9 +216,7 @@ impl Identifiable for Pokemon {
     fn id(&self) -> &Self::Id {
         &self.id
     }
-}
 
-impl Nameable for Pokemon {
     fn name(&self) -> &str {
         &self.name
     }
@@ -315,6 +319,6 @@ mod tests {
             .init(&mut rng, &pokedex, &movedex, &itemdex)
             .unwrap();
 
-        assert!(pokemon.moves.len() != 0)
+        assert!(!pokemon.moves.is_empty())
     }
 }

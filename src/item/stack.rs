@@ -92,8 +92,10 @@ impl<I> AddAssign<StackSize> for ItemStack<I> {
 }
 
 impl SavedItemStack {
-
-    pub fn init<I: Deref<Target = Item> + Clone>(self, dex: &impl Dex<Item, Output = I>) -> Option<ItemStack<I>> {
+    pub fn init<I: Deref<Target = Item> + Clone>(
+        self,
+        dex: &impl Dex<Item, Output = I>,
+    ) -> Option<ItemStack<I>> {
         Some(ItemStack {
             item: dex.try_get(&self.item)?.clone(),
             count: self.count,
@@ -102,7 +104,6 @@ impl SavedItemStack {
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
-
     pub fn uninit(self) -> SavedItemStack {
         ItemStack {
             item: self.item.id,

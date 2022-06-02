@@ -47,9 +47,7 @@ impl<I> Bag<I> {
     where
         I: Clone,
     {
-        self.get_mut(id)
-            .map(|stack| stack.try_take(count))
-            .flatten()
+        self.get_mut(id).and_then(|stack| stack.try_take(count))
     }
 
     pub fn take(&mut self, id: &ItemId, count: usize) -> Option<ItemStack<I>>
@@ -91,8 +89,10 @@ impl<I: Deref<Target = Item>> Bag<I> {
 }
 
 impl SavedBag {
-
-    pub fn init<I: Deref<Target = Item> + Clone>(self, dex: &impl Dex<Item, Output = I>) -> Option<Bag<I>> {
+    pub fn init<I: Deref<Target = Item> + Clone>(
+        self,
+        dex: &impl Dex<Item, Output = I>,
+    ) -> Option<Bag<I>> {
         Some(Bag(self
             .0
             .into_iter()

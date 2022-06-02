@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use tinystr::TinyStr16;
 
-use crate::{item::usage::ItemUsage, Identifiable, Nameable};
+use crate::{item::usage::ItemUsage, Identifiable};
 
 pub mod bag;
 pub mod usage;
@@ -46,6 +46,12 @@ pub struct Item {
     pub usage: ItemUsage,
 }
 
+// impl Identifier<Item> for ItemId {
+//     fn as_id(&self) -> &<Item as Identifiable>::Id {
+//         self
+//     }
+// }
+
 impl Identifiable for Item {
     type Id = ItemId;
 
@@ -54,9 +60,7 @@ impl Identifiable for Item {
     fn id(&self) -> &Self::Id {
         &self.id
     }
-}
 
-impl Nameable for Item {
     fn name(&self) -> &str {
         &self.name
     }

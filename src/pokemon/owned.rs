@@ -134,7 +134,7 @@ impl<
     pub fn name(&self) -> &str {
         self.nickname
             .as_deref()
-            .unwrap_or_else(|| self.pokemon.name.as_str())
+            .unwrap_or(self.pokemon.name.as_str())
     }
 
     pub fn should_evolve(&self) -> Option<&PokemonId> {
@@ -258,13 +258,11 @@ impl<
             experience: self.experience,
         }
     }
-
 }
 
 impl SavedPokemon {
     /// Initialize a [SavedPokemon] that already has values given to its uninitialized fields
     pub fn try_init<
-        'd,
         R: Rng,
         P: Deref<Target = Pokemon> + Clone,
         M: Deref<Target = Move> + Clone,
@@ -280,7 +278,7 @@ impl SavedPokemon {
         let nature = self.nature?;
         let hp = self.hp?;
         let moves = self.moves.init(movedex)?;
-        let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
+        let item = self.item.and_then(|ref id| itemdex.try_get(id));
         Some(OwnedPokemon {
             // data: OwnablePokemonData {
             pokemon: pokemon.clone(),
@@ -302,7 +300,6 @@ impl SavedPokemon {
 
     /// Initialize this owned pokemon struct into an [OwnedPokemon] so it can perform more functions.
     pub fn init<
-        'd,
         R: Rng,
         P: Deref<Target = Pokemon> + Clone,
         M: Deref<Target = Move> + Clone,
@@ -331,20 +328,19 @@ impl SavedPokemon {
 
         if moves.is_empty() {
             let mut m = pokemon
-            .moves_at(1..=self.level)
-            .rev()
-            .flat_map(|id| movedex.try_get(id))
-            .collect::<alloc::vec::Vec<_>>();
+                .moves_at(1..=self.level)
+                .rev()
+                .flat_map(|id| movedex.try_get(id))
+                .collect::<alloc::vec::Vec<_>>();
             m.dedup_by(|a, b| a.id == b.id);
             m.truncate(4);
-            for m in m
-            {
+            for m in m {
                 moves.add(None, m.clone());
             }
         }
 
-        let item = self.item.map(|ref id| itemdex.try_get(id)).flatten();
-        
+        let item = self.item.and_then(|ref id| itemdex.try_get(id));
+
         Some(OwnedPokemon {
             // data: OwnablePokemonData {
             pokemon: pokemon.clone(),

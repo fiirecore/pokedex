@@ -4,8 +4,9 @@ use core::ops::Range;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    item::ItemId,
     moves::MoveId,
-    pokemon::{Experience, Level, PokemonId, Friendship}, item::ItemId,
+    pokemon::{Experience, Friendship, Level, PokemonId},
 };
 
 /// The gender of a Pokemon.

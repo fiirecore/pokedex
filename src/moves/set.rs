@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
-use serde::{Serialize, Deserialize};
 use core::ops::{Deref, Index, IndexMut};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{
@@ -46,7 +46,6 @@ impl<M> MoveSet<M> {
     pub fn push(&mut self, m: M) {
         self.0.push(m);
     }
-
 }
 
 impl<M> Default for MoveSet<M> {
@@ -90,7 +89,7 @@ impl<M: Deref<Target = Move>> OwnedMoveSet<M> {
         let m = OwnedMove::from(m);
         match self.is_full() {
             true => {
-                if let Some(i) = index.map(|i| self.0.get_mut(i)).flatten() {
+                if let Some(i) = index.and_then(|i| self.0.get_mut(i)) {
                     *i = m;
                     true
                 } else {
@@ -114,7 +113,6 @@ impl<M> Index<usize> for MoveSet<M> {
 }
 
 impl<M> IndexMut<usize> for MoveSet<M> {
-
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }

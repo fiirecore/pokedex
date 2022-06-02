@@ -36,7 +36,7 @@ mod defaults {
 
     use hashbrown::HashMap;
 
-    use crate::{Identifiable, Nameable};
+    use crate::Identifiable;
 
     use super::Dex;
 
@@ -71,10 +71,7 @@ mod defaults {
             self.0
         }
 
-        pub fn try_get_named(&self, name: &str) -> Option<&O>
-        where
-            I: Nameable,
-        {
+        pub fn try_get_named(&self, name: &str) -> Option<&O> {
             self.0
                 .values()
                 .find(|i| i.name().eq_ignore_ascii_case(name))
@@ -89,7 +86,6 @@ mod defaults {
     where
         I::Id: Hash + Eq,
     {
-
         type Output = O;
 
         fn try_get(&self, id: &I::Id) -> Option<&O> {
@@ -121,7 +117,8 @@ mod defaults {
     }
 
     /// Serialize Dex as a Vec
-    impl<I: Identifiable + Serialize, O: Deref<Target = I> + Clone + From<I>> Serialize for BasicDex<I, O>
+    impl<I: Identifiable + Serialize, O: Deref<Target = I> + Clone + From<I>> Serialize
+        for BasicDex<I, O>
     where
         I::Id: Hash + Eq,
     {
@@ -131,13 +128,19 @@ mod defaults {
     }
 
     /// Deserialize Dex from a Vec
-    impl<'de, I: Identifiable + Deserialize<'de>, O: Deref<Target = I> + Clone + From<I>> Deserialize<'de> for BasicDex<I, O>
+    impl<'de, I: Identifiable + Deserialize<'de>, O: Deref<Target = I> + Clone + From<I>>
+        Deserialize<'de> for BasicDex<I, O>
     where
         I::Id: Hash + Eq + Clone,
     {
         fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-            alloc::vec::Vec::<I>::deserialize(deserializer)
-                .map(|i| Self(i.into_iter().map(|i| (i.id().clone(), O::from(i))).collect()))
+            alloc::vec::Vec::<I>::deserialize(deserializer).map(|i| {
+                Self(
+                    i.into_iter()
+                        .map(|i| (i.id().clone(), O::from(i)))
+                        .collect(),
+                )
+            })
         }
     }
 }
