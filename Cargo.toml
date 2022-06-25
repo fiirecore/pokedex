@@ -18,4 +18,5 @@ hashbrown = { version = "0.12", features = ["serde"] }
 enum-map = { version = "2", features = ["serde"] }
 
 [workspace]
-packages = ["builder"]
+members = ["builder"]
+default-members = ["builder"]

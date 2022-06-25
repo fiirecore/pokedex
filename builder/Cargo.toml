@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 firecore-pokedex = { path = ".." }
 ron = "0.7"
+hashbrown = "0.12"
