@@ -228,6 +228,15 @@ impl Display for Pokemon {
     }
 }
 
+use enum_map::Enum;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Enum, Deserialize, Serialize)]
+pub enum PokemonTexture {
+    Front,
+    Back,
+    Icon,
+}
+
 #[cfg(test)]
 mod tests {
 
