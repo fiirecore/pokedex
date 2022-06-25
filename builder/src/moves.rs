@@ -5,7 +5,7 @@ use std::{
 
 use pokedex::moves::Move;
 
-pub fn get_moves(moves: impl AsRef<Path>) -> super::Dex<Move> {
+pub fn get_moves(moves: impl AsRef<Path>) -> Vec<Move> {
     let move_dir = moves.as_ref();
 
     read_dir(move_dir)
@@ -17,18 +17,15 @@ pub fn get_moves(moves: impl AsRef<Path>) -> super::Dex<Move> {
         })
         .flat_map(|entry| match entry.map(|entry| entry.path()) {
             Ok(path) => match path.is_file() {
-                true => {
-                    let m = ron::from_str::<Move>(&read_to_string(&path).unwrap_or_else(|err| {
-                        panic!(
-                            "Could not read move file at {:?} to string with error {}",
-                            path, err
-                        )
-                    }))
-                    .unwrap_or_else(|err| {
-                        panic!("Could not parse move file at {:?} with error {}", path, err)
-                    });
-                    Some((m.id, m))
-                }
+                true => Some(ron::from_str::<Move>(&read_to_string(&path).unwrap_or_else(|err| {
+                    panic!(
+                        "Could not read move file at {:?} to string with error {}",
+                        path, err
+                    )
+                }))
+                .unwrap_or_else(|err| {
+                    panic!("Could not parse move file at {:?} with error {}", path, err)
+                })),
                 false => None,
             },
             Err(err) => {

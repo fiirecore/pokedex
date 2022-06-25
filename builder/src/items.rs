@@ -5,7 +5,7 @@ use std::{
 
 use pokedex::item::Item;
 
-pub fn get_items(path: impl AsRef<Path>) -> super::Dex<Item> {
+pub fn get_items(path: impl AsRef<Path>) -> Vec<Item> {
     let path = path.as_ref();
     read_dir(path)
         .unwrap_or_else(|err| {
@@ -18,7 +18,7 @@ pub fn get_items(path: impl AsRef<Path>) -> super::Dex<Item> {
         .map(|entry| entry.path())
         .filter(|path| path.is_file())
         .map(|path| {
-            let i = ron::from_str::<Item>(&read_to_string(&path).unwrap_or_else(|err| {
+            ron::from_str::<Item>(&read_to_string(&path).unwrap_or_else(|err| {
                 panic!(
                     "Could not read item entry at {:?} to string with error {}",
                     path, err
@@ -29,8 +29,7 @@ pub fn get_items(path: impl AsRef<Path>) -> super::Dex<Item> {
                     "Could not deserialize item entry at {:?} with error {}",
                     path, err
                 )
-            });
-            (i.id, i)
+            })
         })
         .collect()
 }

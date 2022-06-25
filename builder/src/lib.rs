@@ -2,9 +2,7 @@ pub extern crate firecore_pokedex as pokedex;
 
 use std::path::Path;
 
-type Dex<I> = hashbrown::HashMap<<I as Identifiable>::Id, I>;
-
-use pokedex::{item::Item, moves::Move, pokemon::Pokemon, Identifiable};
+use pokedex::{item::Item, moves::Move, pokemon::Pokemon};
 
 pub mod items;
 pub mod moves;
@@ -14,7 +12,7 @@ pub fn compile(
     pokemon: impl AsRef<Path>,
     moves: impl AsRef<Path>,
     items: impl AsRef<Path>,
-) -> (Dex<Pokemon>, Dex<Move>, Dex<Item>) {
+) -> (Vec<Pokemon>, Vec<Move>, Vec<Item>) {
     // #[cfg(feature = "gen")]
     // gen::gen(pokemon_dir, move_dir)
 
