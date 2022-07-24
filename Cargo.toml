@@ -1,6 +1,6 @@
 [package]
 name = "firecore-pokedex"
-version = "0.0.8"
+version = "0.0.9"
 authors = ["Rhys H <donotdoughnut99@gmail.com>"]
 edition = "2021"
 description = "A pokedex library"
