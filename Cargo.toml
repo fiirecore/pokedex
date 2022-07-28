@@ -16,7 +16,3 @@ rand = { version = "0.8", default-features = false }
 tinystr = { version = "0.6", features = ["serde"], default-features = false }
 hashbrown = { version = "0.12", features = ["serde"] }
 enum-map = { version = "2", features = ["serde"] }
-
-[workspace]
-members = ["builder"]
-default-members = ["builder"]

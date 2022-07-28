@@ -230,7 +230,9 @@ impl Display for Pokemon {
 
 use enum_map::Enum;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Enum, Deserialize, Serialize)]
+#[derive(
+    Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Enum, Deserialize, Serialize,
+)]
 pub enum PokemonTexture {
     Front,
     Back,
@@ -239,8 +241,6 @@ pub enum PokemonTexture {
 
 #[cfg(test)]
 mod tests {
-
-    use std::rc::Rc;
 
     use crate::{
         item::Item,
@@ -252,7 +252,7 @@ mod tests {
             Nature, Pokemon,
         },
         types::{PokemonType, Types},
-        BasicDex,
+        Dex,
     };
 
     #[test]
@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn dex() {
-        let mut pokedex = BasicDex::<Pokemon, Rc<_>>::default();
+        let mut pokedex = Dex::<Pokemon>::default();
 
         let test = "test".parse().unwrap();
 
@@ -296,7 +296,7 @@ mod tests {
 
         pokedex.insert(v);
 
-        let mut movedex = BasicDex::<Move, Rc<_>>::default();
+        let mut movedex = Dex::<Move>::default();
 
         let v = Move {
             id: test,
@@ -314,7 +314,7 @@ mod tests {
 
         movedex.insert(v);
 
-        let itemdex = BasicDex::<Item, Rc<_>>::default();
+        let itemdex = Dex::<Item>::default();
 
         let pokemon = SavedPokemon {
             pokemon: 0,

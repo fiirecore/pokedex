@@ -1,3 +1,4 @@
+use alloc::sync::Arc;
 use core::ops::{Add, AddAssign, Deref};
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +10,7 @@ use crate::{
 pub type StackSize = usize;
 
 pub type SavedItemStack = ItemStack<ItemId>;
+pub type InitItemStack = ItemStack<Arc<Item>>;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct ItemStack<I> {
@@ -92,10 +94,7 @@ impl<I> AddAssign<StackSize> for ItemStack<I> {
 }
 
 impl SavedItemStack {
-    pub fn init<I: Deref<Target = Item> + Clone>(
-        self,
-        dex: &impl Dex<Item, Output = I>,
-    ) -> Option<ItemStack<I>> {
+    pub fn init(self, dex: &Dex<Item>) -> Option<InitItemStack> {
         Some(ItemStack {
             item: dex.try_get(&self.item)?.clone(),
             count: self.count,

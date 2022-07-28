@@ -1,5 +1,6 @@
 use core::ops::Deref;
 
+use alloc::sync::Arc;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +13,7 @@ use crate::{
 pub struct Bag<I>(HashMap<ItemId, ItemStack<I>>);
 
 pub type SavedBag = Bag<ItemId>;
+pub type InitBag = Bag<Arc<Item>>;
 
 impl<I> Bag<I> {
     pub fn len(&self) -> usize {
@@ -89,10 +91,7 @@ impl<I: Deref<Target = Item>> Bag<I> {
 }
 
 impl SavedBag {
-    pub fn init<I: Deref<Target = Item> + Clone>(
-        self,
-        dex: &impl Dex<Item, Output = I>,
-    ) -> Option<Bag<I>> {
+    pub fn init(self, dex: &Dex<Item>) -> Option<InitBag> {
         Some(Bag(self
             .0
             .into_iter()

@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
-use core::ops::{Deref, Index, IndexMut};
+use alloc::{sync::Arc, vec::Vec};
+use core::ops::{Index, IndexMut};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
 pub struct MoveSet<M>(Vec<M>, usize);
 
 pub type SavedMoveSet = MoveSet<SavedMove>;
-pub type OwnedMoveSet<M> = MoveSet<OwnedMove<M>>;
+pub type OwnedMoveSet = MoveSet<OwnedMove>;
 
 impl<M> MoveSet<M> {
     pub const DEFAULT_SIZE: usize = 4;
@@ -55,10 +55,7 @@ impl<M> Default for MoveSet<M> {
 }
 
 impl SavedMoveSet {
-    pub fn init<M: Deref<Target = Move> + Clone>(
-        self,
-        dex: &impl Dex<Move, Output = M>,
-    ) -> Option<OwnedMoveSet<M>> {
+    pub fn init(self, dex: &Dex<Move>) -> Option<OwnedMoveSet> {
         Some(MoveSet(
             {
                 let mut moves = Vec::new();
@@ -74,18 +71,18 @@ impl SavedMoveSet {
     }
 }
 
-impl<M: Deref<Target = Move>> OwnedMoveSet<M> {
+impl OwnedMoveSet {
     pub fn uninit(self) -> SavedMoveSet {
         MoveSet(self.0.into_iter().map(OwnedMove::uninit).collect(), self.1)
     }
 }
 
-impl<M: Deref<Target = Move>> OwnedMoveSet<M> {
+impl OwnedMoveSet {
     pub fn is_full(&self) -> bool {
         self.0.len() >= self.1
     }
 
-    pub fn add(&mut self, index: Option<usize>, m: M) -> bool {
+    pub fn add(&mut self, index: Option<usize>, m: Arc<Move>) -> bool {
         let m = OwnedMove::from(m);
         match self.is_full() {
             true => {

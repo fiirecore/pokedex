@@ -1,5 +1,5 @@
-use core::ops::Deref;
 use serde::{Deserialize, Serialize};
+use alloc::sync::Arc;
 
 use crate::{
     moves::{Move, MoveId, PP},
@@ -7,32 +7,23 @@ use crate::{
 };
 
 pub type SavedMove = OwnableMove<MoveId, Option<PP>>;
-pub type OwnedMove<M> = OwnableMove<M, PP>;
+pub type OwnedMove = OwnableMove<Arc<Move>, PP>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OwnableMove<M, P>(pub M, pub P);
 
-// #[deprecated]
-// pub trait MoveView {
-//     fn id(&self) -> MoveId;
-
-//     fn is_empty(&self) -> bool;
-
-//     // fn restore(&mut self, amount: Option<PP>);
-// }
-
 impl SavedMove {
-    pub fn init<M: Deref<Target = Move> + Clone>(
+    pub fn init(
         self,
-        dex: &impl Dex<Move, Output = M>,
-    ) -> Option<OwnedMove<M>> {
+        dex: &Dex<Move>,
+    ) -> Option<OwnedMove> {
         dex.try_get(&self.0).cloned().map(OwnedMove::from)
     }
 }
 
-impl<M: Deref<Target = Move>> OwnedMove<M> {
+impl OwnedMove {
     pub fn uninit(self) -> SavedMove {
-        OwnableMove(*self.0.deref().id(), Some(self.1))
+        OwnableMove(*(*self.0).id(), Some(self.1))
     }
 }
 
@@ -58,7 +49,7 @@ impl SavedMove {
     }
 }
 
-impl<M: Deref<Target = Move>> OwnedMove<M> {
+impl OwnedMove {
     pub fn restore(&mut self, amount: Option<PP>) {
         let max = self.0.pp;
         self.1 = amount.unwrap_or(max).min(max)
@@ -75,7 +66,7 @@ impl<M: Deref<Target = Move>> OwnedMove<M> {
 //     }
 // }
 
-impl<M: Deref<Target = Move>> OwnedMove<M> {
+impl OwnedMove {
     pub fn id(&self) -> &MoveId {
         &self.0.id
     }
@@ -91,8 +82,8 @@ impl From<MoveId> for SavedMove {
     }
 }
 
-impl<M: Deref<Target = Move>> From<M> for OwnedMove<M> {
-    fn from(m: M) -> Self {
+impl From<Arc<Move>> for OwnedMove {
+    fn from(m: Arc<Move>) -> Self {
         let pp = m.pp;
         Self(m, pp)
     }

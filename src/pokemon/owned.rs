@@ -1,5 +1,4 @@
-use alloc::string::String;
-use core::ops::Deref;
+use alloc::{string::String, sync::Arc};
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -21,7 +20,7 @@ use crate::{
 
 // pub type HP = crate::MaximumNumber<Health>;
 
-/// The base struct for a pokemon owned by a player.
+/// The base struct for a pokemon owned by a player. (But serializable)
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SavedPokemon {
     /// Pokemon Identifier
@@ -66,14 +65,10 @@ pub struct SavedPokemon {
 }
 
 /// The base struct for a pokemon owned by a player.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OwnedPokemon<
-    P: Deref<Target = Pokemon> + Clone,
-    M: Deref<Target = Move> + Clone,
-    I: Deref<Target = Item> + Clone,
-> {
+#[derive(Debug, Clone)]
+pub struct OwnedPokemon {
     /// Pokemon Identifier
-    pub pokemon: P,
+    pub pokemon: Arc<Pokemon>,
 
     /// [Level] of the pokemon (1 - 100)
     pub level: Level,
@@ -84,41 +79,27 @@ pub struct OwnedPokemon<
 
     pub nature: Nature,
 
-    #[serde(default)]
     /// The [Health] of this pokemon.
     pub hp: Health,
 
-    #[serde(default = "Stats::default_iv")]
     pub ivs: Stats,
-    #[serde(default)]
     pub evs: Stats,
 
-    #[serde(default = "Pokemon::default_friendship")]
     pub friendship: Friendship,
 
-    #[serde(default)]
     pub ailment: Option<LiveAilment>,
 
     /// Optional nickname for the pokemon
-    #[serde(default)]
     pub nickname: Option<String>,
 
-    #[serde(default)]
-    pub moves: MoveSet<OwnedMove<M>>,
+    pub moves: MoveSet<OwnedMove>,
 
-    #[serde(default = "Option::default")]
-    pub item: Option<I>,
+    pub item: Option<Arc<Item>>,
 
-    #[serde(default)]
     pub experience: Experience,
 }
 
-impl<
-        P: Deref<Target = Pokemon> + Clone,
-        M: Deref<Target = Move> + Clone,
-        I: Deref<Target = Item> + Clone,
-    > OwnedPokemon<P, M, I>
-{
+impl OwnedPokemon {
     /// Get the current HP of this pokemon.
     pub fn hp(&self) -> Health {
         self.hp
@@ -190,9 +171,9 @@ impl<
     }
 
     /// Add [Experience] to this pokemon, and also handle level ups.
-    pub fn add_exp<'s, D: Dex<Move, Output = M> + 's>(
+    pub fn add_exp<'s>(
         &'s mut self,
-        movedex: &D,
+        movedex: &Dex<Move>,
         experience: Experience,
     ) -> impl DoubleEndedIterator<Item = &MoveId> + 's {
         // add exp to pokemon
@@ -216,7 +197,7 @@ impl<
     /// Handle leveling up.
     pub fn on_level_up(
         &mut self,
-        movedex: &impl Dex<Move, Output = M>,
+        movedex: &Dex<Move>,
         previous: Level,
     ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
         // Get the moves the pokemon learns at the level it just gained.
@@ -262,17 +243,12 @@ impl<
 
 impl SavedPokemon {
     /// Initialize a [SavedPokemon] that already has values given to its uninitialized fields
-    pub fn try_init<
-        R: Rng,
-        P: Deref<Target = Pokemon> + Clone,
-        M: Deref<Target = Move> + Clone,
-        I: Deref<Target = Item> + Clone,
-    >(
+    pub fn try_init(
         self,
-        pokedex: &impl Dex<Pokemon, Output = P>,
-        movedex: &impl Dex<Move, Output = M>,
-        itemdex: &impl Dex<Item, Output = I>,
-    ) -> Option<OwnedPokemon<P, M, I>> {
+        pokedex: &Dex<Pokemon>,
+        movedex: &Dex<Move>,
+        itemdex: &Dex<Item>,
+    ) -> Option<OwnedPokemon> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let gender = self.gender?;
         let nature = self.nature?;
@@ -299,18 +275,13 @@ impl SavedPokemon {
     }
 
     /// Initialize this owned pokemon struct into an [OwnedPokemon] so it can perform more functions.
-    pub fn init<
-        R: Rng,
-        P: Deref<Target = Pokemon> + Clone,
-        M: Deref<Target = Move> + Clone,
-        I: Deref<Target = Item> + Clone,
-    >(
+    pub fn init<R: Rng>(
         self,
         random: &mut R,
-        pokedex: &impl Dex<Pokemon, Output = P>,
-        movedex: &impl Dex<Move, Output = M>,
-        itemdex: &impl Dex<Item, Output = I>,
-    ) -> Option<OwnedPokemon<P, M, I>> {
+        pokedex: &Dex<Pokemon>,
+        movedex: &Dex<Move>,
+        itemdex: &Dex<Item>,
+    ) -> Option<OwnedPokemon> {
         let pokemon = pokedex.try_get(&self.pokemon)?;
         let gender = self
             .gender
