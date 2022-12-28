@@ -103,7 +103,8 @@ impl SavedItemStack {
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
-    pub fn uninit(self) -> SavedItemStack {
+
+    pub fn save(&self) -> SavedItemStack {
         ItemStack {
             item: self.item.id,
             count: self.count,

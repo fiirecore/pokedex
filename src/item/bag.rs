@@ -13,7 +13,7 @@ use crate::{
 pub struct Bag<I>(HashMap<ItemId, ItemStack<I>>);
 
 pub type SavedBag = Bag<ItemId>;
-pub type InitBag = Bag<Arc<Item>>;
+pub type OwnedBag = Bag<Arc<Item>>;
 
 impl<I> Bag<I> {
     pub fn len(&self) -> usize {
@@ -91,7 +91,7 @@ impl<I: Deref<Target = Item>> Bag<I> {
 }
 
 impl SavedBag {
-    pub fn init(self, dex: &Dex<Item>) -> Option<InitBag> {
+    pub fn init(self, dex: &Dex<Item>) -> Option<OwnedBag> {
         Some(Bag(self
             .0
             .into_iter()
@@ -101,8 +101,13 @@ impl SavedBag {
 }
 
 impl<I: Deref<Target = Item>> Bag<I> {
+
+    pub fn save(&self) -> SavedBag {
+        Bag(self.0.iter().map(|(id, stack)| (id.clone(), stack.save())).collect())
+    }
+
     pub fn uninit(self) -> SavedBag {
-        Bag(self.0.into_iter().map(|(id, v)| (id, v.uninit())).collect())
+        Bag(self.0.into_iter().map(|(id, v)| (id, v.save())).collect())
     }
 }
 

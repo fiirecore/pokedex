@@ -10,11 +10,7 @@ use core::{
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    moves::{MoveCategory, MoveId},
-    types::{Effective, PokemonType, Types},
-    Identifiable,
-};
+use crate::{moves::MoveId, Identifiable, types::PokemonTypes};
 
 pub mod owned;
 
@@ -28,11 +24,6 @@ use self::stat::{BaseStat, Stat, StatType, Stats};
 
 mod nature;
 pub use self::nature::*;
-
-/// The identifier of a Pokemon.
-pub type PokemonId = u16;
-/// The form of a Pokemon.
-pub type PokemonFormId = tinystr::TinyStr8;
 /// The level of a pokemon. Usually 1 - 100.
 /// Levels determine a Pokemon's power, and higher is better.
 pub type Level = u8;
@@ -44,6 +35,15 @@ pub type Friendship = u8;
 /// The amount of health a pokemon has.
 pub type Health = stat::BaseStat;
 
+type IdInner = u16;
+
+/// The identifier of a Pokemon.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(transparent)]
+pub struct PokemonId(pub IdInner);
+// /// The form of a Pokemon.
+// pub type PokemonFormId = tinystr::TinyStr8;
+
 /// A form of a Pokemon.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -51,7 +51,7 @@ pub struct Pokemon {
     pub id: <Self as Identifiable>::Id,
     pub name: String,
 
-    pub types: Types,
+    pub types: PokemonTypes,
 
     pub moves: Vec<LearnableMove>,
     pub base: Stats,
@@ -110,16 +110,6 @@ impl Pokemon {
             23 => Nature::Serious,
             24 => Nature::Timid,
             _ => unreachable!(),
-        }
-    }
-
-    /// Test how [Effective] a [PokemonType] is on this pokemon, in a specified [MoveCategory].
-    pub fn effective(&self, user: PokemonType, category: MoveCategory) -> Effective {
-        let primary = user.effective(self.types.primary, category);
-        if let Some(secondary) = self.types.secondary {
-            primary * user.effective(secondary, category)
-        } else {
-            primary
         }
     }
 
@@ -211,7 +201,7 @@ impl Pokemon {
 impl Identifiable for Pokemon {
     type Id = PokemonId;
 
-    const UNKNOWN: Self::Id = 0;
+    const UNKNOWN: Self::Id = PokemonId(0);
 
     fn id(&self) -> &Self::Id {
         &self.id
@@ -228,15 +218,22 @@ impl Display for Pokemon {
     }
 }
 
-use enum_map::Enum;
+impl Default for PokemonId {
+    fn default() -> Self {
+        Pokemon::UNKNOWN
+    }
+}
 
-#[derive(
-    Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Enum, Deserialize, Serialize,
-)]
-pub enum PokemonTexture {
-    Front,
-    Back,
-    Icon,
+impl From<IdInner> for PokemonId {
+    fn from(inner: IdInner) -> Self {
+        Self(inner)
+    }
+}
+
+impl Display for PokemonId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "#{}", self.0)
+    }
 }
 
 #[cfg(test)]
@@ -244,14 +241,14 @@ mod tests {
 
     use crate::{
         item::Item,
-        moves::{Move, MoveCategory, MoveTarget, Power, PP},
+        moves::{Move, PP},
         pokemon::{
             data::{Breeding, LearnableMove, Training},
             owned::SavedPokemon,
             stat::{StatSet, StatType},
             Nature, Pokemon,
         },
-        types::{PokemonType, Types},
+        types::{PokemonType, PokemonTypes},
         Dex,
     };
 
@@ -275,9 +272,9 @@ mod tests {
         let test = "test".parse().unwrap();
 
         let v = Pokemon {
-            id: 0,
+            id: Default::default(),
             name: "Test".to_owned(),
-            types: Types {
+            types: PokemonTypes {
                 primary: PokemonType::Bug,
                 secondary: Some(PokemonType::Dragon),
             },
@@ -301,15 +298,15 @@ mod tests {
         let v = Move {
             id: test,
             name: "Test Move".to_owned(),
-            category: MoveCategory::Physical,
-            pokemon_type: PokemonType::Bug,
-            accuracy: None,
-            power: Some(Power::MAX),
+            // category: MoveCategory::Physical,
+            // pokemon_type: PokemonType::Bug,
+            // accuracy: None,
+            // power: Some(Power::MAX),
             pp: PP::MAX,
-            priority: 0,
-            target: MoveTarget::Opponent,
-            contact: false,
-            crit_rate: 1,
+            // priority: 0,
+            // target: MoveTarget::Opponent,
+            // contact: false,
+            // crit_rate: 1,
         };
 
         movedex.insert(v);
@@ -317,7 +314,7 @@ mod tests {
         let itemdex = Dex::<Item>::default();
 
         let pokemon = SavedPokemon {
-            pokemon: 0,
+            pokemon: Default::default(),
             level: 30,
             ..Default::default()
         };

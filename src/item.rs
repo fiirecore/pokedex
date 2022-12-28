@@ -6,18 +6,21 @@ use alloc::string::String;
 
 use serde::{Deserialize, Serialize};
 
-use tinystr::TinyStr16;
-
 use crate::{item::usage::ItemUsage, Identifiable};
 
 pub mod bag;
+#[deprecated(note = "move")]
 pub mod usage;
 
 mod stack;
 pub use stack::*;
 
+type IdInner = tinystr::TinyStr16;
+
 /// An identifier for items.
-pub type ItemId = TinyStr16;
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(transparent)]
+pub struct ItemId(pub IdInner);
 
 pub type Price = crate::Money;
 
@@ -38,10 +41,12 @@ pub struct Item {
     #[serde(default)]
     pub stackable: Stackable,
 
+    #[deprecated]
     #[serde(default = "Item::consumable_default")]
     pub consume: bool,
 
     /// Item usage (outside of battle)
+    #[deprecated]
     #[serde(default)]
     pub usage: ItemUsage,
 }
@@ -55,7 +60,7 @@ pub struct Item {
 impl Identifiable for Item {
     type Id = ItemId;
 
-    const UNKNOWN: Self::Id = crate::UNKNOWN_ID;
+    const UNKNOWN: Self::Id = ItemId(crate::UNKNOWN_ID);
 
     fn id(&self) -> &Self::Id {
         &self.id
@@ -87,6 +92,40 @@ pub enum ItemCategory {
 pub enum Stackable {
     Singular,
     Stackable(u16),
+}
+
+impl Default for ItemId {
+    fn default() -> Self {
+        Item::UNKNOWN
+    }
+}
+
+impl ItemId {
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+
+}
+
+impl From<IdInner> for ItemId {
+    fn from(inner: IdInner) -> Self {
+        Self(inner)
+    }
+}
+
+impl core::str::FromStr for ItemId {
+    type Err = tinystr::TinyStrError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(Self)
+    }
+}
+
+impl core::fmt::Display for ItemId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
 }
 
 impl Default for Stackable {

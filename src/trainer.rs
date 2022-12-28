@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{
-        bag::{InitBag, SavedBag},
+        bag::{OwnedBag, SavedBag},
         Item,
     },
     moves::Move,
@@ -17,14 +17,34 @@ use crate::{
     Dex, Money,
 };
 
+type IdInner = tinystr::TinyAsciiStr<16>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct TrainerGroupId(pub IdInner);
+
 pub type SavedTrainer = Trainer<SavedPokemon, SavedBag>;
-pub type InitTrainer = Trainer<OwnedPokemon, InitBag>;
+pub type InitTrainer = Trainer<OwnedPokemon, OwnedBag>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Trainer<P, B> {
     pub party: Party<P>,
     pub bag: B,
     pub money: Money,
+}
+
+impl From<IdInner> for TrainerGroupId {
+    fn from(inner: IdInner) -> Self {
+        Self(inner)
+    }
+}
+
+impl core::str::FromStr for TrainerGroupId {
+    type Err = tinystr::TinyStrError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(Self)
+    }
 }
 
 impl<P, B: Default> Default for Trainer<P, B> {

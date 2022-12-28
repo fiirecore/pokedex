@@ -10,6 +10,7 @@ pub type SavedMove = OwnableMove<MoveId, Option<PP>>;
 pub type OwnedMove = OwnableMove<Arc<Move>, PP>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[deprecated]
 pub struct OwnableMove<M, P>(pub M, pub P);
 
 impl SavedMove {

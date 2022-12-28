@@ -1,7 +1,9 @@
 //! Structs/enums that represent something for a Pokemon
 
 use core::ops::Range;
+
 use serde::{Deserialize, Serialize};
+use enum_map::Enum;
 
 use crate::{
     item::ItemId,
@@ -69,6 +71,15 @@ pub enum GrowthRate {
     MediumSlow,
     FastThenVerySlow,
     SlowThenVeryFast,
+}
+
+#[derive(
+    Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Enum, Deserialize, Serialize,
+)]
+pub enum PokemonTexture {
+    Front,
+    Back,
+    Icon,
 }
 
 impl Default for GrowthRate {
