@@ -13,6 +13,6 @@ categories = ["game-development"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 rand = { version = "0.8", default-features = false }
-tinystr = { version = "0.6", features = ["serde"], default-features = false }
-hashbrown = { version = "0.12", features = ["serde"] }
+tinystr = { version = "0.7", features = ["serde"], default-features = false }
+hashbrown = { version = "0.13", features = ["serde"] }
 enum-map = { version = "2", features = ["serde"] }
