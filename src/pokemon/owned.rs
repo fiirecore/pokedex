@@ -1,3 +1,5 @@
+use core::ops::RangeInclusive;
+
 use alloc::{string::String, sync::Arc};
 
 use rand::Rng;
@@ -171,11 +173,10 @@ impl OwnedPokemon {
     }
 
     /// Add [Experience] to this pokemon, and also handle level ups.
-    pub fn add_exp<'s>(
-        &'s mut self,
-        movedex: &Dex<Move>,
+    pub fn add_exp(
+        &mut self,
         experience: Experience,
-    ) -> impl DoubleEndedIterator<Item = &MoveId> + 's {
+    ) -> RangeInclusive<Level> {
         // add exp to pokemon
 
         self.experience += experience * 5;
@@ -191,18 +192,15 @@ impl OwnedPokemon {
             self.level += 1;
         }
 
-        self.on_level_up(movedex, previous)
+        previous..=self.level
     }
 
     /// Handle leveling up.
-    pub fn on_level_up(
+    pub fn fill_moves<'m>(
         &mut self,
+        mut moves: impl DoubleEndedIterator<Item = &'m MoveId> + 'm,
         movedex: &Dex<Move>,
-        previous: Level,
-    ) -> impl DoubleEndedIterator<Item = &MoveId> + '_ {
-        // Get the moves the pokemon learns at the level it just gained.
-
-        let mut moves = self.pokemon.moves_at(previous..self.level);
+    ) -> impl DoubleEndedIterator<Item = &'m MoveId> + 'm {
 
         // Add moves if the player's pokemon does not have a full set of moves.
 

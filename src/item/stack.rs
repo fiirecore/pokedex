@@ -24,6 +24,19 @@ impl<I> From<I> for ItemStack<I> {
     }
 }
 
+impl<I> ItemStack<I> {
+    pub fn try_use(&mut self, consume: bool) -> bool {
+        if self.count > 0 {
+            if consume {
+                self.count -= 1;
+            }
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl<I: Clone> ItemStack<I> {
     fn take_gt(&mut self, count: StackSize) -> Self {
         self.count -= count;
@@ -56,17 +69,6 @@ impl<I: Clone> ItemStack<I> {
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
-    pub fn try_use(&mut self) -> bool {
-        if self.count > 0 {
-            if self.item.should_consume() {
-                self.count -= 1;
-            }
-            true
-        } else {
-            false
-        }
-    }
-
     pub fn stacks(&self) -> usize {
         match self.item.stackable {
             Stackable::Singular => self.count,
@@ -103,7 +105,6 @@ impl SavedItemStack {
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
-
     pub fn save(&self) -> SavedItemStack {
         ItemStack {
             item: self.item.id,

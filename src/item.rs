@@ -6,11 +6,9 @@ use alloc::string::String;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{item::usage::ItemUsage, Identifiable};
+use crate::Identifiable;
 
 pub mod bag;
-#[deprecated(note = "move")]
-pub mod usage;
 
 mod stack;
 pub use stack::*;
@@ -40,15 +38,6 @@ pub struct Item {
 
     #[serde(default)]
     pub stackable: Stackable,
-
-    #[deprecated]
-    #[serde(default = "Item::consumable_default")]
-    pub consume: bool,
-
-    /// Item usage (outside of battle)
-    #[deprecated]
-    #[serde(default)]
-    pub usage: ItemUsage,
 }
 
 // impl Identifier<Item> for ItemId {
@@ -68,16 +57,6 @@ impl Identifiable for Item {
 
     fn name(&self) -> &str {
         &self.name
-    }
-}
-
-impl Item {
-    pub const fn should_consume(&self) -> bool {
-        self.consume
-    }
-
-    const fn consumable_default() -> bool {
-        true
     }
 }
 
@@ -101,11 +80,9 @@ impl Default for ItemId {
 }
 
 impl ItemId {
-
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
-
 }
 
 impl From<IdInner> for ItemId {

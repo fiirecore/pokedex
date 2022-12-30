@@ -82,10 +82,10 @@ impl<I: Deref<Target = Item>> Bag<I> {
         }
     }
 
-    pub fn use_item(&mut self, id: &ItemId) -> bool {
+    pub fn use_item(&mut self, id: &ItemId, consume: bool) -> bool {
         self.0
             .get_mut(id)
-            .map(|item| item.try_use())
+            .map(|item| item.try_use(consume))
             .unwrap_or_default()
     }
 }
