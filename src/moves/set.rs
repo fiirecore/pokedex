@@ -4,17 +4,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     moves::{
-        owned::{OwnedMove, SavedMove},
+        owned::*,
         Move,
     },
     Dex,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[deprecated(note = "fix sizing")]
 pub struct MoveSet<M>(Vec<M>, usize);
 
-pub type SavedMoveSet = MoveSet<SavedMove>;
-pub type OwnedMoveSet = MoveSet<OwnedMove>;
+#[deprecated]
+pub type MoveSetData = MoveSet<UserMoveData>;
+#[deprecated]
+pub type UserMoveSet = MoveSet<UserMove>;
 
 impl<M> MoveSet<M> {
     pub const DEFAULT_SIZE: usize = 4;
@@ -54,14 +57,15 @@ impl<M> Default for MoveSet<M> {
     }
 }
 
-impl SavedMoveSet {
-    pub fn init(self, dex: &Dex<Move>) -> Option<OwnedMoveSet> {
-        Some(MoveSet(
+impl MoveSetData {
+    pub fn init(&self, dex: &Dex<Move>) -> Result<UserMoveSet, usize> {
+        Ok(MoveSet(
             {
                 let mut moves = Vec::new();
-                for m in self.0 {
-                    if let Some(m) = m.init(dex) {
-                        moves.push(m);
+                for (i, m) in self.0.iter().enumerate() {
+                    match m.init(dex) {
+                        Some(m) => moves.push(m),
+                        None => return Err(i),
                     }
                 }
                 moves
@@ -71,19 +75,19 @@ impl SavedMoveSet {
     }
 }
 
-impl OwnedMoveSet {
-    pub fn uninit(self) -> SavedMoveSet {
-        MoveSet(self.0.into_iter().map(OwnedMove::uninit).collect(), self.1)
+impl UserMoveSet {
+    pub fn data(&self) -> MoveSetData {
+        MoveSet(self.0.iter().map(UserMove::data).collect(), self.1)
     }
 }
 
-impl OwnedMoveSet {
+impl UserMoveSet {
     pub fn is_full(&self) -> bool {
         self.0.len() >= self.1
     }
 
     pub fn add(&mut self, index: Option<usize>, m: Arc<Move>) -> bool {
-        let m = OwnedMove::from(m);
+        let m = UserMove::from(m);
         match self.is_full() {
             true => {
                 if let Some(i) = index.and_then(|i| self.0.get_mut(i)) {

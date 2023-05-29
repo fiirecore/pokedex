@@ -239,12 +239,14 @@ impl Display for PokemonId {
 #[cfg(test)]
 mod tests {
 
+    use alloc::vec;
+
     use crate::{
         item::Item,
-        moves::{Move, PP},
+        moves::{Move, PP, owned::UserMoveData, MoveId},
         pokemon::{
             data::{Breeding, LearnableMove, Training},
-            owned::SavedPokemon,
+            owned::UserPokemonData,
             stat::{StatSet, StatType},
             Nature, Pokemon,
         },
@@ -313,18 +315,29 @@ mod tests {
 
         let itemdex = Dex::<Item>::default();
 
-        let pokemon = SavedPokemon {
+        let pokemon = UserPokemonData {
             pokemon: Default::default(),
             level: 30,
-            ..Default::default()
+            gender: crate::pokemon::data::Gender::None,
+            nature: todo!(),
+            hp: todo!(),
+            ivs: todo!(),
+            evs: todo!(),
+            friendship: todo!(),
+            ailment: todo!(),
+            nickname: todo!(),
+            moves: vec![UserMoveData::from(test)],
+            item: Default::default(),
+            experience: Default::default(),
         };
 
         let mut rng = rand::rngs::mock::StepRng::new(12, 24);
 
         let pokemon = pokemon
-            .init(&mut rng, &pokedex, &movedex, &itemdex)
+            .init(&pokedex, &movedex, &itemdex, Some(&mut rng))
             .unwrap();
 
         assert!(!pokemon.moves.is_empty())
     }
+
 }

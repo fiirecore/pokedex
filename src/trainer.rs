@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{
-        bag::{OwnedBag, SavedBag},
+        bag::*,
         Item,
     },
     moves::Move,
     pokemon::{
-        owned::{OwnedPokemon, SavedPokemon},
+        owned::*,
         party::Party,
         Pokemon,
     },
@@ -23,8 +23,8 @@ type IdInner = tinystr::TinyAsciiStr<16>;
 #[serde(transparent)]
 pub struct TrainerGroupId(pub IdInner);
 
-pub type SavedTrainer = Trainer<SavedPokemon, SavedBag>;
-pub type InitTrainer = Trainer<OwnedPokemon, OwnedBag>;
+pub type TrainerData = Trainer<UserPokemonData, BagData>;
+pub type UserTrainer = Trainer<UserPokemon, UserBag>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Trainer<P, B> {
@@ -57,19 +57,19 @@ impl<P, B: Default> Default for Trainer<P, B> {
     }
 }
 
-impl SavedTrainer {
+impl TrainerData {
     pub fn init(
         self,
         random: &mut impl Rng,
         pokedex: &Dex<Pokemon>,
         movedex: &Dex<Move>,
         itemdex: &Dex<Item>,
-    ) -> Option<InitTrainer> {
-        Some(Trainer {
+    ) -> Option<UserTrainer> {
+        Some(UserTrainer {
             party: {
                 let mut party = Vec::new();
                 for pokemon in self.party {
-                    party.push(pokemon.init(random, pokedex, movedex, itemdex)?);
+                    party.push(pokemon.init(pokedex, movedex, itemdex, Some(random)).ok()?);
                 }
                 party
             },
@@ -79,12 +79,12 @@ impl SavedTrainer {
     }
 }
 
-impl InitTrainer
+impl UserTrainer
 {
-    pub fn uninit(self) -> SavedTrainer {
-        SavedTrainer {
-            party: self.party.into_iter().map(|p| p.uninit()).collect(),
-            bag: self.bag.uninit(),
+    pub fn data(&self) -> TrainerData {
+        TrainerData {
+            party: self.party.iter().map(|p| p.data()).collect(),
+            bag: self.bag.data(),
             money: self.money,
         }
     }

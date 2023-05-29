@@ -6,7 +6,7 @@ use alloc::string::String;
 
 use serde::{Deserialize, Serialize};
 
-use crate::Identifiable;
+use crate::{Identifiable};
 
 pub mod bag;
 

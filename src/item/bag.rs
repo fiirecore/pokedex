@@ -1,4 +1,4 @@
-use core::ops::Deref;
+use core::{ops::Deref};
 
 use alloc::sync::Arc;
 use hashbrown::HashMap;
@@ -8,14 +8,28 @@ use crate::{
     item::{Item, ItemId, ItemStack},
     Dex,
 };
+
+use super::UserItemStack;
 #[repr(transparent)]
 #[derive(Debug, Clone)]
 pub struct Bag<I>(HashMap<ItemId, ItemStack<I>>);
 
-pub type SavedBag = Bag<ItemId>;
-pub type OwnedBag = Bag<Arc<Item>>;
+pub type BagData = Bag<ItemId>;
+pub type UserBag = Bag<Arc<Item>>;
 
-impl<I> Bag<I> {
+
+impl UserBag {
+
+    // /// Adds an item stack to the bag. Returns extra items if bag is filled.
+    pub fn insert(&mut self, stack: UserItemStack) {
+        match self.0.get_mut(&stack.item.id) {
+            Some(bag_stack) => *bag_stack += stack.count,
+            None => {
+                self.0.insert(stack.item.id.clone(), stack);
+            }
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -24,15 +38,15 @@ impl<I> Bag<I> {
         self.len() == 0
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &ItemStack<I>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &UserItemStack> + '_ {
         self.0.values()
     }
 
-    pub fn get(&self, id: &ItemId) -> Option<&ItemStack<I>> {
+    pub fn get(&self, id: &ItemId) -> Option<&UserItemStack> {
         self.0.get(id)
     }
 
-    pub fn get_mut(&mut self, id: &ItemId) -> Option<&mut ItemStack<I>> {
+    pub fn get_mut(&mut self, id: &ItemId) -> Option<&mut UserItemStack> {
         self.0.get_mut(id)
     }
 
@@ -45,41 +59,18 @@ impl<I> Bag<I> {
     }
 
     /// If the bag has a certain amount of items or more, it will take them.
-    pub fn try_take(&mut self, id: &ItemId, count: usize) -> Option<ItemStack<I>>
-    where
-        I: Clone,
+    pub fn try_take(&mut self, id: &ItemId, count: usize) -> Option<UserItemStack>
+    // where
+    //     I: Clone,
     {
         self.get_mut(id).and_then(|stack| stack.try_take(count))
     }
 
-    pub fn take(&mut self, id: &ItemId, count: usize) -> Option<ItemStack<I>>
-    where
-        I: Clone,
+    pub fn take(&mut self, id: &ItemId, count: usize) -> Option<UserItemStack>
+    // where
+    //     I: Clone,
     {
         self.get_mut(id).map(|stack| stack.take(count))
-    }
-}
-
-impl SavedBag {
-    pub fn insert_saved(&mut self, stack: ItemStack<ItemId>) {
-        match self.0.get_mut(&stack.item) {
-            Some(bag_stack) => *bag_stack += stack.count,
-            None => {
-                self.0.insert(stack.item, stack);
-            }
-        }
-    }
-}
-
-impl<I: Deref<Target = Item>> Bag<I> {
-    /// Adds an item stack to the bag. Returns extra items if bag is filled.
-    pub fn insert(&mut self, stack: ItemStack<I>) {
-        match self.0.get_mut(&stack.item.id) {
-            Some(bag_stack) => *bag_stack += stack.count,
-            None => {
-                self.0.insert(stack.item.id, stack);
-            }
-        }
     }
 
     pub fn use_item(&mut self, id: &ItemId, consume: bool) -> bool {
@@ -90,34 +81,31 @@ impl<I: Deref<Target = Item>> Bag<I> {
     }
 }
 
-impl SavedBag {
-    pub fn init(self, dex: &Dex<Item>) -> Option<OwnedBag> {
+impl BagData {
+    pub fn init(&self, dex: &Dex<Item>) -> Option<UserBag> {
         Some(Bag(self
             .0
-            .into_iter()
-            .flat_map(|(i, stack)| stack.init(dex).map(|stack| (i, stack)))
+            .iter()
+            .flat_map(|(i, stack)| stack.init(dex).map(|stack| (i.clone(), stack)))
             .collect()))
     }
 }
 
 impl<I: Deref<Target = Item>> Bag<I> {
 
-    pub fn save(&self) -> SavedBag {
-        Bag(self.0.iter().map(|(id, stack)| (id.clone(), stack.save())).collect())
+    pub fn data(&self) -> BagData {
+        Bag(self.0.iter().map(|(id, stack)| (id.clone(), stack.data())).collect())
     }
 
-    pub fn uninit(self) -> SavedBag {
-        Bag(self.0.into_iter().map(|(id, v)| (id, v.save())).collect())
-    }
 }
 
-impl Serialize for SavedBag {
+impl Serialize for BagData {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.collect_seq(self.0.values())
     }
 }
 
-impl<'de> Deserialize<'de> for SavedBag {
+impl<'de> Deserialize<'de> for BagData {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         Ok(Self(
             alloc::vec::Vec::<ItemStack<ItemId>>::deserialize(deserializer)?
@@ -134,7 +122,7 @@ impl<I> Default for Bag<I> {
     }
 }
 
-impl From<alloc::vec::Vec<ItemStack<ItemId>>> for SavedBag {
+impl From<alloc::vec::Vec<ItemStack<ItemId>>> for BagData {
     fn from(v: alloc::vec::Vec<ItemStack<ItemId>>) -> Self {
         Self(v.into_iter().map(|i| (i.item, i)).collect())
     }

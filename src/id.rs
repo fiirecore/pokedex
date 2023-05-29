@@ -15,13 +15,3 @@ pub trait Identifiable {
 
     fn name(&self) -> &str;
 }
-
-// pub trait Identifier<I: Identifiable> {
-//     fn as_id(&self) -> &I::Id;
-// }
-
-// impl<I: Identifiable> Identifier<I> for I {
-//     fn as_id(&self) -> &I::Id {
-//         Identifiable::id(self)
-//     }
-// }

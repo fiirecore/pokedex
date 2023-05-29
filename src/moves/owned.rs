@@ -7,40 +7,40 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SavedMove {
+pub struct UserMoveData {
     pub id: MoveId,
     #[serde(default)]
     pub pp: Option<PP>,
 }
 
 #[derive(Debug, Clone)]
-pub struct OwnedMove {
+pub struct UserMove {
     pub m: Arc<Move>,
     pub pp: PP,
 }
 
-impl SavedMove {
+impl UserMoveData {
 
     pub fn id(&self) -> &MoveId {
         &self.id
     }
 
-    pub fn restore(&mut self, amount: Option<PP>) {
-        match amount {
-            Some(by) => {
-                if let Some(pp) = self.pp.as_mut() {
-                    *pp = pp.saturating_add(by);
-                }
-            }
-            None => self.pp = None,
-        }
-    }
+    // pub fn restore(&mut self, amount: Option<PP>) {
+    //     match amount {
+    //         Some(by) => {
+    //             if let Some(pp) = self.pp.as_mut() {
+    //                 *pp = pp.saturating_add(by);
+    //             }
+    //         }
+    //         None => self.pp = None,
+    //     }
+    // }
 
     pub fn init(
         self,
         dex: &Dex<Move>,
-    ) -> Option<OwnedMove> {
-        dex.try_get(&self.id).cloned().map(OwnedMove::from)
+    ) -> Option<UserMove> {
+        dex.try_get(&self.id).cloned().map(UserMove::from)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -48,7 +48,7 @@ impl SavedMove {
     }
 }
 
-impl OwnedMove {
+impl UserMove {
 
     pub fn id(&self) -> &MoveId {
         &self.m.id
@@ -63,21 +63,21 @@ impl OwnedMove {
         self.pp = amount.unwrap_or(max).min(max)
     }
 
-    pub fn uninit(self) -> SavedMove {
-        SavedMove {
+    pub fn data(&self) -> UserMoveData {
+        UserMoveData {
             id: self.m.id().clone(), 
             pp: Some(self.pp)
         }
     }
 }
 
-impl From<MoveId> for SavedMove {
+impl From<MoveId> for UserMoveData {
     fn from(id: MoveId) -> Self {
         Self { id, pp: None }
     }
 }
 
-impl From<Arc<Move>> for OwnedMove {
+impl From<Arc<Move>> for UserMove {
     fn from(m: Arc<Move>) -> Self {
         let pp = m.pp;
         Self { m, pp }

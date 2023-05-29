@@ -9,8 +9,8 @@ use crate::{
 
 pub type StackSize = usize;
 
-pub type SavedItemStack = ItemStack<ItemId>;
-pub type InitItemStack = ItemStack<Arc<Item>>;
+pub type ItemStackData = ItemStack<ItemId>;
+pub type UserItemStack = ItemStack<Arc<Item>>;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct ItemStack<I> {
@@ -95,8 +95,8 @@ impl<I> AddAssign<StackSize> for ItemStack<I> {
     }
 }
 
-impl SavedItemStack {
-    pub fn init(self, dex: &Dex<Item>) -> Option<InitItemStack> {
+impl ItemStackData {
+    pub fn init(&self, dex: &Dex<Item>) -> Option<UserItemStack> {
         Some(ItemStack {
             item: dex.try_get(&self.item)?.clone(),
             count: self.count,
@@ -105,7 +105,7 @@ impl SavedItemStack {
 }
 
 impl<I: Deref<Target = Item>> ItemStack<I> {
-    pub fn save(&self) -> SavedItemStack {
+    pub fn data(&self) -> ItemStackData {
         ItemStack {
             item: self.item.id,
             count: self.count,
